@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import shlex
 
 import click
@@ -5,17 +7,24 @@ from click.testing import CliRunner
 
 runner = CliRunner()
 
-@click.group(name='')
-def command(**kwargs):
-    pass
+class Command:
+    def __init__(self, user=None):
+        self.user = user
 
-@command.command()
-def about(**kwargs):
-    click.echo('This is the about command.')
+    @click.group(name='')
+    def command(**kwargs):
+        pass
 
-@command.command()
-def echo(**kwargs):
-    click.echo('This is the echo command.')
+    @command.command()
+    def about(**kwargs):
+        click.echo('This is the about command.')
+
+    @command.command()
+    def echo(**kwargs):
+        click.echo('This is the echo command.  You are {}.'.format(self.user))
 
 def run(user, cmd):
-    return runner.invoke(command, shlex.split(cmd)).output
+    command = Command(user)
+    result = runner.invoke(command.command, shlex.split(cmd))
+    print('run result: {}'.format(result))
+    return result.output
