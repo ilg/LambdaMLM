@@ -28,7 +28,11 @@ class InvalidSignatureException(Exception):
     pass
 
 def handle_command(command_address, msg):
-    # TODO: don't do anything with autoresponder responses (Auto-submitted: header, https://www.iana.org/assignments/auto-submitted-keywords/auto-submitted-keywords.xhtml)
+    auto_submitted = msg_get_header(msg, 'auto-submitted')
+    if auto_submitted and auto_submitted.lower() != 'no':
+        # Auto-submitted: header, https://www.iana.org/assignments/auto-submitted-keywords/auto-submitted-keywords.xhtml
+        print("Message appears to be automatically generated ({}), so ignoring it.".format(auto_submitted))
+        return
 
     # Grab the address to which to respond and the subject
     reply_to = msg_get_response_address(msg)
