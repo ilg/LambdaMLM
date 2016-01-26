@@ -3,8 +3,11 @@ from __future__ import print_function
 import datetime
 import hmac
 import hashlib
+import re
 
 timestamp_format = '%Y%m%d%H%M%S'
+
+signed_cmd_regex = re.compile(r'^(?P<cmd>.+) (?P<timestamp>\d{14}) (?P<signature>[\da-f]{40})$')
 
 from config import signing_key
 from ses import msg_get_header, msg_get_response_address
@@ -14,6 +17,15 @@ import boto3
 ses = boto3.client('ses')
 
 from cnc_commands import run
+
+class NotSignedException(Exception):
+    pass
+
+class ExpiredSignatureException(Exception):
+    pass
+
+class InvalidSignatureException(Exception):
+    pass
 
 def handle_command(command_address, msg):
     # TODO: don't do anything with autoresponder responses (Auto-submitted: header, https://www.iana.org/assignments/auto-submitted-keywords/auto-submitted-keywords.xhtml)
@@ -32,8 +44,17 @@ def handle_command(command_address, msg):
         subject = subject[subject.rfind(':') + 1:]
     subject = subject.strip()
 
-    cmd = check_signature(subject, reply_to)
-    if not cmd:
+    try:
+        cmd = get_signed_command(subject, reply_to)
+    except ExpiredSignatureException:
+        # TODO (maybe): Reply to the sender to tell them the signature was expired?  Or send a newly-signed message?
+        print("Expired signature.")
+        return
+    except InvalidSignatureException:
+        # Do nothing.
+        print("Invalid signature.")
+        return
+    except NotSignedException:
         # If the subject isn't a signed command...
         # TODO (maybe): ... check if the reply_to is allowed to run the specific command with the given parameters...
         # ... and reply with a signed command for the recipient to send back (by replying).
@@ -73,21 +94,25 @@ def send_response(source, destination, subject, body):
                 },
             )
 
-def check_signature(subject, address):
+def get_signed_command(subject, address):
+    match = signed_cmd_regex.match(subject)
+    if not match:
+        raise NotSignedException
     (cmd, timestamp, sig) = ('  ' + subject).rsplit(' ', 2)
-    cmd = cmd.strip()
-    sig = sig.strip()
-    if not timestamp:
-        return False
+    cmd = match.group('cmd').strip()
+    sig = match.group('signature')
+    timestamp = match.group('timestamp')
+    if not sig or not timestamp:
+        raise NotSignedException
     timestamp_age = datetime.datetime.now() - datetime.datetime.strptime(timestamp, timestamp_format)
     try:
         # Check that the timestamp is recent enough.
         if timestamp_age > datetime.timedelta(hours=1):
-            return False
+            raise ExpiredSignatureException
     except ValueError:
-        return False
+        raise InvalidSignatureException
     if not hmac.compare_digest(unicode(signature(' '.join([ address, cmd, timestamp, ]))), unicode(sig)):
-        return False
+        raise InvalidSignatureException
     return cmd
 
 def signature(cmd):
