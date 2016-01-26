@@ -3,7 +3,7 @@ from __future__ import print_function
 from ses import email_message_from_s3_bucket, event_msg_is_to_command
 from cnc import handle_command
 
-email_bucket = 'lambdamlm'
+from config import email_bucket
 
 def lambda_handler(event, context):
     with email_message_from_s3_bucket(event, email_bucket) as msg:

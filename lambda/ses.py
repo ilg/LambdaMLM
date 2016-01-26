@@ -8,6 +8,9 @@ import boto3
 
 s3 = boto3.client('s3')
 
+from config import command_user
+command_address_prefix = command_user + '@'
+
 @contextmanager
 def email_message_from_s3_bucket(event, email_bucket):
     key = event['Records'][0]['ses']['mail']['messageId']
@@ -52,7 +55,7 @@ def event_msg_is_to_command(event, msg):
     if len(recipients) != 1:
         #print("Too many recipients (SES receipt).")
         return False
-    if not recipients[0].startswith('lambda@'):
+    if not recipients[0].startswith(command_address_prefix):
         #print("Unexpected recipient (SES receipt).")
         return False
 
@@ -61,14 +64,14 @@ def event_msg_is_to_command(event, msg):
     if len(destination) != 1:
         #print("Too many recipients (SES destination).")
         return False
-    if not destination[0].startswith('lambda@'):
+    if not destination[0].startswith(command_address_prefix):
         #print("Unexpected recipient (SES destination).")
         return False
 
     # Validate the To: header.
     _, to_address = email.utils.parseaddr(msg_get_header(msg, 'to'))
     #print("To: " + to_address)
-    if not to_address.startswith('lambda@'):
+    if not to_address.startswith(command_address_prefix):
         #print("Unexpected recipient (To: header).")
         return False
 
