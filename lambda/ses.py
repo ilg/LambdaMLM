@@ -49,6 +49,11 @@ def msg_get_response_address(msg):
         reply_to = msg_get_header(msg, 'sender')
     return reply_to
 
+def recipient_destination_overlap(event):
+    recipients = set(event['Records'][0]['ses']['receipt']['recipients'])
+    destination = set(event['Records'][0]['ses']['mail']['destination'])
+    return recipients & destination
+
 def event_msg_is_to_command(event, msg):
     # Validate that the control address is the only recipient.
     recipients = event['Records'][0]['ses']['receipt']['recipients']
