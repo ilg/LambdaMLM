@@ -13,7 +13,7 @@ s3 = boto3.client('s3')
 
 from config import config_bucket
 
-class ListConfiguration:
+class List:
     def __init__(self, address=None, name=None, host=None):
         if address is None:
             if name is None or host is None:

@@ -26,8 +26,8 @@ def lambda_handler(event, context):
         for addr in recipient_destination_overlap(event):
             print('Looking for list {}...'.format(addr))
             try:
-                cfg = ListConfiguration(addr)
-            except:
+                cfg = List(addr)
+            except ValueError:
                 continue
             print('Found list {}.'.format(addr))
             del msg['Sender']
