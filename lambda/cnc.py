@@ -10,7 +10,7 @@ timestamp_format = '%Y%m%d%H%M%S'
 signed_cmd_regex = re.compile(r'^(?P<cmd>.+) (?P<timestamp>\d{14}) (?P<signature>[\da-f]{40})$')
 
 from config import signing_key
-from ses import msg_get_header, msg_get_response_address
+from sestools import msg_get_header, msg_get_response_address
 
 import boto3
 

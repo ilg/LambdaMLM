@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from ses import email_message_from_s3_bucket, event_msg_is_to_command, msg_get_header, recipient_destination_overlap
+from sestools import email_message_from_s3_bucket, event_msg_is_to_command, msg_get_header, recipient_destination_overlap
 from cnc import handle_command
 
 import boto3
