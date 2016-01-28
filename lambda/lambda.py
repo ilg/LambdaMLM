@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from ses import email_message_from_s3_bucket, event_msg_is_to_command, recipient_destination_overlap
+from ses import email_message_from_s3_bucket, event_msg_is_to_command, msg_get_header, recipient_destination_overlap
 from cnc import handle_command
 
 import boto3
@@ -20,6 +20,8 @@ def lambda_handler(event, context):
             handle_command(command_address, msg)
             return
         
+        del msg['DKIM-Signature']
+        print('Message from {}.'.format(msg_get_header(msg, 'from')))
         # See if the message was sent to any known lists.
         for addr in recipient_destination_overlap(event):
             print('Looking for list {}...'.format(addr))
@@ -28,6 +30,8 @@ def lambda_handler(event, context):
             except:
                 continue
             print('Found list {}.'.format(addr))
+            del msg['Sender']
+            msg['Sender'] = cfg.address
             for user, flags in cfg.config['users'].iteritems():
                 print('> Sending to user {}.'.format(user))
                 ses.send_raw_email(
