@@ -19,7 +19,7 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 - [x] Process commands like *nix CLI commands.
 - [x] Accept single command in subject.
 - [ ] Accept multiple commands in body.
-- [ ] Maintain list configurations in S3 (YAML?)
+- [x] Maintain list configurations in S3 in YAML format
 
 #### Commands
 
@@ -32,9 +32,21 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 
 ### Sending/Receiving Email
 
-- [ ] Validate incoming email against posting permissions
+- [x] Validate incoming email against posting permissions
 - [ ] Adjust subject, reply-to, footer, etc. per list configuration
-- [ ] Send email to list members
+- [x] Send email to list members
 - [ ] Handle bounces
 - [ ] Handle moderating messages
 - [ ] Handle MIME/attachments
+
+## Notes
+
+- 2016-02-04: Sending via Amazon SES is likely not possible, as SES appears to require that the `From:` address be verified, which isn't plausible for discussion lists.  The best option thus far is to use an external SMTP server.  It appears to be possible to configure a given host to receive email through SES and send via an external SMTP server with both SPF and DKIM passing.
+
+## License
+
+[MIT License](LICENSE)
+
+## Author
+
+[Isaac Greenspan](https://github.com/ilg), with some time contributed by [Vokal](http://vokal.io) Hack Days.
