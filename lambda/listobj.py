@@ -12,6 +12,7 @@ import boto3
 s3 = boto3.client('s3')
 
 from email.header import Header
+from sestools import msg_get_header
 
 import config
 if hasattr(config, 'smtp_server'):
@@ -87,6 +88,14 @@ class List:
         # See if replies should default to the list.
         if self.reply_to_list:
             msg['Reply-to'] = Header(self.display_address)
+
+        # See if the list has a subject tag.
+        if self.subject_tag:
+            prefix = u'[{}] '.format(self.subject_tag)
+            subject = msg_get_header(msg, 'Subject')
+            if prefix not in subject:
+                del msg['Subject']
+                msg['Subject'] = Header(u'{}{}'.format(prefix, subject))
 
         # TODO: body footer
         # TODO (maybe): batch sends
