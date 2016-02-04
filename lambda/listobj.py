@@ -83,6 +83,11 @@ class List:
         # Capture bounces, etc., to the list address.  # TODO: this isn't quite right, is it?
         del msg['Return-path']
         msg['Return-path'] = Header(self.display_address)  # TODO: VERP?
+
+        # See if replies should default to the list.
+        if self.reply_to_list:
+            msg['Reply-to'] = Header(self.display_address)
+
         # TODO: body footer
         # TODO (maybe): batch sends
         for user, flags in self.config['users'].iteritems():
