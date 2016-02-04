@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import yaml
+from enum import Enum
 
 import re
 
@@ -12,6 +13,7 @@ import boto3
 s3 = boto3.client('s3')
 
 from email.header import Header
+import email.utils
 from sestools import msg_get_header
 
 from list_member import ListMember, MemberFlag
@@ -40,6 +42,12 @@ list_properties = [
         'reply-to-list',
         'subject-tag',
         ]
+
+CanSend = Enum('CanSend', [
+    'no',
+    'moderated',
+    'yes',
+    ])
 
 class List:
     def __init__(self, address=None, name=None, host=None):
@@ -73,9 +81,28 @@ class List:
         else:
             self.display_address = self.address
 
+    def address_can_send(self, address):
+        member = next(( m for m in self.members if m.address == address ), None)
+        if member is None:
+            # TODO: allow a list to receive from off-list; allow off-list emails to go to moderation
+            return CanSend.no
+        if MemberFlag.noPost in member.flags:
+            return CanSend.no
+        if MemberFlag.modPost in member.flags:
+            return CanSend.moderated
+        # TODO: check if the list is moderated
+        return CanSend.yes
+
     def send(self, msg):
-        # TODO: check if the list allows messages from this message's sender
-        # TODO: check if the list might allow messages from this message's sender with moderator approval
+        _, from_address = email.utils.parseaddr(msg_get_header(msg, 'From'))
+        can_send = self.address_can_send(from_address)
+        if can_send == CanSend.no:
+            print('{} cannot send email to {}.'.format(from_address, self.address))
+            return
+        if can_send == CanSend.moderated:
+            # TODO: the list allows messages from this message's sender with moderator approval, so handle moderation
+            print('Email from {} to {} should be moderated (not yet implemented).'.format(from_address, self.address))
+            return
 
         # Strip out any exising DKIM signature.
         del msg['DKIM-Signature']
