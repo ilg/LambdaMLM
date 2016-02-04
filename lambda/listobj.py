@@ -29,6 +29,13 @@ else:
                 RawMessage={ 'Data': message.as_string(), },
                 )
 
+list_properties = [
+        'name',
+        'users',
+        'reply-to-list',
+        'subject-tag',
+        ]
+
 class List:
     def __init__(self, address=None, name=None, host=None):
         if address is None:
@@ -54,7 +61,8 @@ class List:
             print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
             raise e
         self.config = yaml.load(config_response['Body'])
-        print('Loaded list {} configuration: {}'.format(self.address, self.config))
+        for prop in list_properties:
+            setattr(self, prop.replace('-', '_'), self.config.get(prop))
 
     def send(self, msg):
         # TODO: check if the list allows messages from this message's sender
