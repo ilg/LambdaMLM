@@ -14,6 +14,8 @@ s3 = boto3.client('s3')
 from email.header import Header
 from sestools import msg_get_header
 
+from list_member import ListMember, MemberFlag
+
 import config
 if hasattr(config, 'smtp_server'):
     import smtplib
@@ -34,7 +36,7 @@ else:
 
 list_properties = [
         'name',
-        'users',
+        'members',
         'reply-to-list',
         'subject-tag',
         ]
@@ -99,11 +101,11 @@ class List:
 
         # TODO: body footer
         # TODO (maybe): batch sends
-        for user, flags in self.users.iteritems():
+        for member in self.members:
             # TODO: skip vacation users, maybe bouncing users
             # TODO: skip sending back to the sender unless echopost is set
-            print('> Sending to user {}.'.format(user))
-            send(self.address, [ user, ], msg)
+            print('> Sending to user {}.'.format(member.address))
+            send(self.address, [ member.address, ], msg)
             
     @classmethod
     def lists_for_addresses(cls, addresses):
