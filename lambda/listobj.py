@@ -11,6 +11,8 @@ import boto3
 
 s3 = boto3.client('s3')
 
+from email.header import Header
+
 import config
 if hasattr(config, 'smtp_server'):
     import smtplib
@@ -63,6 +65,10 @@ class List:
         self.config = yaml.load(config_response['Body'])
         for prop in list_properties:
             setattr(self, prop.replace('-', '_'), self.config.get(prop))
+        if self.name:
+            self.display_address = u'{} <{}>'.format(self.name, self.address)
+        else:
+            self.display_address = self.address
 
     def send(self, msg):
         # TODO: check if the list allows messages from this message's sender
@@ -71,11 +77,12 @@ class List:
         # Strip out any exising DKIM signature.
         del msg['DKIM-Signature']
 
+        # Make the list be the sender of the email.
         del msg['Sender']
-        msg['Sender'] = self.address
+        msg['Sender'] = Header(self.display_address)
+        # Capture bounces, etc., to the list address.  # TODO: this isn't quite right, is it?
         del msg['Return-path']
-        msg['Return-path'] = self.address  # TODO: VERP?
-        # TODO: subject tagging
+        msg['Return-path'] = Header(self.display_address)  # TODO: VERP?
         # TODO: body footer
         # TODO (maybe): batch sends
         for user, flags in self.config['users'].iteritems():
