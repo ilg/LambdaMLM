@@ -63,9 +63,9 @@ class List:
             print(e)
             print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
             raise e
-        self.config = yaml.load(config_response['Body'])
+        self._config = yaml.load(config_response['Body'])
         for prop in list_properties:
-            setattr(self, prop.replace('-', '_'), self.config.get(prop))
+            setattr(self, prop.replace('-', '_'), self._config.get(prop))
         if self.name:
             self.display_address = u'{} <{}>'.format(self.name, self.address)
         else:
@@ -99,7 +99,7 @@ class List:
 
         # TODO: body footer
         # TODO (maybe): batch sends
-        for user, flags in self.config['users'].iteritems():
+        for user, flags in self.users.iteritems():
             # TODO: skip vacation users, maybe bouncing users
             # TODO: skip sending back to the sender unless echopost is set
             print('> Sending to user {}.'.format(user))
