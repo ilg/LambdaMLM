@@ -63,7 +63,7 @@ class List:
             print(e)
             print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
             raise e
-        self._config = yaml.load(config_response['Body'])
+        self._config = yaml.safe_load(config_response['Body'])
         for prop in list_properties:
             setattr(self, prop.replace('-', '_'), self._config.get(prop))
         if self.name:
