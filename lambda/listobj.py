@@ -10,9 +10,24 @@ name_regex = re.compile(r'^[a-z0-9-]+$')
 import boto3
 
 s3 = boto3.client('s3')
-ses = boto3.client('ses')
 
-from config import config_bucket
+import config
+if hasattr(config, 'smtp_server'):
+    import smtplib
+    smtp = smtplib.SMTP_SSL(config.smtp_server)
+    if hasattr(config, 'smtp_user') and hasattr(config, 'smtp_password'):
+        smtp.login(config.smtp_user, config.smtp_password)
+    def send(source, destinations, message):
+        smtp.sendmail(source, destinations, message.as_string())
+else:
+    # Sending using SES doesn't seem to work because of validation issues...
+    ses = boto3.client('ses')
+    def send(source, destinations, message):
+        ses.send_raw_email(
+                Source=source,
+                Destinations=destinations,
+                RawMessage={ 'Data': message.as_string(), },
+                )
 
 class List:
     def __init__(self, address=None, name=None, host=None):
@@ -33,10 +48,10 @@ class List:
             raise ValueError('Invalid list host.')
         self.key = '{}/{}.yaml'.format(self.host, self.name)
         try:
-            config_response = s3.get_object(Bucket=config_bucket, Key=self.key)
+            config_response = s3.get_object(Bucket=config.config_bucket, Key=self.key)
         except Exception as e:
             print(e)
-            print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config_bucket))
+            print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
             raise e
         self.config = yaml.load(config_response['Body'])
         print('Loaded list {} configuration: {}'.format(self.address, self.config))
@@ -59,11 +74,7 @@ class List:
             # TODO: skip vacation users, maybe bouncing users
             # TODO: skip sending back to the sender unless echopost is set
             print('> Sending to user {}.'.format(user))
-            ses.send_raw_email(
-                    Source=self.address,
-                    Destinations=[ user, ],
-                    RawMessage={ 'Data': msg.as_string(), },
-                    )
+            send(self.address, [ user, ], msg)
             
     @classmethod
     def lists_for_addresses(cls, addresses):

@@ -14,3 +14,12 @@ config_bucket = 'lambdamlm-config'
 # The key to use when generating a HMAC-SHA1 signature of a command.
 signing_key = u'Put some unique text here.  It’ll get used as the secret key for generating the command-validation signatures (HMAC-SHA1).'
 
+# The hostname of the SMTP server to use to send email.
+smtp_server = 'smtp.example.com'
+
+# The username with which to log in to the SMTP server.
+smtp_user = 'user@example.com'
+
+# The password with which to log in to the SMTP server.
+smtp_password = 'password'
+
