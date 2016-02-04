@@ -36,6 +36,8 @@ else:
                 RawMessage={ 'Data': message.as_string(), },
                 )
 
+batch_size = 20
+
 list_properties = [
         'name',
         'members',
@@ -93,6 +95,20 @@ class List:
         # TODO: check if the list is moderated
         return CanSend.yes
 
+    def addresses_to_receive_from(self, from_address):
+        return [
+                m.address
+                for m in self.members
+                if (
+                    MemberFlag.diagnostic not in m.flags
+                    and MemberFlag.vacation not in m.flags
+                    and (
+                        MemberFlag.echoPost in m.flags
+                        or from_address != m.address
+                        )
+                    )
+                ]
+
     def send(self, msg):
         _, from_address = email.utils.parseaddr(msg_get_header(msg, 'From'))
         can_send = self.address_can_send(from_address)
@@ -127,12 +143,12 @@ class List:
                 msg['Subject'] = Header(u'{}{}'.format(prefix, subject))
 
         # TODO: body footer
-        # TODO (maybe): batch sends
-        for member in self.members:
-            # TODO: skip vacation users, maybe bouncing users
-            # TODO: skip sending back to the sender unless echopost is set
-            print('> Sending to user {}.'.format(member.address))
-            send(self.address, [ member.address, ], msg)
+        recipients = self.addresses_to_receive_from(from_address)
+        while recipients:
+            batch = recipients[:batch_size]
+            recipients = recipients[batch_size:]
+            print('> Sending to users {}.'.format(batch))
+            send(self.address, batch, msg)
             
     @classmethod
     def lists_for_addresses(cls, addresses):
