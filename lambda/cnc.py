@@ -9,7 +9,7 @@ timestamp_format = '%Y%m%d%H%M%S'
 
 signed_cmd_regex = re.compile(r'^(?P<cmd>.+) (?P<timestamp>\d{14}) (?P<signature>[\da-f]{40})$')
 
-from config import signing_key
+from config import signing_key, signed_validity_interval
 from sestools import msg_get_header, msg_get_response_address
 
 import boto3
@@ -111,7 +111,7 @@ def get_signed_command(subject, address):
     timestamp_age = datetime.datetime.now() - datetime.datetime.strptime(timestamp, timestamp_format)
     try:
         # Check that the timestamp is recent enough.
-        if timestamp_age > datetime.timedelta(hours=1):
+        if timestamp_age > signed_validity_interval:
             raise ExpiredSignatureException
     except ValueError:
         raise InvalidSignatureException
