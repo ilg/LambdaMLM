@@ -47,12 +47,6 @@ list_properties = [
         'closed-unsubscription',
         ]
 
-CanSend = Enum('CanSend', [
-    'no',
-    'moderated',
-    'yes',
-    ])
-
 class InsufficientPermissions(Exception):
     pass
 
@@ -133,19 +127,6 @@ class List:
             raise ClosedUnsubscription
         # TODO: remove member
 
-
-    def address_can_send(self, address):
-        member = self.member_with_address(address)
-        if member is None:
-            # TODO: allow a list to receive from off-list; allow off-list emails to go to moderation
-            return CanSend.no
-        if MemberFlag.noPost in member.flags:
-            return CanSend.no
-        if MemberFlag.modPost in member.flags:
-            return CanSend.moderated
-        # TODO: check if the list is moderated
-        return CanSend.yes
-
     def addresses_to_receive_from(self, from_address):
         return [
                 m.address
@@ -162,14 +143,18 @@ class List:
 
     def send(self, msg):
         _, from_address = email.utils.parseaddr(msg_get_header(msg, 'From'))
-        can_send = self.address_can_send(from_address)
-        if can_send == CanSend.no:
-            print('{} cannot send email to {}.'.format(from_address, self.address))
+        member = self.member_with_address(from_address)
+        if member is None:
+            # TODO: allow a list to receive from off-list; allow off-list emails to go to moderation
+            print('{} cannot send email to {} (not a member).'.format(from_address, self.address))
             return
-        if can_send == CanSend.moderated:
-            # TODO: the list allows messages from this message's sender with moderator approval, so handle moderation
+        if MemberFlag.noPost in member.flags:
+            print('{} cannot send email to {} (noPost is set).'.format(from_address, self.address))
+            return
+        if MemberFlag.modPost in member.flags:
             print('Email from {} to {} should be moderated (not yet implemented).'.format(from_address, self.address))
             return
+        # TODO: check if the list is moderated
 
         # Strip out any exising DKIM signature.
         del msg['DKIM-Signature']
