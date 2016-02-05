@@ -22,9 +22,14 @@ def about(ctx, **kwargs):
     click.echo('This is the about command.')
 
 @command.command()
+@click.argument('stuff', nargs=-1, required=False)
 @click.pass_context
-def echo(ctx, **kwargs):
+def echo(ctx, stuff, **kwargs):
     click.echo('This is the echo command.  You are {}.'.format(ctx.obj.user))
+    if stuff:
+        click.echo(' '.join(stuff))
+    else:
+        click.echo('[no parameters]')
 
 def run(user, cmd):
     result = runner.invoke(command, [user,] + shlex.split(cmd))
