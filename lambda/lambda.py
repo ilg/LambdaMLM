@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from sestools import email_message_from_s3_bucket, event_msg_is_to_command, msg_get_header, recipient_destination_overlap
-from cnc import handle_command
+from control import handle_command
 
 from config import email_bucket
 

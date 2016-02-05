@@ -16,7 +16,7 @@ import boto3
 
 ses = boto3.client('ses')
 
-from cnc_commands import run
+from commands import run
 
 class NotSignedException(Exception):
     pass
