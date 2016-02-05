@@ -49,4 +49,4 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 
 ## Author
 
-[Isaac Greenspan](https://github.com/ilg), with some time contributed by [Vokal](http://vokal.io) Hack Days.
+[Isaac Greenspan](https://github.com/ilg), with some time contributed by [Vokal](http://vokal.io) Hack Days (February, 2016).
