@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import base64
 import datetime
 import hmac
 import hashlib
@@ -7,7 +8,7 @@ import re
 
 timestamp_format = '%Y%m%d%H%M%S'
 
-signed_cmd_regex = re.compile(r'^(?P<cmd>.+) (?P<timestamp>\d{14}) (?P<signature>[\da-f]{40})$')
+signed_cmd_regex = re.compile(r'^(?P<cmd>.+)\s+(?P<signature>[\da-zA-Z+/]{27}=)(?P<timestamp>\d{14})$')
 
 from config import signing_key, signed_validity_interval
 from sestools import msg_get_header, msg_get_response_address
@@ -115,13 +116,17 @@ def get_signed_command(subject, address):
             raise ExpiredSignatureException
     except ValueError:
         raise InvalidSignatureException
-    if not hmac.compare_digest(unicode(signature(' '.join([ address, cmd, timestamp, ]))), unicode(sig)):
+    if not hmac.compare_digest(base64.b64decode(signature(' '.join([ address, timestamp, cmd, ]))), base64.b64decode(sig)):
         raise InvalidSignatureException
     return cmd
 
 def signature(cmd):
-    return hmac.new(signing_key, cmd.strip(), hashlib.sha1).hexdigest()
+    return base64.b64encode(hmac.new(signing_key, cmd.strip(), hashlib.sha1).digest())
 
 def sign(subject, reply_to):
     timestamp = datetime.datetime.now().strftime(timestamp_format)
-    return ' '.join([ subject, timestamp, signature(' '.join([ reply_to, subject, timestamp, ])), ])
+    return '{} {}{}'.format(
+            subject,
+            signature(' '.join([ reply_to, timestamp, subject, ])),
+            timestamp,
+            )
