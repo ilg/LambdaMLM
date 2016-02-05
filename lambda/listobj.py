@@ -43,6 +43,8 @@ list_properties = [
         'members',
         'reply-to-list',
         'subject-tag',
+        'open-subscription',
+        'closed-unsubscription',
         ]
 
 CanSend = Enum('CanSend', [
@@ -50,6 +52,21 @@ CanSend = Enum('CanSend', [
     'moderated',
     'yes',
     ])
+
+class InsufficientPermissions(Exception):
+    pass
+
+class AlreadySubscribed(Exception):
+    pass
+
+class NotSubscribed(Exception):
+    pass
+
+class ClosedSubscription(Exception):
+    pass
+
+class ClosedUnsubscription(Exception):
+    pass
 
 class List:
     def __init__(self, address=None, name=None, host=None):
@@ -83,8 +100,42 @@ class List:
         else:
             self.display_address = self.address
 
+    def member_with_address(self, address):
+        return next(( m for m in self.members if m.address == address ), None)
+
+    def address_will_modify_address(self, from_address, target_address):
+        if from_address != target_address:
+            member = self.member_with_address(from_address)
+            if MemberFlag.admin not in member.flags and MemberFlag.superadmin not in member.flags:
+                raise InsufficientPermissions
+
+    def user_subscribe_user(self, from_user, target_user):
+        _, from_address = email.utils.parseaddr(from_user)
+        _, target_address = email.utils.parseaddr(target_user)
+        self.address_will_modify_address(from_address, target_address)
+        if self.member_with_address(target_address):
+            # Address is already subscribed.
+            raise AlreadySubscribed
+        if from_address == target_address and not self.open_subscription:
+            # List doesn't allow self-subscription.
+            raise ClosedSubscription
+        # TODO: add target_address as subscriber
+
+    def user_unsubscribe_user(self, from_user, target_user):
+        _, from_address = email.utils.parseaddr(from_user)
+        _, target_address = email.utils.parseaddr(target_user)
+        self.address_will_modify_address(from_address, target_address)
+        member = self.member_with_address(target_address)
+        if not member:
+            raise NotSubscribed
+        if from_address == target_address and self.closed_unsubscription:
+            # List doesn't allow self-unsubscription.
+            raise ClosedUnsubscription
+        # TODO: remove member
+
+
     def address_can_send(self, address):
-        member = next(( m for m in self.members if m.address == address ), None)
+        member = self.member_with_address(address)
         if member is None:
             # TODO: allow a list to receive from off-list; allow off-list emails to go to moderation
             return CanSend.no
