@@ -150,7 +150,8 @@ class List (object):
         if from_address == target_address and self.closed_unsubscription:
             # List doesn't allow self-unsubscription.
             raise ClosedUnsubscription
-        # TODO: remove member
+        self.members.remove(member)
+        self._save()
 
     def addresses_to_receive_from(self, from_address):
         return [
