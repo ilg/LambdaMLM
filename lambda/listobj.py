@@ -63,23 +63,23 @@ class ClosedUnsubscription(Exception):
     pass
 
 class List:
-    def __init__(self, address=None, name=None, host=None):
+    def __init__(self, address=None, username=None, host=None):
         if address is None:
-            if name is None or host is None:
-                raise TypeError('Either address or name and host must be provided.')
-            self.name = name
+            if username is None or host is None:
+                raise TypeError('Either address or username and host must be provided.')
+            self.username = username
             self.host = host
             self.address = '{}@{}'.format(name, host)
         elif '@' not in address:
             raise ValueError('A list address must contain @.')
         else:
             self.address = address
-            (self.name, self.host) = address.split('@', 1)
-        if not name_regex.match(self.name):
-            raise ValueError('Invalid list name.')
+            (self.username, self.host) = address.split('@', 1)
+        if not name_regex.match(self.username):
+            raise ValueError('Invalid list username.')
         if not host_regex.match(self.host):
             raise ValueError('Invalid list host.')
-        self.key = '{}/{}.yaml'.format(self.host, self.name)
+        self.key = '{}/{}.yaml'.format(self.host, self.username)
         try:
             config_response = s3.get_object(Bucket=config.config_bucket, Key=self.key)
         except Exception as e:
