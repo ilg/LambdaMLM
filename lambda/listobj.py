@@ -136,7 +136,9 @@ class List (object):
         if from_address == target_address and not self.open_subscription:
             # List doesn't allow self-subscription.
             raise ClosedSubscription
-        # TODO: add target_address as subscriber
+        self.members.append(ListMember(target_address))
+        # TODO: store human-readable name?
+        self._save()
 
     def user_unsubscribe_user(self, from_user, target_user):
         _, from_address = email.utils.parseaddr(from_user)
