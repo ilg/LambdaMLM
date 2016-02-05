@@ -62,7 +62,7 @@ def handle_command(command_address, msg):
         # If the subject isn't a signed command...
         # TODO (maybe): ... check if the reply_to is allowed to run the specific command with the given parameters...
         # ... and reply with a signed command for the recipient to send back (by replying).
-        print("Signing command.")
+        print("Signing command: {}".format(subject))
         response = send_response(
                 source=command_address,
                 destination=reply_to,
