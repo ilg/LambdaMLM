@@ -27,4 +27,7 @@ def run(user, cmd):
     command = Command(user)
     result = runner.invoke(command.command, shlex.split(cmd))
     print('run result: {}'.format(result))
+    if not result.output:
+        print('Exception: {}\nTraceback:\n {}'.format(result.exception, ''.join(format_exception(*result.exc_info))))
+        return 'Internal error.'
     return result.output
