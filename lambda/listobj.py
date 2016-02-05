@@ -62,7 +62,7 @@ class ClosedSubscription(Exception):
 class ClosedUnsubscription(Exception):
     pass
 
-class List:
+class List (object):
     def __init__(self, address=None, username=None, host=None):
         if address is None:
             if username is None or host is None:
@@ -87,12 +87,23 @@ class List:
             #print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
             raise e
         self._config = yaml.safe_load(config_response['Body'])
-        for prop in list_properties:
-            setattr(self, prop.replace('-', '_'), self._config.get(prop))
         if self.name:
             self.display_address = u'{} <{}>'.format(self.name, self.address)
         else:
             self.display_address = self.address
+
+    def __getattr__(self, name):
+        prop = name.replace('_', '-')
+        if prop not in list_properties:
+            raise AttributeError(name)
+        return self._config.get(prop)
+
+    def __setattr__(self, name, value):
+        if name in list_properties:
+            prop = name.replace('_', '-')
+            self._config[prop] = value
+            return
+        super(List, self).__setattr__(name, value)
 
     def member_with_address(self, address):
         return next(( m for m in self.members if m.address == address ), None)
