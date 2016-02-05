@@ -105,6 +105,18 @@ class List (object):
             return
         super(List, self).__setattr__(name, value)
 
+    def _save(self):
+        try:
+            response = s3.put_object(
+                    Bucket=config.config_bucket,
+                    Key=self.key,
+                    Body=yaml.dump(self._config, default_flow_style=False),
+                    )
+        except Exception as e:
+            #print(e)
+            #print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
+            raise e
+
     def member_with_address(self, address):
         return next(( m for m in self.members if m.address == address ), None)
 
