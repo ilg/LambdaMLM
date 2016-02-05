@@ -35,6 +35,12 @@ class ListMember(yaml.YAMLObject):
     yaml_tag = u'!Member'
     yaml_loader = yaml.SafeLoader
     def __init__(self, address, *args, **kwargs):
+        if isinstance(address, unicode):
+            # Attempt to down-convert unicode-string addresses to plain strings
+            try:
+                address = str(address)
+            except UnicodeEncodeError:
+                pass
         self.address = address
         self.flags = set(a for a in args if isinstance(a, MemberFlag))
     def __repr__(self):
