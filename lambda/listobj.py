@@ -194,6 +194,7 @@ class List (object):
 
         # See if replies should default to the list.
         if self.reply_to_list:
+            del msg['Reply-to']
             msg['Reply-to'] = Header(self.display_address)
 
         # See if the list has a subject tag.
