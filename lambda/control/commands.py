@@ -26,20 +26,6 @@ def about(ctx, **kwargs):
 def echo(ctx, **kwargs):
     click.echo('This is the echo command.  You are {}.'.format(ctx.obj.user))
 
-@command.group(name='list')
-@click.argument('list_address')
-@click.pass_context
-def list_command(ctx, list_address):
-    ctx.obj.list_address = list_address
-
-@list_command.command()
-@click.argument('address', required=False)
-@click.pass_context
-def subscribe(ctx, address=None):
-    if address is None:
-        address = ctx.obj.user
-    click.echo('{} wants to subscribe {} to {}.'.format(ctx.obj.user, address, ctx.obj.list_address))
-
 def run(user, cmd):
     result = runner.invoke(command, [user,] + shlex.split(cmd))
     print('run result: {}'.format(result))
@@ -47,3 +33,8 @@ def run(user, cmd):
         print('Exception: {}\nTraceback:\n {}'.format(result.exception, ''.join(format_exception(*result.exc_info))))
         return 'Internal error.'
     return result.output
+
+# Import files with subcommands here--we don't use them directly, but we need
+# to make sure they're loaded, since that's when they add their commands to
+# our command object.
+import list_commands

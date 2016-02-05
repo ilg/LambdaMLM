@@ -72,8 +72,8 @@ class List:
         try:
             config_response = s3.get_object(Bucket=config.config_bucket, Key=self.key)
         except Exception as e:
-            print(e)
-            print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
+            #print(e)
+            #print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
             raise e
         self._config = yaml.safe_load(config_response['Body'])
         for prop in list_properties:
