@@ -65,11 +65,10 @@ A single command is sent as the subject of an email to `lambda@[domain]` where `
 		- `unsetflag [flag name]` unsets the given flag on the sender
 	- _Admin commands:_  
 	  (Note: An `admin` member cannot modify another `admin` member.  Only a `superAdmin` member can.  The `superAdmin` flag cannot be modified via email command.)
-		- `create` creates the list
 		- `members` returns a list of the members
-		- `config` returns the list configuration
 		- `set [config option name] [value]` sets the value of a configuration option for the list
-			- value is assumed to be a string
+			- invoke without an option name to view list configuration
+			- `value` is assumed to be a string
 			- for boolean values, use `--true` or `--false`
 			- for integer values, use `--int [value]`
 		- `subscribe [address]` subscribes the given address to the list

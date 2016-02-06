@@ -228,6 +228,17 @@ class List (object):
         setattr(self, option, value)
         self._save()
 
+    def user_get_members(self, from_user):
+        _, from_address = email.utils.parseaddr(from_user)
+        member = self.member_with_address(from_address)
+        # TODO: allow non-admins to view list membership?
+        if not member or MemberFlag.admin not in member.flags:
+            raise InsufficientPermissions
+        return [
+                '{}: {}'.format(m.address, ', '.join(f.name for f in m.flags))
+                for m in self.members
+                ]
+
     def addresses_to_receive_from(self, from_address):
         return [
                 m.address

@@ -138,3 +138,12 @@ def set_config(ctx, option=None, value=None, boolean=None, integer=None):
     except listobj.UnknownOption:
         click.echo('{} is not a valid configuration option.'.format(option), err=True)
 
+@list_command.command()
+@require_list
+def members(ctx):
+    try:
+        click.echo('Members of {}:'.format(ctx.obj.list_address))
+        for m in ctx.obj.listobj.user_get_members(ctx.obj.user):
+            click.echo(m)
+    except listobj.InsufficientPermissions:
+        handle_insufficient_permissions('view the members of {}.'.format(ctx.obj.list_address))
