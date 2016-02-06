@@ -79,7 +79,7 @@ def ctx_set_member_flag_value(ctx, address, flag, value):
     if flag is None:
         try:
             click.echo('Available flags:')
-            for flag, value in ctx.obj.listobj.member_own_flags(ctx.obj.user):
+            for flag, value in ctx.obj.listobj.user_own_flags(ctx.obj.user):
                 click.echo('{}: {}'.format(flag.name, value))
         except listobj.NotSubscribed:
             handle_not_subscribed(ctx.obj.user, ctx.obj.user, ctx.obj.list_address)

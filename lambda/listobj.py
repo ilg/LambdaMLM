@@ -169,7 +169,7 @@ class List (object):
         self.members.remove(member)
         self._save()
 
-    def member_own_flags(self, user):
+    def user_own_flags(self, user):
         _, address = email.utils.parseaddr(user)
         member = self.member_with_address(address)
         if not member:
