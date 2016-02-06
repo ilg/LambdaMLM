@@ -25,6 +25,7 @@ def handle_invalid_list_address(list_address):
     
 def require_list(f):
     @wraps(f)
+    @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         try:
             ctx.obj.listobj = listobj.List(ctx.obj.list_address)
@@ -44,7 +45,6 @@ def list_command(ctx, list_address):
 
 @list_command.command()
 @click.argument('address', required=False)
-@click.pass_context
 @require_list
 def subscribe(ctx, address=None):
     if address is None:
@@ -61,7 +61,6 @@ def subscribe(ctx, address=None):
 
 @list_command.command()
 @click.argument('address', required=False)
-@click.pass_context
 @require_list
 def unsubscribe(ctx, address=None):
     if address is None:
@@ -100,7 +99,6 @@ def ctx_set_member_flag_value(ctx, address, flag, value):
 @list_command.command()
 @click.argument('flag', required=False)
 @click.argument('address', required=False)
-@click.pass_context
 @require_list
 def setflag(ctx, flag=None, address=None):
     ctx_set_member_flag_value(ctx, address, flag, True)
@@ -108,7 +106,6 @@ def setflag(ctx, flag=None, address=None):
 @list_command.command()
 @click.argument('flag', required=False)
 @click.argument('address', required=False)
-@click.pass_context
 @require_list
 def unsetflag(ctx, flag=None, address=None):
     ctx_set_member_flag_value(ctx, address, flag, False)
