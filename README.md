@@ -49,6 +49,7 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 ## Notes
 
 - 2016-02-04: Sending via Amazon SES is likely not possible, as SES appears to require that the `From:` address be verified, which isn't plausible for discussion lists.  The best option thus far is to use an external SMTP server.  It appears to be possible to configure a given host to receive email through SES and send via an external SMTP server with both SPF and DKIM passing.
+- 2016-02-06: Setting a list name with non-ASCII characters with `reply-to-list: true` generates `Reply-to:` headers that may not be entirely correct—GMail ignores them entirely and other mail clients show weird things.
 
 ## Commands
 
