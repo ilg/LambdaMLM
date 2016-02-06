@@ -63,7 +63,8 @@ A single command is sent as the subject of an email to `lambda@[domain]` where `
 		- `unsubscribe` removes the sender from the list
 		- `setflag [flag name]` sets the given flag on the sender
 		- `unsetflag [flag name]` unsets the given flag on the sender
-	- _Admin commands:_
+	- _Admin commands:_  
+	  (Note: An `admin` member cannot modify another `admin` member.  Only a `superAdmin` member can.  The `superAdmin` flag cannot be modified via email command.)
 		- `create` creates the list
 		- `members` returns a list of the members
 		- `config` returns the list configuration
@@ -101,6 +102,7 @@ A single command is sent as the subject of an email to `lambda@[domain]` where `
 - `noPost` The member cannot post to the list.
 - `moderator` The member is a list moderator.  **Not yet implemented.**
 - `admin` The member is a list administrator.
+- `superAdmin` The member is a super-administrator.
 - `vacation` No emails are sent to the member.
 - `echoPost` The member receives their own posts.
 
@@ -112,7 +114,6 @@ Based on [ecartis](https://www.ecartis.net), descriptions from [here](https://wi
 - `digest2` User wants to receive digested version of list _and_ normal posts. This flag should be set _instead_ of `digest`, not in addition to.
 - `diagnostic` User is for diagnostics only, don't receive list traffic.
 - `myopic` Administrative user does not receive admin postings.
-- `superadmin` User is a super-administrator.
 - `protected` User will never be unsubscribed by bouncer.
 - `ccErrors` User wishes to have bounces cc'd to them.
 - `reports` User wishes to have reports sent to them.

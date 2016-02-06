@@ -138,8 +138,13 @@ class List (object):
 
     def address_will_modify_address(self, from_address, target_address):
         if from_address != target_address:
-            member = self.member_with_address(from_address)
-            if MemberFlag.admin not in member.flags:
+            from_member = self.member_with_address(from_address)
+            # Only admin members can modify other members.
+            if MemberFlag.admin not in from_member.flags:
+                raise InsufficientPermissions
+            target_member = self.member_with_address(target_address)
+            # Only superAdmin members can modify admin members.
+            if MemberFlag.admin in target_member.flags and MemberFlag.superAdmin not in from_member.flags:
                 raise InsufficientPermissions
 
     def user_subscribe_user(self, from_user, target_user):
@@ -191,9 +196,11 @@ class List (object):
             flag = MemberFlag[flag_name]
         except KeyError:
             raise UnknownFlag
+        # The superAdmin flag cannot be modified by email command.
+        if flag == MemberFlag.superAdmin:
+            raise InsufficientPermissions
         if flag not in MemberFlag.userlevel_flags() and MemberFlag.admin not in self.member_with_address(from_address).flags:
             raise InsufficientPermissions
-        # TODO: safety around removing admin flag?
         if value:
             member.flags.add(flag)
         else:

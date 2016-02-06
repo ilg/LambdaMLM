@@ -12,7 +12,7 @@ MemberFlag = IntEnum('MemberFlag', [
     #'diagnostic',
     'moderator',
     #'myopic',
-    #'superadmin',
+    'superAdmin',
     'admin',
     #'protected',
     #'ccErrors',
