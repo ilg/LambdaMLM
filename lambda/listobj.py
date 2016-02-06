@@ -167,6 +167,9 @@ class List (object):
                     )
                 ]
 
+    def list_address_with_tag(self, tag):
+        return '{}+{}@{}'.format(self.username, tag, self.host)
+
     def send(self, msg):
         _, from_address = email.utils.parseaddr(msg_get_header(msg, 'From'))
         member = self.member_with_address(from_address)
@@ -188,9 +191,9 @@ class List (object):
         # Make the list be the sender of the email.
         del msg['Sender']
         msg['Sender'] = Header(self.display_address)
-        # Capture bounces, etc., to the list address.  # TODO: this isn't quite right, is it?
+        # Capture bounces, etc., to the list address tagged with 'bounce'.
         del msg['Return-path']
-        msg['Return-path'] = Header(self.display_address)  # TODO: VERP?
+        msg['Return-path'] = Header(self.list_address_with_tag('bounce'))  # TODO: VERP?
 
         # See if replies should default to the list.
         if self.reply_to_list:

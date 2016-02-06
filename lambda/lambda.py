@@ -17,7 +17,18 @@ def lambda_handler(event, context):
             return
         
         print('Message from {}.'.format(msg_get_header(msg, 'from')))
+        recipients = recipient_destination_overlap(event)
+
+        # See if the message looks like it's a bounce.
+        for r in recipients:
+            if '+bounce@' in r:
+                list_address = r.replace('+bounce@', '@')
+                print('Bounce received for list {}.'.format(list_address))
+                # TODO: handle bounce.
+                # Don't do any further processing with this email.
+                return
+
         # See if the message was sent to any known lists.
-        for l in List.lists_for_addresses(recipient_destination_overlap(event)):
+        for l in List.lists_for_addresses(recipients):
             print('Sending to list {}.'.format(l.address))
             l.send(msg)
