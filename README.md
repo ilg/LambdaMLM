@@ -24,7 +24,7 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 #### Commands
 
 - [ ] Create list
-- [ ] Configure list
+- [x] Configure list
 - [x] Subscribe to list
 - [x] Unsubscribe from list
 - [x] Toggle modes: vacation, echo-post, etc.
@@ -58,18 +58,23 @@ A single command is sent as the subject of an email to `lambda@[domain]` where `
 - `about` returns an about message
 - `echo [parameters]` echos the given parameters
 - `list [list address]` indicates a list-specific command
-	- `create` creates the list _(admin)_
-	- `members` returns a list of the members _(admin)_
-	- `config` returns the list configuration _(admin)_
-	- `set [config option name] [value]` sets the value of a configuration option for the list _(admin)_
-	- `subscribe` subscribes the sender to the list
-	- `subscribe [address]` subscribes the given address to the list _(admin)_
-	- `unsubscribe` removes the sender from the list
-	- `unsubscribe [address]` removes the given address from the list _(admin)_
-	- `setflag [flag name]` sets the given flag on the sender
-	- `setflag [flag name] [address]` sets the given flag on the member with the given address _(admin)_
-	- `unsetflag [flag name]` unsets the given flag on the sender
-	- `unsetflag [flag name] [address]` unsets the given flag on the member with the given address _(admin)_
+	- _User-level commands:_
+		- `subscribe` subscribes the sender to the list
+		- `unsubscribe` removes the sender from the list
+		- `setflag [flag name]` sets the given flag on the sender
+		- `unsetflag [flag name]` unsets the given flag on the sender
+	- _Admin commands:_
+		- `create` creates the list
+		- `members` returns a list of the members
+		- `config` returns the list configuration
+		- `set [config option name] [value]` sets the value of a configuration option for the list
+			- value is assumed to be a string
+			- for boolean values, use `--true` or `--false`
+			- for integer values, use `--int [value]`
+		- `subscribe [address]` subscribes the given address to the list
+		- `unsubscribe [address]` removes the given address from the list
+		- `setflag [flag name] [address]` sets the given flag on the member with the given address
+		- `unsetflag [flag name] [address]` unsets the given flag on the member with the given address
 
 ## List Configuration File Format
 

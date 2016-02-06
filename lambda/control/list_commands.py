@@ -110,3 +110,31 @@ def setflag(ctx, flag=None, address=None):
 def unsetflag(ctx, flag=None, address=None):
     ctx_set_member_flag_value(ctx, address, flag, False)
 
+@list_command.command(name='set')
+@click.argument('option', required=False)
+@click.argument('value', required=False)
+@click.option('--true', 'boolean', flag_value=True)
+@click.option('--false', 'boolean', flag_value=False)
+@click.option('--int', 'integer', default=None, type=int)
+@require_list
+def set_config(ctx, option=None, value=None, boolean=None, integer=None):
+    if option is None:
+        try:
+            click.echo('Configuration for {}:'.format(ctx.obj.list_address))
+            for option, value in ctx.obj.listobj.user_config_values(ctx.obj.user):
+                click.echo('{}: {}'.format(option, value))
+        except listobj.InsufficientPermissions:
+            handle_insufficient_permissions('view options on {}.'.format(ctx.obj.list_address))
+        return
+    if boolean is not None:
+        value = boolean
+    elif integer is not None:
+        value = integer
+    try:
+        ctx.obj.listobj.user_set_config_value(ctx.obj.user, option, value)
+        click.echo('Set {} to {} on {}.'.format(option, value, ctx.obj.list_address))
+    except listobj.InsufficientPermissions:
+        handle_insufficient_permissions('change {} on {}.'.format(option, ctx.obj.list_address))
+    except listobj.UnknownOption:
+        click.echo('{} is not a valid configuration option.'.format(option), err=True)
+

@@ -45,6 +45,9 @@ list_properties = [
         'open-subscription',
         'closed-unsubscription',
         ]
+list_properties_protected = [
+        'members',
+        ]
 
 default_bounce_limit = 5
 
@@ -64,6 +67,9 @@ class ClosedUnsubscription(Exception):
     pass
 
 class UnknownFlag(Exception):
+    pass
+
+class UnknownOption(Exception):
     pass
 
 class List (object):
@@ -196,6 +202,23 @@ class List (object):
             except KeyError:
                 # Trying to remove an element from the set that isn't in the set raises KeyError.  Ignore it.
                 pass
+        self._save()
+
+    def user_config_values(self, from_user):
+        _, from_address = email.utils.parseaddr(from_user)
+        member = self.member_with_address(from_address)
+        if not member or MemberFlag.admin not in member.flags:
+            raise InsufficientPermissions
+        return [(o, getattr(self, o)) for o in list_properties if o not in list_properties_protected]
+
+    def user_set_config_value(self, from_user, option, value):
+        _, from_address = email.utils.parseaddr(from_user)
+        member = self.member_with_address(from_address)
+        if not member or MemberFlag.admin not in member.flags:
+            raise InsufficientPermissions
+        if option not in list_properties or option in list_properties_protected:
+            raise UnknownOption
+        setattr(self, option, value)
         self._save()
 
     def addresses_to_receive_from(self, from_address):
