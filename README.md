@@ -2,54 +2,11 @@
 
 A mailing list manager (MLM or email discussion list software) that runs on AWS Lambda (with help from SES and S3).
 
-***This is rapidly approaching very basic usability, but it isn't there yet.***
+***LambdaMLM is not production-ready.  Use LambdaMLM at your own risk.***
 
-## Goals
+Planned enhancements, bugs, and known limitations are tracked in [GitHub Issues](https://github.com/ilg/LambdaMLM/issues).
 
-### Setup/Development/Deployment via Fabric
-
-- [ ] Command to perform initial AWS setup.
-- [x] Command to re-deploy Lambda code.
-- [x] Command to set up virtualenv (in .env) based on requirements.txt.
-
-### Command and Control
-
-- [x] Receive commands via a command user at any domain.
-- [x] Reply to unsigned commands with signed version to avoid running commands from spoofed emails.
-- [x] Process commands like *nix CLI commands.
-- [x] Accept single command in subject.
-- [ ] Accept multiple commands in body.
-- [x] Maintain list configurations in S3 in YAML format
-
-#### Commands
-
-- [ ] Create list
-- [x] Configure list
-- [x] Subscribe to list
-- [x] Unsubscribe from list
-- [x] Toggle modes: vacation, echo-post, etc.
-- [ ] Moderation
-
-### Sending/Receiving Email
-
-- [x] Validate incoming email against posting permissions
-- [ ] Modify message per list configuration:
-	- [x] Tag subject
-	- [x] Reply to list
-	- [ ] Message footer
-- [x] Send email to list members
-- [ ] Handle bounces
-	- [x] Variable envelope return path
-	- [x] Stop sending emails to addresses that continue to bounce
-	- [ ] Differentiate between hard and soft bounces
-	- [ ] Notify list member and/or list admin about bounces
-- [ ] Handle moderating messages
-- [ ] Handle MIME/attachments
-
-## Notes
-
-- 2016-02-04: Sending via Amazon SES is likely not possible, as SES appears to require that the `From:` address be verified, which isn't plausible for discussion lists.  The best option thus far is to use an external SMTP server.  It appears to be possible to configure a given host to receive email through SES and send via an external SMTP server with both SPF and DKIM passing.
-- 2016-02-06: Setting a list name with non-ASCII characters with `reply-to-list: true` generates `Reply-to:` headers that may not be entirely correct—GMail ignores them entirely and other mail clients show weird things.
+Here are [the items to be addressed](https://github.com/ilg/LambdaMLM/milestones/usable) for this to be considered usable.
 
 ## Commands
 
@@ -104,20 +61,6 @@ A single command is sent as the subject of an email to `lambda@[domain]` where `
 - `superAdmin` The member is a super-administrator.
 - `vacation` No emails are sent to the member.
 - `echoPost` The member receives their own posts.
-
-###### Potential Future Flags
-
-Based on [ecartis](https://www.ecartis.net), descriptions from [here](https://wiki.utdallas.edu/wiki/display/FAQ/Ecartis+Account+Flags).
-
-- `digest` User wants to receive digested version of list.
-- `digest2` User wants to receive digested version of list _and_ normal posts. This flag should be set _instead_ of `digest`, not in addition to.
-- `diagnostic` User is for diagnostics only, don't receive list traffic.
-- `myopic` Administrative user does not receive admin postings.
-- `protected` User will never be unsubscribed by bouncer.
-- `ccErrors` User wishes to have bounces cc'd to them.
-- `reports` User wishes to have reports sent to them.
-- `ackPost` User receives small note when a message is posted, or approved by a moderator.
-- `hidden` User won't show up in membership listing of list unless viewed by an admin.
 
 ### Example
 ```yaml
