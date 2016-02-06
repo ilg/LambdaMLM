@@ -30,24 +30,20 @@ MemberFlag.userlevel_flags = classmethod(
             ]
         )
 
-def member_flag_representer(dumper, data):
-    return dumper.represent_scalar(u'!flag', data.name)
-yaml.add_representer(MemberFlag, member_flag_representer)
-def member_flag_constructor(loader, node):
-    value = loader.construct_scalar(node)
-    return MemberFlag[value]
-yaml.SafeLoader.add_constructor(u'!flag', member_flag_constructor)
+yaml.SafeDumper.add_representer(
+        MemberFlag,
+        lambda dumper, data: dumper.represent_scalar(u'!flag', data.name)
+        )
+yaml.SafeLoader.add_constructor(
+        u'!flag',
+        lambda loader, node: MemberFlag[loader.construct_scalar(node)]
+        )
 
 class ListMember(yaml.YAMLObject):
     yaml_tag = u'!Member'
     yaml_loader = yaml.SafeLoader
+    yaml_dumper = yaml.SafeDumper
     def __init__(self, address, *args, **kwargs):
-        if isinstance(address, unicode):
-            # Attempt to down-convert unicode-string addresses to plain strings
-            try:
-                address = str(address)
-            except UnicodeEncodeError:
-                pass
         self.address = address
         self.flags = set(a for a in args if isinstance(a, MemberFlag))
         self.bounce_count = kwargs.get('bounce_count', 0)

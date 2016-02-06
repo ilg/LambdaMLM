@@ -117,7 +117,7 @@ class List (object):
             response = s3.put_object(
                     Bucket=config.config_bucket,
                     Key=self.key,
-                    Body=yaml.dump(self._config, default_flow_style=False),
+                    Body=yaml.safe_dump(self._config, default_flow_style=False, allow_unicode=True),
                     )
         except Exception as e:
             #print(e)
