@@ -68,7 +68,7 @@ def handle_command(command_address, msg):
                 source=command_address,
                 destination=reply_to,
                 subject='Re: {}'.format(sign(subject, reply_to)),
-                body='To verify the origin of the command, please reply to this email.',
+                body='To confirm and execute the command, please reply to this email.',
                 )
         return
 
