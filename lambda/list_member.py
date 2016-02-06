@@ -43,6 +43,14 @@ class ListMember(yaml.YAMLObject):
                 pass
         self.address = address
         self.flags = set(a for a in args if isinstance(a, MemberFlag))
+        self.bounce_count = kwargs.get('bounce_count', 0)
+    def __getattr__(self, name):
+        # Patch default values that might be missing in the YAML, since loading from YAML doesn't call __init__.
+        if name == 'flags':
+            return set()
+        if name == 'bounce_count':
+            return 0
+        raise AttributeError(name)
     def __repr__(self):
         return u'{}({}, flags: {})'.format(
                 self.__class__.__name__,
