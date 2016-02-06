@@ -4,23 +4,23 @@ from enum import IntEnum
 import yaml
 
 MemberFlag = IntEnum('MemberFlag', [
-    'digest',
-    'digest2',
+    #'digest',
+    #'digest2',
     'modPost',
     'preapprove',
     'noPost',
-    'diagnostic',
+    #'diagnostic',
     'moderator',
-    'myopic',
-    'superadmin',
+    #'myopic',
+    #'superadmin',
     'admin',
-    'protected',
-    'ccErrors',
-    'reports',
+    #'protected',
+    #'ccErrors',
+    #'reports',
     'vacation',
-    'ackPost',
+    #'ackPost',
     'echoPost',
-    'hidden',
+    #'hidden',
     ])
 
 def member_flag_representer(dumper, data):

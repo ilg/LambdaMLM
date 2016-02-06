@@ -130,7 +130,7 @@ class List (object):
     def address_will_modify_address(self, from_address, target_address):
         if from_address != target_address:
             member = self.member_with_address(from_address)
-            if MemberFlag.admin not in member.flags and MemberFlag.superadmin not in member.flags:
+            if MemberFlag.admin not in member.flags:
                 raise InsufficientPermissions
 
     def user_subscribe_user(self, from_user, target_user):
