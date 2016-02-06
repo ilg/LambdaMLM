@@ -2,7 +2,7 @@
 
 A mailing list manager (MLM or email discussion list software) that runs on AWS Lambda (with help from SES and S3).
 
-***This is nowhere near usable software yet.***
+***This is rapidly approaching very basic usability, but it isn't there yet.***
 
 ## Goals
 
@@ -33,9 +33,16 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 ### Sending/Receiving Email
 
 - [x] Validate incoming email against posting permissions
-- [ ] Adjust subject, reply-to, footer, etc. per list configuration
+- [ ] Modify message per list configuration:
+	- [x] Tag subject
+	- [x] Reply to list
+	- [ ] Message footer
 - [x] Send email to list members
 - [ ] Handle bounces
+	- [x] Variable envelope return path
+	- [x] Stop sending emails to addresses that continue to bounce
+	- [ ] Differentiate between hard and soft bounces
+	- [ ] Notify list member and/or list admin about bounces
 - [ ] Handle moderating messages
 - [ ] Handle MIME/attachments
 
