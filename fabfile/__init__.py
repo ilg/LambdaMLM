@@ -20,7 +20,7 @@ def update_lambda():
         cd "{codedir}"
         zip --recurse-paths "{zipfile}" * --exclude "*.pyc"
         cd "{libdir}"
-        zip --recurse-paths "{zipfile}" * --exclude "*.pyc"
+        zip --recurse-paths "{zipfile}" * --exclude "*.pyc" "pip*" "docutils*" "setuptools*" "wheel*" "pkg_resources*"
         '''.format(
             zipfile=zipfile, 
             codedir=codedir, 
