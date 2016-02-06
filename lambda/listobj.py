@@ -36,8 +36,6 @@ else:
                 RawMessage={ 'Data': message.as_string(), },
                 )
 
-batch_size = 20
-
 list_properties = [
         'name',
         'members',
@@ -167,8 +165,9 @@ class List (object):
                     )
                 ]
 
-    def list_address_with_tag(self, tag):
-        return '{}+{}@{}'.format(self.username, tag, self.host)
+    def list_address_with_tags(self, *tags):
+        tags = map(lambda s: s.replace('@', '='), tags)
+        return '{}+{}@{}'.format(self.username, '+'.join(tags), self.host)
 
     def send(self, msg):
         _, from_address = email.utils.parseaddr(msg_get_header(msg, 'From'))
@@ -188,12 +187,12 @@ class List (object):
         # Strip out any exising DKIM signature.
         del msg['DKIM-Signature']
 
+        # Strip out any existing return path.
+        del msg['Return-path']
+
         # Make the list be the sender of the email.
         del msg['Sender']
         msg['Sender'] = Header(self.display_address)
-        # Capture bounces, etc., to the list address tagged with 'bounce'.
-        del msg['Return-path']
-        msg['Return-path'] = Header(self.list_address_with_tag('bounce'))  # TODO: VERP?
 
         # See if replies should default to the list.
         if self.reply_to_list:
@@ -209,12 +208,11 @@ class List (object):
                 msg['Subject'] = Header(u'{}{}'.format(prefix, subject))
 
         # TODO: body footer
-        recipients = self.addresses_to_receive_from(from_address)
-        while recipients:
-            batch = recipients[:batch_size]
-            recipients = recipients[batch_size:]
-            print('> Sending to users {}.'.format(batch))
-            send(self.address, batch, msg)
+        for recipient in self.addresses_to_receive_from(from_address):
+            # Set the return-path VERP-style: [list username]+[recipient s/@/=/]+bounce@[host]
+            return_path = self.list_address_with_tags(recipient, 'bounce')
+            print('> Sending to {}.'.format(recipient))
+            send(return_path, [ recipient, ], msg)
             
     @classmethod
     def lists_for_addresses(cls, addresses):
