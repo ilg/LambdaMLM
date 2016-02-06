@@ -34,7 +34,7 @@ def echo(ctx, stuff, **kwargs):
 def run(user, cmd):
     result = runner.invoke(command, [user,] + shlex.split(cmd))
     print('run result: {}'.format(result))
-    if not result.output:
+    if result.exception:
         print('Exception: {}\nTraceback:\n {}'.format(result.exception, ''.join(format_exception(*result.exc_info))))
         return 'Internal error.'
     return result.output
