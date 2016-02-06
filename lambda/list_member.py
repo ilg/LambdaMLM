@@ -23,6 +23,13 @@ MemberFlag = IntEnum('MemberFlag', [
     #'hidden',
     ])
 
+MemberFlag.userlevel_flags = classmethod(
+        lambda cls: [
+            cls.vacation, 
+            cls.echoPost,
+            ]
+        )
+
 def member_flag_representer(dumper, data):
     return dumper.represent_scalar(u'!flag', data.name)
 yaml.add_representer(MemberFlag, member_flag_representer)

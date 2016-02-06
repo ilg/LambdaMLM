@@ -63,6 +63,9 @@ class ClosedSubscription(Exception):
 class ClosedUnsubscription(Exception):
     pass
 
+class UnknownFlag(Exception):
+    pass
+
 class List (object):
     def __init__(self, address=None, username=None, host=None):
         if address is None:
@@ -158,6 +161,41 @@ class List (object):
             # List doesn't allow self-unsubscription.
             raise ClosedUnsubscription
         self.members.remove(member)
+        self._save()
+
+    def member_own_flags(self, user):
+        _, address = email.utils.parseaddr(user)
+        member = self.member_with_address(address)
+        if not member:
+            raise NotSubscribed
+        if MemberFlag.admin in member.flags:
+            all_flags = MemberFlag
+        else:
+            all_flags = MemberFlag.userlevel_flags()
+        return [(f, f in member.flags) for f in all_flags]
+
+    def user_set_member_flag_value(self, from_user, target_user, flag_name, value):
+        _, from_address = email.utils.parseaddr(from_user)
+        _, target_address = email.utils.parseaddr(target_user)
+        self.address_will_modify_address(from_address, target_address)
+        member = self.member_with_address(target_address)
+        if not member:
+            raise NotSubscribed
+        try:
+            flag = MemberFlag[flag_name]
+        except KeyError:
+            raise UnknownFlag
+        if flag not in MemberFlag.userlevel_flags() and MemberFlag.admin not in self.member_with_address(from_address).flags:
+            raise InsufficientPermissions
+        # TODO: safety around removing admin flag?
+        if value:
+            member.flags.add(flag)
+        else:
+            try:
+                member.flags.remove(flag)
+            except KeyError:
+                # Trying to remove an element from the set that isn't in the set raises KeyError.  Ignore it.
+                pass
         self._save()
 
     def addresses_to_receive_from(self, from_address):

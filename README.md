@@ -27,7 +27,7 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 - [ ] Configure list
 - [x] Subscribe to list
 - [x] Unsubscribe from list
-- [ ] Toggle modes: vacation, echo-post, etc.
+- [x] Toggle modes: vacation, echo-post, etc.
 - [ ] Moderation
 
 ### Sending/Receiving Email
