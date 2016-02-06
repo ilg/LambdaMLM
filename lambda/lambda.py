@@ -22,9 +22,7 @@ def lambda_handler(event, context):
         # See if the message looks like it's a bounce.
         for r in recipients:
             if '+bounce@' in r:
-                list_address = r.replace('+bounce@', '@')
-                print('Bounce received for list {}.'.format(list_address))
-                # TODO: handle bounce.
+                List.handle_bounce_to(r, msg)
                 # Don't do any further processing with this email.
                 return
 

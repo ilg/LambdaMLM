@@ -50,6 +50,7 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 - `members` The list of members.
 - `name` The descriptive human-readable name of the list.
 - `subject-tag` The tag to prepend to the subject.
+- `bounce-limit` The number of bounces a member is allowed before they no longer receives list emails (defaults to 5).
 - `reply-to-list` Whether the `Reply-to:` header should be set to the list address (defaults to `false`).
 - `open-subscription` Whether the list allows users to subscribe themselves (defaults to `false`).
 - `closed-unsubscription` Whether the list prevents members from unsubscribing themselves (defaults to `false`).
@@ -58,6 +59,7 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 
 - `address` The email address of the member.
 - `flags` The flags set for the user.
+- `bounce_count` The number of emails to the member that have bounced.
 
 ##### Member Flags
 
@@ -94,6 +96,7 @@ members:
 - !Member
   address: user1@example.com
   flags: !!set {}
+  bounce_count: 3
 - !Member
   address: user2@example.com
   flags: !!set

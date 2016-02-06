@@ -39,11 +39,14 @@ else:
 list_properties = [
         'name',
         'members',
-        'reply-to-list',
         'subject-tag',
+        'bounce-limit',
+        'reply-to-list',
         'open-subscription',
         'closed-unsubscription',
         ]
+
+default_bounce_limit = 5
 
 class InsufficientPermissions(Exception):
     pass
@@ -67,7 +70,7 @@ class List (object):
                 raise TypeError('Either address or username and host must be provided.')
             self.username = username
             self.host = host
-            self.address = '{}@{}'.format(name, host)
+            self.address = '{}@{}'.format(username, host)
         elif '@' not in address:
             raise ValueError('A list address must contain @.')
         else:
@@ -89,6 +92,9 @@ class List (object):
             self.display_address = u'{} <{}>'.format(self.name, self.address)
         else:
             self.display_address = self.address
+        # Default bounce limit.
+        if not self.bounce_limit:
+            self.bounce_limit = default_bounce_limit
 
     def __getattr__(self, name):
         prop = name.replace('_', '-')
@@ -115,8 +121,11 @@ class List (object):
             #print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
             raise e
 
+    def member_passing_test(self, test):
+        return next(( m for m in self.members if test(m) ), None)
+
     def member_with_address(self, address):
-        return next(( m for m in self.members if m.address == address ), None)
+        return self.member_passing_test(lambda m: m.address == address)
 
     def address_will_modify_address(self, from_address, target_address):
         if from_address != target_address:
@@ -162,12 +171,16 @@ class List (object):
                         MemberFlag.echoPost in m.flags
                         or from_address != m.address
                         )
+                    and m.bounce_count <= self.bounce_limit
                     )
                 ]
 
     def list_address_with_tags(self, *tags):
         tags = map(lambda s: s.replace('@', '='), tags)
         return '{}+{}@{}'.format(self.username, '+'.join(tags), self.host)
+
+    def verp_address(self, address):
+        return self.list_address_with_tags(address, 'bounce')
 
     def send(self, msg):
         _, from_address = email.utils.parseaddr(msg_get_header(msg, 'From'))
@@ -210,7 +223,7 @@ class List (object):
         # TODO: body footer
         for recipient in self.addresses_to_receive_from(from_address):
             # Set the return-path VERP-style: [list username]+[recipient s/@/=/]+bounce@[host]
-            return_path = self.list_address_with_tags(recipient, 'bounce')
+            return_path = self.verp_address(recipient)
             print('> Sending to {}.'.format(recipient))
             send(return_path, [ recipient, ], msg)
             
@@ -221,3 +234,26 @@ class List (object):
                 yield cls(a)
             except ValueError:
                 continue
+
+    @classmethod
+    def handle_bounce_to(cls, bounce_address, msg):
+        print('Handling bounce to {}.'.format(bounce_address))
+        if '@' not in bounce_address:
+            raise ValueError('Bounced-to addresses must contain an @.')
+        username, host = bounce_address.split('@', 1)
+        if '+' not in bounce_address:
+            raise ValueError('Bounced-to username must contain a +.')
+        list_username, _ = username.split('+', 1)
+        l = cls(username=list_username, host=host)
+        if not l:
+            raise ValueError('Bounced-to address does not resolve to a known list.')
+        print('Bounce received for list {}.'.format(l.display_address))
+        member = l.member_passing_test(lambda m: l.verp_address(m.address) == bounce_address)
+        if not member:
+            print('No member found matching the bounce address.')
+            return
+        member.bounce_count += 1
+        print('Incremented bounce count for {} to {}.'.format(member.address, member.bounce_count))
+        l._save()
+        # TODO: send email to member and/or admin(s) noting that the bounce limit has been reached?
+        
