@@ -50,6 +50,26 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 
 - 2016-02-04: Sending via Amazon SES is likely not possible, as SES appears to require that the `From:` address be verified, which isn't plausible for discussion lists.  The best option thus far is to use an external SMTP server.  It appears to be possible to configure a given host to receive email through SES and send via an external SMTP server with both SPF and DKIM passing.
 
+## Commands
+
+A single command is sent as the subject of an email to `lambda@[domain]` where `domain` is a domain on which LambdaMLM receives email.  LambdaMLM will reply with a signed version of the command, in order to validate the address from which the command came.  The command is confirmed and executed by replying to that email.
+
+- `about` returns an about message
+- `echo [parameters]` echos the given parameters
+- `list [list address]` indicates a list-specific command
+	- `create` creates the list _(admin)_
+	- `members` returns a list of the members _(admin)_
+	- `config` returns the list configuration _(admin)_
+	- `set [config option name] [value]` sets the value of a configuration option for the list _(admin)_
+	- `subscribe` subscribes the sender to the list
+	- `subscribe [address]` subscribes the given address to the list _(admin)_
+	- `unsubscribe` removes the sender from the list
+	- `unsubscribe [address]` removes the given address from the list _(admin)_
+	- `setflag [flag name]` sets the given flag on the sender
+	- `setflag [flag name] [address]` sets the given flag on the member with the given address _(admin)_
+	- `unsetflag [flag name]` unsets the given flag on the sender
+	- `unsetflag [flag name] [address]` unsets the given flag on the member with the given address _(admin)_
+
 ## List Configuration File Format
 
 ### Top-level properties
