@@ -203,8 +203,7 @@ class List (object):
                 m.address
                 for m in self.members
                 if (
-                    MemberFlag.diagnostic not in m.flags
-                    and MemberFlag.vacation not in m.flags
+                    MemberFlag.vacation not in m.flags
                     and (
                         MemberFlag.echoPost in m.flags
                         or from_address != m.address
