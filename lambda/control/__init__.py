@@ -109,10 +109,10 @@ def get_signed_command(subject, address):
     timestamp = match.group('timestamp')
     if not sig or not timestamp:
         raise NotSignedException
-    timestamp_age = datetime.datetime.now() - datetime.datetime.strptime(timestamp, timestamp_format)
+    expiration = datetime.datetime.strptime(timestamp, timestamp_format)
     try:
         # Check that the timestamp is recent enough.
-        if timestamp_age > signed_validity_interval:
+        if datetime.datetime.now() > expiration:
             raise ExpiredSignatureException
     except ValueError:
         raise InvalidSignatureException
@@ -123,8 +123,8 @@ def get_signed_command(subject, address):
 def signature(cmd):
     return base64.b64encode(hmac.new(signing_key, cmd.strip(), hashlib.sha1).digest())
 
-def sign(subject, reply_to):
-    timestamp = datetime.datetime.now().strftime(timestamp_format)
+def sign(subject, reply_to, validity_duration=signed_validity_interval):
+    timestamp = (datetime.datetime.now() + validity_duration).strftime(timestamp_format)
     return '{} {}{}'.format(
             subject,
             signature(' '.join([ reply_to, timestamp, subject, ])),
