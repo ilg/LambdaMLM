@@ -8,19 +8,19 @@ import boto3
 
 s3 = boto3.client('s3')
 
-from config import command_user
+from config import command_user, s3_bucket, s3_incoming_email_prefix
 command_address_prefix = command_user + '@'
 
 @contextmanager
-def email_message_from_s3_bucket(event, email_bucket):
-    key = event['Records'][0]['ses']['mail']['messageId']
+def email_message_for_event(event):
+    key = s3_incoming_email_prefix + event['Records'][0]['ses']['mail']['messageId']
     
     # Get the email from S3
     try:
-        response = s3.get_object(Bucket=email_bucket, Key=key)
+        response = s3.get_object(Bucket=s3_bucket, Key=key)
     except Exception as e:
         print(e)
-        print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, email_bucket))
+        print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, s3_bucket))
         raise e
     
     try:
@@ -28,11 +28,11 @@ def email_message_from_s3_bucket(event, email_bucket):
     finally:
         # Clean up: delete the email from S3
         try:
-            response = s3.delete_object(Bucket=email_bucket, Key=key)
+            response = s3.delete_object(Bucket=s3_bucket, Key=key)
             print("Removed email from S3.")
         except Exception as e:
             print(e)
-            print('Error removing object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
+            print('Error removing object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, s3_bucket))
             raise e
 
 def msg_get_header(msg, header_name):

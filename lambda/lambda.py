@@ -1,14 +1,12 @@
 from __future__ import print_function
 
-from sestools import email_message_from_s3_bucket, event_msg_is_to_command, msg_get_header, recipient_destination_overlap
+from sestools import email_message_for_event, event_msg_is_to_command, msg_get_header, recipient_destination_overlap
 from control import handle_command
-
-from config import email_bucket
 
 from listobj import List
 
 def lambda_handler(event, context):
-    with email_message_from_s3_bucket(event, email_bucket) as msg:
+    with email_message_for_event(event) as msg:
         # If it's a command, handle it as such.
         command_address = event_msg_is_to_command(event, msg)
         if command_address:

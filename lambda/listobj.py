@@ -19,6 +19,7 @@ from sestools import msg_get_header
 from list_member import ListMember, MemberFlag
 
 import config
+
 if hasattr(config, 'smtp_server'):
     import smtplib
     smtp = smtplib.SMTP_SSL(config.smtp_server)
@@ -89,12 +90,12 @@ class List (object):
             raise ValueError('Invalid list username.')
         if not host_regex.match(self.host):
             raise ValueError('Invalid list host.')
-        self.key = '{}/{}.yaml'.format(self.host, self.username)
+        self._s3_key = '{}{}/{}.yaml'.format(config.s3_configuration_prefix, self.host, self.username)
         try:
-            config_response = s3.get_object(Bucket=config.config_bucket, Key=self.key)
+            config_response = s3.get_object(Bucket=config.s3_bucket, Key=self._s3_key)
         except Exception as e:
             #print(e)
-            #print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
+            #print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self._s3_key, config.s3_bucket))
             raise e
         self._config = yaml.safe_load(config_response['Body'])
         if self.name:
@@ -121,13 +122,13 @@ class List (object):
     def _save(self):
         try:
             response = s3.put_object(
-                    Bucket=config.config_bucket,
-                    Key=self.key,
+                    Bucket=config.s3_bucket,
+                    Key=self._s3_key,
                     Body=yaml.safe_dump(self._config, default_flow_style=False, allow_unicode=True),
                     )
         except Exception as e:
             #print(e)
-            #print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self.key, config.config_bucket))
+            #print('Error putting object {} to bucket {}. Make sure the bucket exists and is in the same region as this function.'.format(self._s3_key, config.s3_bucket))
             raise e
 
     def member_passing_test(self, test):
