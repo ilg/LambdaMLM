@@ -6,7 +6,7 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 
 Planned enhancements, bugs, and known limitations are tracked in [GitHub Issues](https://github.com/ilg/LambdaMLM/issues).
 
-Here are [the items to be addressed](https://github.com/ilg/LambdaMLM/milestones/usable) for this to be considered usable.
+Setup requires familiarity with AWS—in particular, having credentials already set up locally and having familiarity with IAM and Lambda will help.  A rough outline of how to set up LambdaMLM is [here](#setup).
 
 ## Commands
 
@@ -58,7 +58,7 @@ A single command is sent as the subject of an email to `lambda@[domain]` where `
 - `modPost` Posts from the member are moderated, regardless of list settings.
 - `preapprove` Posts from the member are automatically approved (not moderated, regardless of list settings).
 - `noPost` The member cannot post to the list.
-- `moderator` The member is a list moderator.  **Not yet implemented.**
+- `moderator` The member is a list moderator.
 - `admin` The member is a list administrator.
 - `superAdmin` The member is a super-administrator.
 - `vacation` No emails are sent to the member.
