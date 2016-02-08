@@ -100,12 +100,7 @@ class List (object):
             raise ValueError('Invalid list host.')
         self._s3_key = '{}{}/{}.yaml'.format(config.s3_configuration_prefix, self.host, self.username)
         self._s3_moderation_prefix = '{}{}/{}/'.format(config.s3_moderation_prefix, self.host, self.username)
-        try:
-            config_response = s3.get_object(Bucket=config.s3_bucket, Key=self._s3_key)
-        except Exception as e:
-            #print(e)
-            #print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(self._s3_key, config.s3_bucket))
-            raise e
+        config_response = s3.get_object(Bucket=config.s3_bucket, Key=self._s3_key)
         self._config = yaml.safe_load(config_response['Body'])
         if self.name:
             self.display_address = u'{} <{}>'.format(self.name, self.address)
@@ -129,16 +124,11 @@ class List (object):
         super(List, self).__setattr__(name, value)
 
     def _save(self):
-        try:
-            response = s3.put_object(
-                    Bucket=config.s3_bucket,
-                    Key=self._s3_key,
-                    Body=yaml.safe_dump(self._config, default_flow_style=False, allow_unicode=True),
-                    )
-        except Exception as e:
-            #print(e)
-            #print('Error putting object {} to bucket {}. Make sure the bucket exists and is in the same region as this function.'.format(self._s3_key, config.s3_bucket))
-            raise e
+        response = s3.put_object(
+                Bucket=config.s3_bucket,
+                Key=self._s3_key,
+                Body=yaml.safe_dump(self._config, default_flow_style=False, allow_unicode=True),
+                )
 
     @property
     def moderator_addresses(self):
@@ -331,16 +321,11 @@ class List (object):
             print('Unable to moderate incoming message due to lack of Message-ID: header.')
             raise ValueError('Messages must contain a Message-ID: header.')
         message_id = message_id.replace(':', '_')  # Make it safe for subject-command.
-        try:
-            response = s3.put_object(
-                    Bucket=config.s3_bucket,
-                    Key=self._s3_moderation_prefix + message_id,
-                    Body=msg.as_string(),
-                    )
-        except Exception as e:
-            #print(e)
-            #print('Error putting object {} to bucket {}. Make sure the bucket exists and is in the same region as this function.'.format(self._s3_key, config.s3_bucket))
-            raise e
+        response = s3.put_object(
+                Bucket=config.s3_bucket,
+                Key=self._s3_moderation_prefix + message_id,
+                Body=msg.as_string(),
+                )
         control_address = 'lambda@{}'.format(self.host)
         # TODO: figure out the mod interval by using get_bucket_lifecycle_configuration to introspect the moderation queue's expiration interval?  Or, conversely, set the bucket's lifecycle configuration based on a list setting of the expiration interval?
         from datetime import timedelta
@@ -387,10 +372,6 @@ If no action has been taken in {} days, the message will be automatically reject
                     )
         except ClientError:
             raise ModeratedMessageNotFound
-        except Exception as e:
-            #print(e)
-            #print('Error putting object {} to bucket {}. Make sure the bucket exists and is in the same region as this function.'.format(self._s3_key, config.s3_bucket))
-            raise e
 
     def user_mod_approve(self, from_user, message_id):
         response = self._user_mod_act_on(from_user, message_id, s3.get_object)
