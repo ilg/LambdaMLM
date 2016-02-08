@@ -20,7 +20,6 @@ from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.message import MIMEMessage
 from email.mime.text import MIMEText
-import email.utils
 from sestools import msg_get_header
 
 import config
@@ -82,6 +81,11 @@ class UnknownOption(Exception):
 
 class ModeratedMessageNotFound(Exception):
     pass
+
+def address_from_user(user):
+    from email.utils import parseaddr
+    _, address = parseaddr(user)
+    return address.lower()
 
 class List (object):
     def __init__(self, address=None, username=None, host=None):
@@ -158,8 +162,8 @@ class List (object):
                 raise InsufficientPermissions
 
     def user_subscribe_user(self, from_user, target_user):
-        _, from_address = email.utils.parseaddr(from_user)
-        _, target_address = email.utils.parseaddr(target_user)
+        from_address = address_from_user(from_user)
+        target_address = address_from_user(target_user)
         self.address_will_modify_address(from_address, target_address)
         if self.member_with_address(target_address):
             # Address is already subscribed.
@@ -172,8 +176,8 @@ class List (object):
         self._save()
 
     def user_unsubscribe_user(self, from_user, target_user):
-        _, from_address = email.utils.parseaddr(from_user)
-        _, target_address = email.utils.parseaddr(target_user)
+        from_address = address_from_user(from_user)
+        target_address = address_from_user(target_user)
         self.address_will_modify_address(from_address, target_address)
         member = self.member_with_address(target_address)
         if not member:
@@ -185,7 +189,7 @@ class List (object):
         self._save()
 
     def user_own_flags(self, user):
-        _, address = email.utils.parseaddr(user)
+        address = address_from_user(user)
         member = self.member_with_address(address)
         if not member:
             raise NotSubscribed
@@ -196,8 +200,8 @@ class List (object):
         return [(f, f in member.flags) for f in all_flags]
 
     def user_set_member_flag_value(self, from_user, target_user, flag_name, value):
-        _, from_address = email.utils.parseaddr(from_user)
-        _, target_address = email.utils.parseaddr(target_user)
+        from_address = address_from_user(from_user)
+        target_address = address_from_user(target_user)
         self.address_will_modify_address(from_address, target_address)
         member = self.member_with_address(target_address)
         if not member:
@@ -222,14 +226,14 @@ class List (object):
         self._save()
 
     def user_config_values(self, from_user):
-        _, from_address = email.utils.parseaddr(from_user)
+        from_address = address_from_user(from_user)
         member = self.member_with_address(from_address)
         if not member or MemberFlag.admin not in member.flags:
             raise InsufficientPermissions
         return [(o, getattr(self, o)) for o in list_properties if o not in list_properties_protected]
 
     def user_set_config_value(self, from_user, option, value):
-        _, from_address = email.utils.parseaddr(from_user)
+        from_address = address_from_user(from_user)
         member = self.member_with_address(from_address)
         if not member or MemberFlag.admin not in member.flags:
             raise InsufficientPermissions
@@ -239,7 +243,7 @@ class List (object):
         self._save()
 
     def user_get_members(self, from_user):
-        _, from_address = email.utils.parseaddr(from_user)
+        from_address = address_from_user(from_user)
         member = self.member_with_address(from_address)
         # TODO: allow non-admins to view list membership?
         if not member or MemberFlag.admin not in member.flags:
@@ -271,7 +275,7 @@ class List (object):
         return self.list_address_with_tags(address, 'bounce')
 
     def send(self, msg, mod_approved=False):
-        _, from_address = email.utils.parseaddr(msg_get_header(msg, 'From'))
+        from_address = address_from_user(msg_get_header(msg, 'From'))
         if not mod_approved:
             member = self.member_with_address(from_address)
             if member is None and self.reject_from_non_members:
@@ -377,7 +381,7 @@ If no action has been taken in {} days, the message will be automatically reject
                     )
 
     def _user_mod_act_on(self, from_user, message_id, action):
-        _, from_address = email.utils.parseaddr(from_user)
+        from_address = address_from_user(from_user)
         member = self.member_with_address(from_address)
         if member is None or MemberFlag.moderator not in member.flags:
             raise InsufficientPermissions
