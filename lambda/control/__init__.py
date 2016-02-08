@@ -12,6 +12,7 @@ signed_cmd_regex = re.compile(r'^(?P<cmd>.+)\s+(?P<signature>[\da-zA-Z+/]{27}=)(
 
 from config import signing_key, signed_validity_interval
 from sestools import msg_get_header, msg_get_response_address
+from email.utils import parseaddr
 
 import boto3
 
@@ -99,6 +100,9 @@ def send_response(source, destination, subject, body):
                 },
             )
 
+def check_signature(cmd, address, timestamp, sig):
+    return hmac.compare_digest(base64.b64decode(signature(' '.join([ address, timestamp, cmd, ]))), base64.b64decode(sig))
+
 def get_signed_command(subject, address):
     match = signed_cmd_regex.match(subject)
     if not match:
@@ -116,8 +120,11 @@ def get_signed_command(subject, address):
             raise ExpiredSignatureException
     except ValueError:
         raise InvalidSignatureException
-    if not hmac.compare_digest(base64.b64decode(signature(' '.join([ address, timestamp, cmd, ]))), base64.b64decode(sig)):
-        raise InvalidSignatureException
+    if not check_signature(cmd, address, timestamp, sig):
+        # Maybe the command was signed for a bare email address, but the address passed in had a name with it?
+        _, address = parseaddr(address)
+        if not check_signature(cmd, address, timestamp, sig):
+            raise InvalidSignatureException
     return cmd
 
 def signature(cmd):
