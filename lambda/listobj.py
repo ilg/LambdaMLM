@@ -88,14 +88,14 @@ class List (object):
         if address is None:
             if username is None or host is None:
                 raise TypeError('Either address or username and host must be provided.')
-            self.username = username
-            self.host = host
-            self.address = '{}@{}'.format(username, host)
+            self.username = username.lower()
+            self.host = host.lower()
+            self.address = '{}@{}'.format(self.username, self.host)
         elif '@' not in address:
             raise ValueError('A list address must contain @.')
         else:
-            self.address = address
-            (self.username, self.host) = address.split('@', 1)
+            self.address = address.lower()
+            (self.username, self.host) = self.address.split('@', 1)
         if not name_regex.match(self.username):
             raise ValueError('Invalid list username.')
         if not host_regex.match(self.host):
