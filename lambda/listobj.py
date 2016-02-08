@@ -11,14 +11,20 @@ name_regex = re.compile(r'^[a-z0-9-]+$')
 import boto3
 
 s3 = boto3.client('s3')
+ses = boto3.client('ses')
 
+from botocore.exceptions import ClientError
+
+import email
 from email.header import Header
+from email.mime.multipart import MIMEMultipart
+from email.mime.message import MIMEMessage
+from email.mime.text import MIMEText
 import email.utils
 from sestools import msg_get_header
 
-from list_member import ListMember, MemberFlag
-
 import config
+from list_member import ListMember, MemberFlag
 
 if hasattr(config, 'smtp_server'):
     import smtplib
@@ -29,7 +35,6 @@ if hasattr(config, 'smtp_server'):
         smtp.sendmail(source, destinations, message.as_string())
 else:
     # Sending using SES doesn't seem to work because of validation issues...
-    ses = boto3.client('ses')
     def send(source, destinations, message):
         ses.send_raw_email(
                 Source=source,
@@ -73,6 +78,9 @@ class UnknownFlag(Exception):
 class UnknownOption(Exception):
     pass
 
+class ModeratedMessageNotFound(Exception):
+    pass
+
 class List (object):
     def __init__(self, address=None, username=None, host=None):
         if address is None:
@@ -91,6 +99,7 @@ class List (object):
         if not host_regex.match(self.host):
             raise ValueError('Invalid list host.')
         self._s3_key = '{}{}/{}.yaml'.format(config.s3_configuration_prefix, self.host, self.username)
+        self._s3_moderation_prefix = '{}{}/{}/'.format(config.s3_moderation_prefix, self.host, self.username)
         try:
             config_response = s3.get_object(Bucket=config.s3_bucket, Key=self._s3_key)
         except Exception as e:
@@ -130,6 +139,14 @@ class List (object):
             #print(e)
             #print('Error putting object {} to bucket {}. Make sure the bucket exists and is in the same region as this function.'.format(self._s3_key, config.s3_bucket))
             raise e
+
+    @property
+    def moderator_addresses(self):
+        return [
+                m.address
+                for m in self.members
+                if MemberFlag.moderator in m.flags
+                ]
 
     def member_passing_test(self, test):
         return next(( m for m in self.members if test(m) ), None)
@@ -261,7 +278,7 @@ class List (object):
     def verp_address(self, address):
         return self.list_address_with_tags(address, 'bounce')
 
-    def send(self, msg):
+    def send(self, msg, mod_approved=False):
         _, from_address = email.utils.parseaddr(msg_get_header(msg, 'From'))
         member = self.member_with_address(from_address)
         if member is None:
@@ -271,8 +288,8 @@ class List (object):
         if MemberFlag.noPost in member.flags:
             print('{} cannot send email to {} (noPost is set).'.format(from_address, self.address))
             return
-        if MemberFlag.modPost in member.flags:
-            print('Email from {} to {} should be moderated (not yet implemented).'.format(from_address, self.address))
+        if not mod_approved and MemberFlag.modPost in member.flags:
+            self.moderate(msg)
             return
         # TODO: check if the list is moderated
 
@@ -306,6 +323,85 @@ class List (object):
             print('> Sending to {}.'.format(recipient))
             send(return_path, [ recipient, ], msg)
             
+    def moderate(self, msg):
+        # For some reason, this import doesn't work at the file level.
+        from control import sign
+        message_id = msg['message-id']
+        if not message_id:
+            print('Unable to moderate incoming message due to lack of Message-ID: header.')
+            raise ValueError('Messages must contain a Message-ID: header.')
+        message_id = message_id.replace(':', '_')  # Make it safe for subject-command.
+        try:
+            response = s3.put_object(
+                    Bucket=config.s3_bucket,
+                    Key=self._s3_moderation_prefix + message_id,
+                    Body=msg.as_string(),
+                    )
+        except Exception as e:
+            #print(e)
+            #print('Error putting object {} to bucket {}. Make sure the bucket exists and is in the same region as this function.'.format(self._s3_key, config.s3_bucket))
+            raise e
+        control_address = 'lambda@{}'.format(self.host)
+        # TODO: figure out the mod interval by using get_bucket_lifecycle_configuration to introspect the moderation queue's expiration interval?  Or, conversely, set the bucket's lifecycle configuration based on a list setting of the expiration interval?
+        from datetime import timedelta
+        mod_interval = timedelta(days=4)
+        forward_mime = MIMEMessage(msg)
+        for moderator in self.moderator_addresses:
+            approve_cmd = sign('list {} mod approve "{}"'.format(self.address, message_id), moderator, mod_interval)
+            reject_cmd = sign('list {} mod reject "{}"'.format(self.address, message_id), moderator, mod_interval)
+            message = MIMEMultipart()
+            message['Subject'] = 'Message to {} needs approval: {}'.format(self.address, approve_cmd)
+            message['From'] = control_address
+            message['To'] = moderator
+            message.attach(MIMEText(
+                '''The included message needs moderator approval to be posted to {}.
+
+To approve this message, reply to this email or send an email to {} with subject:
+
+        {}
+
+To reject this message, send an email to {} with subject:
+
+        {}
+
+If no action has been taken in {} days, the message will be automatically rejected.
+
+'''.format(self.address, control_address, approve_cmd, control_address, reject_cmd, mod_interval.days)
+                ))
+            message.attach(forward_mime)
+            ses.send_raw_email(
+                    Source=control_address,
+                    Destinations=[ moderator, ],
+                    RawMessage={ 'Data': message.as_string(), },
+                    )
+
+    def _user_mod_act_on(self, from_user, message_id, action):
+        _, from_address = email.utils.parseaddr(from_user)
+        member = self.member_with_address(from_address)
+        if member is None or MemberFlag.moderator not in member.flags:
+            raise InsufficientPermissions
+        try:
+            return action(
+                    Bucket=config.s3_bucket,
+                    Key=self._s3_moderation_prefix + message_id,
+                    )
+        except ClientError:
+            raise ModeratedMessageNotFound
+        except Exception as e:
+            #print(e)
+            #print('Error putting object {} to bucket {}. Make sure the bucket exists and is in the same region as this function.'.format(self._s3_key, config.s3_bucket))
+            raise e
+
+    def user_mod_approve(self, from_user, message_id):
+        response = self._user_mod_act_on(from_user, message_id, s3.get_object)
+        self.send(email.message_from_file(response['Body']), mod_approved=True)
+        self._user_mod_act_on(from_user, message_id, s3.delete_object)
+
+    def user_mod_reject(self, from_user, message_id):
+        # Head the object first, since delete won't raise an exception if the object doesn't exist.
+        self._user_mod_act_on(from_user, message_id, s3.head_object)
+        self._user_mod_act_on(from_user, message_id, s3.delete_object)
+
     @classmethod
     def lists_for_addresses(cls, addresses):
         for a in addresses:

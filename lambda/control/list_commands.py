@@ -147,3 +147,33 @@ def members(ctx):
             click.echo(m)
     except listobj.InsufficientPermissions:
         handle_insufficient_permissions('view the members of {}.'.format(ctx.obj.list_address))
+
+@list_command.group(name='mod')
+@require_list
+def moderate(ctx):
+    pass
+
+@moderate.command()
+@click.argument('message_id')
+@require_list
+def approve(ctx, message_id):
+    try:
+        ctx.obj.listobj.user_mod_approve(ctx.obj.user, message_id)
+        click.echo('Post approved.')
+    except listobj.InsufficientPermissions:
+        handle_insufficient_permissions('moderate messages on {}.'.format(ctx.obj.list_address))
+    except listobj.ModeratedMessageNotFound:
+        click.echo('Message not found.  It may already have been acted on.', err=True)
+
+@moderate.command()
+@click.argument('message_id')
+@require_list
+def reject(ctx, message_id):
+    try:
+        ctx.obj.listobj.user_mod_reject(ctx.obj.user, message_id)
+        click.echo('Post rejected.')
+    except listobj.InsufficientPermissions:
+        handle_insufficient_permissions('moderate messages on {}.'.format(ctx.obj.list_address))
+    except listobj.ModeratedMessageNotFound:
+        click.echo('Message not found.  It may already have been acted on.', err=True)
+

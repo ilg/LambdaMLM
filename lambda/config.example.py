@@ -14,6 +14,9 @@ s3_incoming_email_prefix = 'incoming/'
 # The prefix used for configuration files.
 s3_configuration_prefix = 'config/'
 
+# The prefix used for moderated emails.
+s3_moderation_prefix = 'moderation/'
+
 # The key to use when generating a HMAC-SHA1 signature of a command.
 signing_key = u'Put some unique text here.  It’ll get used as the secret key for generating the command-validation signatures (HMAC-SHA1).'
 
