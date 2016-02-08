@@ -328,17 +328,26 @@ class List (object):
             print('Unable to moderate incoming message due to lack of Message-ID: header.')
             raise ValueError('Messages must contain a Message-ID: header.')
         message_id = message_id.replace(':', '_')  # Make it safe for subject-command.
+        # Put the email message into the list's moderation holding space on S3.
         response = s3.put_object(
                 Bucket=config.s3_bucket,
                 Key=self._s3_moderation_prefix + message_id,
                 Body=msg.as_string(),
                 )
-        control_address = 'lambda@{}'.format(self.host)
-        # TODO: figure out the mod interval by using get_bucket_lifecycle_configuration to introspect the moderation queue's expiration interval?  Or, conversely, set the bucket's lifecycle configuration based on a list setting of the expiration interval?
+        # Get the moderation auto-deletion/auto-rejection interval from the S3 bucket lifecycle configuration.
+        lifecycle = s3.get_bucket_lifecycle_configuration(Bucket=config.s3_bucket)
         from datetime import timedelta
-        mod_interval = timedelta(days=4)
+        mod_interval = timedelta(days=next((
+            r['Expiration']['Days']
+            for r in lifecycle.get('Rules', [])
+            if r['Prefix'] == config.s3_moderation_prefix
+            ), 3))
+        # Wrap the moderated message for inclusion in the notification to mods.
         forward_mime = MIMEMessage(msg)
+        control_address = 'lambda@{}'.format(self.host)
         for moderator in self.moderator_addresses:
+            # Build up the notification email per-moderator so that we can include
+            # pre-signed moderation commands specific to that moderator.
             approve_cmd = sign('list {} mod approve "{}"'.format(self.address, message_id), moderator, mod_interval)
             reject_cmd = sign('list {} mod reject "{}"'.format(self.address, message_id), moderator, mod_interval)
             message = MIMEMultipart()
