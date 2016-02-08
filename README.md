@@ -44,6 +44,8 @@ A single command is sent as the subject of an email to `lambda@[domain]` where `
 - `reply-to-list` Whether the `Reply-to:` header should be set to the list address (defaults to `false`).
 - `open-subscription` Whether the list allows users to subscribe themselves (defaults to `false`).
 - `closed-unsubscription` Whether the list prevents members from unsubscribing themselves (defaults to `false`).
+- `moderated` Whether posts to the list are, by default, moderated (defaults to `false`).
+- `reject-from-non-members` Whether messages from non-list-members are rejected (versus being moderated; defaults to `false`).
 
 #### Members
 
@@ -82,6 +84,8 @@ subject-tag: TestList
 reply-to-list: true
 open-subscription: true
 closed-unsubscription: false
+moderated: false
+reject-from-non-members: true
 ```
 
 ## License

@@ -50,6 +50,8 @@ list_properties = [
         'reply-to-list',
         'open-subscription',
         'closed-unsubscription',
+        'moderated',
+        'reject-from-non-members',
         ]
 list_properties_protected = [
         'members',
@@ -270,18 +272,21 @@ class List (object):
 
     def send(self, msg, mod_approved=False):
         _, from_address = email.utils.parseaddr(msg_get_header(msg, 'From'))
-        member = self.member_with_address(from_address)
-        if member is None:
-            # TODO: allow a list to receive from off-list; allow off-list emails to go to moderation
-            print('{} cannot send email to {} (not a member).'.format(from_address, self.address))
-            return
-        if MemberFlag.noPost in member.flags:
-            print('{} cannot send email to {} (noPost is set).'.format(from_address, self.address))
-            return
-        if not mod_approved and MemberFlag.modPost in member.flags:
-            self.moderate(msg)
-            return
-        # TODO: check if the list is moderated
+        if not mod_approved:
+            member = self.member_with_address(from_address)
+            if member is None and self.reject_from_non_members:
+                print('{} cannot send email to {} (not a member and list rejects email from non-members).'.format(from_address, self.address))
+                return
+            if member and MemberFlag.noPost in member.flags:
+                print('{} cannot send email to {} (noPost is set).'.format(from_address, self.address))
+                return
+            if (member is None
+                    or MemberFlag.modPost in member.flags
+                    or (self.moderated and MemberFlag.preapprove not in member.flags)
+                    ):
+                print('Moderating message.')
+                self.moderate(msg)
+                return
 
         # Strip out any exising DKIM signature.
         del msg['DKIM-Signature']
@@ -310,7 +315,9 @@ class List (object):
         for recipient in self.addresses_to_receive_from(from_address):
             # Set the return-path VERP-style: [list username]+[recipient s/@/=/]+bounce@[host]
             return_path = self.verp_address(recipient)
-            print('> Sending to {}.'.format(recipient))
+            if not mod_approved:
+                # Suppress printing when mod-approved, because the output will go to the moderator approving it.
+                print('> Sending to {}.'.format(recipient))
             send(return_path, [ recipient, ], msg)
             
     def moderate(self, msg):
