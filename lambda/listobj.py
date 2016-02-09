@@ -158,7 +158,7 @@ class List (object):
                 raise InsufficientPermissions
             target_member = self.member_with_address(target_address)
             # Only superAdmin members can modify admin members.
-            if MemberFlag.admin in target_member.flags and MemberFlag.superAdmin not in from_member.flags:
+            if target_member and MemberFlag.admin in target_member.flags and MemberFlag.superAdmin not in from_member.flags:
                 raise InsufficientPermissions
 
     def user_subscribe_user(self, from_user, target_user):
