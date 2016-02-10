@@ -262,11 +262,13 @@ class List (object):
         return self.list_address_with_tags(address, 'from')
 
     @staticmethod
-    def msg_remove_header(msg, header):
+    def msg_replace_header(msg, header, new_value=None):
         old_value = msg.get(header)
         if old_value:
             msg['X-Original-' + header] = old_value
         del msg[header]
+        if new_value:
+            msg[header] = new_value
 
     def send(self, msg, mod_approved=False):
         from_user = msg_get_header(msg, 'From')
@@ -290,43 +292,43 @@ class List (object):
                 return
 
         # Strip out any exising DKIM signature.
-        self.msg_remove_header(msg, 'DKIM-Signature')
+        self.msg_replace_header(msg, 'DKIM-Signature')
 
         # Strip out any existing return path.
-        self.msg_remove_header(msg, 'Return-path')
+        self.msg_replace_header(msg, 'Return-path')
 
         # Make the list be the sender of the email.
-        self.msg_remove_header(msg, 'Sender')
-        msg['Sender'] = Header(self.display_address)
+        self.msg_replace_header(msg, 'Sender', Header(self.display_address))
 
         # Munge the From: header.
         # While munging the From: header probably technically violates an RFC,
         # it does appear to be the current best practice for MLMs:
         # https://dmarc.org/supplemental/mailman-project-mlm-dmarc-reqs.html
-        self.msg_remove_header(msg, 'From')
         list_name = self.name
         if not list_name:
             list_name = self.address
-        msg['From'] = formataddr((
-                '{} (via {})'.format(from_name, list_name),
-                self.munged_from(from_address),
-                ))
+        self.msg_replace_header(
+                msg,
+                'From',
+                formataddr((
+                    '{} (via {})'.format(from_name, list_name),
+                    self.munged_from(from_address),
+                    )),
+                )
 
         # See if replies should default to the list.
-        self.msg_remove_header(msg, 'Reply-to')
         if self.reply_to_list:
-            msg['Reply-to'] = Header(self.display_address)
+            self.msg_replace_header(msg, 'Reply-to', Header(self.display_address))
             msg['CC'] = Header(from_user)
         else:
-            msg['Reply-to'] = Header(from_user)
+            self.msg_replace_header(msg, 'Reply-to', Header(from_user))
 
         # See if the list has a subject tag.
         if self.subject_tag:
             prefix = u'[{}] '.format(self.subject_tag)
             subject = msg_get_header(msg, 'Subject')
             if prefix not in subject:
-                self.msg_remove_header(msg, 'Subject')
-                msg['Subject'] = Header(u'{}{}'.format(prefix, subject))
+                self.msg_replace_header(msg, 'Subject', Header(u'{}{}'.format(prefix, subject)))
 
         # TODO: body footer
         for recipient in self.addresses_to_receive_from(from_address):
