@@ -273,6 +273,7 @@ class List (object):
     def send(self, msg, mod_approved=False):
         from_user = msg_get_header(msg, 'From')
         from_name, from_address = parseaddr(from_user)
+        from_address = from_address.lower()
         if not from_name:
             from_name, _ = from_address.split('@', 1)
         if not mod_approved:
