@@ -153,10 +153,6 @@ Rough outline:
 		    ]
 		}
 		```
-- SMTP Server/Service
-	- Must be able to send email with arbitrary `From:` headers, not only verified domains.  (`Sender:` headers will be verified/verifiable domains.)
-	- Configure DKIM and SPF for all list domains.
-	- Put SMTP server and credentials, if necessary, in `config.py`.
 - Locally
 	- Need [pip](https://pip.pypa.io/), [Virtualenv](https://virtualenv.pypa.io/), and [Fabric](http://fabfile.org/) installed.
 	- Clone this repo.

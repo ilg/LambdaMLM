@@ -26,22 +26,6 @@ from sestools import msg_get_header
 import config
 from list_member import ListMember, MemberFlag
 
-if hasattr(config, 'smtp_server'):
-    import smtplib
-    smtp = smtplib.SMTP_SSL(config.smtp_server)
-    if hasattr(config, 'smtp_user') and hasattr(config, 'smtp_password'):
-        smtp.login(config.smtp_user, config.smtp_password)
-    def send(source, destinations, message):
-        smtp.sendmail(source, destinations, message.as_string())
-else:
-    # Sending using SES doesn't seem to work because of validation issues...
-    def send(source, destinations, message):
-        ses.send_raw_email(
-                Source=source,
-                Destinations=destinations,
-                RawMessage={ 'Data': message.as_string(), },
-                )
-
 list_properties = [
         'name',
         'members',
@@ -351,7 +335,11 @@ class List (object):
             if not mod_approved:
                 # Suppress printing when mod-approved, because the output will go to the moderator approving it.
                 print('> Sending to {}.'.format(recipient))
-            send(return_path, [ recipient, ], msg)
+            ses.send_raw_email(
+                    Source=return_path,
+                    Destinations=[ recipient, ],
+                    RawMessage={ 'Data': msg.as_string(), },
+                    )
             
     def moderate(self, msg):
         # For some reason, this import doesn't work at the file level.

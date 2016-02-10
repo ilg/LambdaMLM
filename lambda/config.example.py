@@ -24,12 +24,3 @@ signing_key = u'Put some unique text here.  It’ll get used as the secret key f
 from datetime import timedelta
 signed_validity_interval = timedelta(hours=1)
 
-# The hostname of the SMTP server to use to send email.
-smtp_server = 'smtp.example.com'
-
-# The username with which to log in to the SMTP server.
-smtp_user = 'user@example.com'
-
-# The password with which to log in to the SMTP server.
-smtp_password = 'password'
-
