@@ -17,6 +17,7 @@ from botocore.exceptions import ClientError
 
 import email
 from email.header import Header
+from email.utils import parseaddr, formataddr
 from email.mime.multipart import MIMEMultipart
 from email.mime.message import MIMEMessage
 from email.mime.text import MIMEText
@@ -83,7 +84,6 @@ class ModeratedMessageNotFound(Exception):
     pass
 
 def address_from_user(user):
-    from email.utils import parseaddr
     _, address = parseaddr(user)
     return address.lower()
 
@@ -274,6 +274,9 @@ class List (object):
     def verp_address(self, address):
         return self.list_address_with_tags(address, 'bounce')
 
+    def munged_from(self, address):
+        return self.list_address_with_tags(address, 'from')
+
     @staticmethod
     def msg_remove_header(msg, header):
         old_value = msg.get(header)
@@ -282,7 +285,10 @@ class List (object):
         del msg[header]
 
     def send(self, msg, mod_approved=False):
-        from_address = address_from_user(msg_get_header(msg, 'From'))
+        from_user = msg_get_header(msg, 'From')
+        from_name, from_address = parseaddr(from_user)
+        if not from_name:
+            from_name, _ = from_address.split('@', 1)
         if not mod_approved:
             member = self.member_with_address(from_address)
             if member is None and self.reject_from_non_members:
@@ -309,10 +315,26 @@ class List (object):
         self.msg_remove_header(msg, 'Sender')
         msg['Sender'] = Header(self.display_address)
 
+        # Munge the From: header.
+        # While munging the From: header probably technically violates an RFC,
+        # it does appear to be the current best practice for MLMs:
+        # https://dmarc.org/supplemental/mailman-project-mlm-dmarc-reqs.html
+        self.msg_remove_header(msg, 'From')
+        list_name = self.name
+        if not list_name:
+            list_name = self.address
+        msg['From'] = formataddr((
+                '{} (via {})'.format(from_name, list_name),
+                self.munged_from(from_address),
+                ))
+
         # See if replies should default to the list.
+        self.msg_remove_header(msg, 'Reply-to')
         if self.reply_to_list:
-            self.msg_remove_header(msg, 'Reply-to')
             msg['Reply-to'] = Header(self.display_address)
+            msg['CC'] = Header(from_user)
+        else:
+            msg['Reply-to'] = Header(from_user)
 
         # See if the list has a subject tag.
         if self.subject_tag:
