@@ -274,6 +274,13 @@ class List (object):
     def verp_address(self, address):
         return self.list_address_with_tags(address, 'bounce')
 
+    @staticmethod
+    def msg_remove_header(msg, header):
+        old_value = msg.get(header)
+        if old_value:
+            msg['X-Original-' + header] = old_value
+        del msg[header]
+
     def send(self, msg, mod_approved=False):
         from_address = address_from_user(msg_get_header(msg, 'From'))
         if not mod_approved:
@@ -293,18 +300,18 @@ class List (object):
                 return
 
         # Strip out any exising DKIM signature.
-        del msg['DKIM-Signature']
+        self.msg_remove_header(msg, 'DKIM-Signature')
 
         # Strip out any existing return path.
-        del msg['Return-path']
+        self.msg_remove_header(msg, 'Return-path')
 
         # Make the list be the sender of the email.
-        del msg['Sender']
+        self.msg_remove_header(msg, 'Sender')
         msg['Sender'] = Header(self.display_address)
 
         # See if replies should default to the list.
         if self.reply_to_list:
-            del msg['Reply-to']
+            self.msg_remove_header(msg, 'Reply-to')
             msg['Reply-to'] = Header(self.display_address)
 
         # See if the list has a subject tag.
@@ -312,7 +319,7 @@ class List (object):
             prefix = u'[{}] '.format(self.subject_tag)
             subject = msg_get_header(msg, 'Subject')
             if prefix not in subject:
-                del msg['Subject']
+                self.msg_remove_header(msg, 'Subject')
                 msg['Subject'] = Header(u'{}{}'.format(prefix, subject))
 
         # TODO: body footer
