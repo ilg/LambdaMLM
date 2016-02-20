@@ -37,7 +37,7 @@ A single command is sent as the subject of an email to `lambda@[domain]` where `
 
 ### Top-level properties
 
-- `members` The list of members.
+- `members` The list of members.  (Note: this property cannot be directly modified by email command.)
 - `name` The descriptive human-readable name of the list.
 - `subject-tag` The tag to prepend to the subject.
 - `bounce-limit` The number of bounces a member is allowed before they no longer receives list emails (defaults to 5).
@@ -46,6 +46,7 @@ A single command is sent as the subject of an email to `lambda@[domain]` where `
 - `closed-unsubscription` Whether the list prevents members from unsubscribing themselves (defaults to `false`).
 - `moderated` Whether posts to the list are, by default, moderated (defaults to `false`).
 - `reject-from-non-members` Whether messages from non-list-members are rejected (versus being moderated; defaults to `false`).
+- `cc-lists` A list of other list addresses to which to send copies of any messages sent to this list.  (Note: for security/anti-spam reasons, this property cannot be modified by email command; it must be set manually in the configuration file.)
 
 #### Members
 

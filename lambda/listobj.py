@@ -42,9 +42,11 @@ list_properties = [
         'closed-unsubscription',
         'moderated',
         'reject-from-non-members',
+        'cc-lists',
         ]
 list_properties_protected = [
         'members',
+        'cc-lists',
         ]
 
 default_bounce_limit = 5
@@ -249,6 +251,11 @@ class List (ListMemberContainer):
                 self.moderate(msg)
                 return
 
+        # Send to CC lists.
+        print('self.cc_lists: {}; self._config: {}'.format(self.cc_lists, self._config))
+        for cc_list in List.lists_for_addresses(self.cc_lists):
+            cc_list.send(msg, mod_approved=True)
+
         # Strip out any exising DKIM signature.
         self.msg_replace_header(msg, 'DKIM-Signature')
 
@@ -375,11 +382,14 @@ class List (ListMemberContainer):
 
     @classmethod
     def lists_for_addresses(cls, addresses):
-        for a in addresses:
-            try:
-                yield cls(a)
-            except ValueError:
-                continue
+        try:
+            for a in addresses:
+                try:
+                    yield cls(a)
+                except ValueError:
+                    continue
+        except TypeError:
+            return
 
     @classmethod
     def handle_bounce_to(cls, bounce_address, msg):
