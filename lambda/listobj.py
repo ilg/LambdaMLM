@@ -24,6 +24,7 @@ from email.mime.text import MIMEText
 from sestools import msg_get_header
 
 import config
+import templates
 from list_member import ListMember, MemberFlag
 from list_member_container import ListMemberContainer
 from list_exceptions import (
@@ -334,21 +335,14 @@ class List (ListMemberContainer):
             message['Subject'] = 'Message to {} needs approval: {}'.format(self.address, approve_cmd)
             message['From'] = control_address
             message['To'] = moderator
-            message.attach(MIMEText(
-                '''The included message needs moderator approval to be posted to {}.
-
-To approve this message, reply to this email or send an email to {} with subject:
-
-        {}
-
-To reject this message, send an email to {} with subject:
-
-        {}
-
-If no action has been taken in {} days, the message will be automatically rejected.
-
-'''.format(self.address, control_address, approve_cmd, control_address, reject_cmd, mod_interval.days)
-                ))
+            message.attach(MIMEText(templates.render(
+                'notify_moderators.jinja2',
+                list_name=self.address,
+                control_address=control_address,
+                approve_command=approve_cmd,
+                reject_command=reject_cmd,
+                moderation_days=mod_interval.days
+                )))
             message.attach(forward_mime)
             ses.send_raw_email(
                     Source=control_address,
