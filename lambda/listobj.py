@@ -17,6 +17,7 @@ from botocore.exceptions import ClientError
 
 import email
 from email.header import Header
+from email.utils import parseaddr, formataddr
 from email.mime.multipart import MIMEMultipart
 from email.mime.message import MIMEMessage
 from email.mime.text import MIMEText
@@ -24,22 +25,6 @@ from sestools import msg_get_header
 
 import config
 from list_member import ListMember, MemberFlag
-
-if hasattr(config, 'smtp_server'):
-    import smtplib
-    smtp = smtplib.SMTP_SSL(config.smtp_server)
-    if hasattr(config, 'smtp_user') and hasattr(config, 'smtp_password'):
-        smtp.login(config.smtp_user, config.smtp_password)
-    def send(source, destinations, message):
-        smtp.sendmail(source, destinations, message.as_string())
-else:
-    # Sending using SES doesn't seem to work because of validation issues...
-    def send(source, destinations, message):
-        ses.send_raw_email(
-                Source=source,
-                Destinations=destinations,
-                RawMessage={ 'Data': message.as_string(), },
-                )
 
 list_properties = [
         'name',
@@ -83,7 +68,6 @@ class ModeratedMessageNotFound(Exception):
     pass
 
 def address_from_user(user):
-    from email.utils import parseaddr
     _, address = parseaddr(user)
     return address.lower()
 
@@ -274,8 +258,24 @@ class List (object):
     def verp_address(self, address):
         return self.list_address_with_tags(address, 'bounce')
 
+    def munged_from(self, address):
+        return self.list_address_with_tags(address, 'from')
+
+    @staticmethod
+    def msg_replace_header(msg, header, new_value=None):
+        old_value = msg.get(header)
+        if old_value:
+            msg['X-Original-' + header] = old_value
+        del msg[header]
+        if new_value:
+            msg[header] = new_value
+
     def send(self, msg, mod_approved=False):
-        from_address = address_from_user(msg_get_header(msg, 'From'))
+        from_user = msg_get_header(msg, 'From')
+        from_name, from_address = parseaddr(from_user)
+        from_address = from_address.lower()
+        if not from_name:
+            from_name, _ = from_address.split('@', 1)
         if not mod_approved:
             member = self.member_with_address(from_address)
             if member is None and self.reject_from_non_members:
@@ -293,27 +293,43 @@ class List (object):
                 return
 
         # Strip out any exising DKIM signature.
-        del msg['DKIM-Signature']
+        self.msg_replace_header(msg, 'DKIM-Signature')
 
         # Strip out any existing return path.
-        del msg['Return-path']
+        self.msg_replace_header(msg, 'Return-path')
 
         # Make the list be the sender of the email.
-        del msg['Sender']
-        msg['Sender'] = Header(self.display_address)
+        self.msg_replace_header(msg, 'Sender', Header(self.display_address))
+
+        # Munge the From: header.
+        # While munging the From: header probably technically violates an RFC,
+        # it does appear to be the current best practice for MLMs:
+        # https://dmarc.org/supplemental/mailman-project-mlm-dmarc-reqs.html
+        list_name = self.name
+        if not list_name:
+            list_name = self.address
+        self.msg_replace_header(
+                msg,
+                'From',
+                formataddr((
+                    '{} (via {})'.format(from_name, list_name),
+                    self.munged_from(from_address),
+                    )),
+                )
 
         # See if replies should default to the list.
         if self.reply_to_list:
-            del msg['Reply-to']
-            msg['Reply-to'] = Header(self.display_address)
+            self.msg_replace_header(msg, 'Reply-to', Header(self.display_address))
+            msg['CC'] = Header(from_user)
+        else:
+            self.msg_replace_header(msg, 'Reply-to', Header(from_user))
 
         # See if the list has a subject tag.
         if self.subject_tag:
             prefix = u'[{}] '.format(self.subject_tag)
             subject = msg_get_header(msg, 'Subject')
             if prefix not in subject:
-                del msg['Subject']
-                msg['Subject'] = Header(u'{}{}'.format(prefix, subject))
+                self.msg_replace_header(msg, 'Subject', Header(u'{}{}'.format(prefix, subject)))
 
         # TODO: body footer
         for recipient in self.addresses_to_receive_from(from_address):
@@ -322,7 +338,11 @@ class List (object):
             if not mod_approved:
                 # Suppress printing when mod-approved, because the output will go to the moderator approving it.
                 print('> Sending to {}.'.format(recipient))
-            send(return_path, [ recipient, ], msg)
+            ses.send_raw_email(
+                    Source=return_path,
+                    Destinations=[ recipient, ],
+                    RawMessage={ 'Data': msg.as_string(), },
+                    )
             
     def moderate(self, msg):
         # For some reason, this import doesn't work at the file level.
