@@ -1,4 +1,5 @@
 click==6.2
 enum34==1.1.2
+Jinja2==2.8
 PyYAML==3.11
 wheel==0.26.0
