@@ -6,6 +6,23 @@ from control import handle_command
 from listobj import List
 
 def lambda_handler(event, context):
+    if 'Records' not in event:
+        # API
+        if 'list' not in event or 'server' not in event:
+            print('list and server path parameters are required.')
+            return None
+        l = List(username=event['list'], host=event['server'])
+        if not l:
+            print('List {}@{} not found.'.format(event['list'], event['server']))
+            return None
+        if 'member' not in event:
+            print('member path parameter is required.')
+            return None
+        m = l.member_with_address(event['member'])
+        if not m:
+            print('member {} not found.'.format(event['member']))
+            return None
+        return m
     with email_message_for_event(event) as msg:
         # If it's a command, handle it as such.
         command_address = event_msg_is_to_command(event, msg)
