@@ -25,6 +25,11 @@ from sestools import msg_get_header
 
 import config
 from list_member import ListMember, MemberFlag
+from list_member_container import ListMemberContainer
+from list_exceptions import (
+        AlreadySubscribed, ClosedSubscription, ClosedUnsubscription,
+        NotSubscribed, UnknownFlag, UnknownOption, ModeratedMessageNotFound,
+        InsufficientPermissions)
 
 list_properties = [
         'name',
@@ -43,35 +48,11 @@ list_properties_protected = [
 
 default_bounce_limit = 5
 
-class InsufficientPermissions(Exception):
-    pass
-
-class AlreadySubscribed(Exception):
-    pass
-
-class NotSubscribed(Exception):
-    pass
-
-class ClosedSubscription(Exception):
-    pass
-
-class ClosedUnsubscription(Exception):
-    pass
-
-class UnknownFlag(Exception):
-    pass
-
-class UnknownOption(Exception):
-    pass
-
-class ModeratedMessageNotFound(Exception):
-    pass
-
 def address_from_user(user):
     _, address = parseaddr(user)
     return address.lower()
 
-class List (object):
+class List (ListMemberContainer):
     def __init__(self, address=None, username=None, host=None):
         if address is None:
             if username is None or host is None:
@@ -119,31 +100,6 @@ class List (object):
                 Key=self._s3_key,
                 Body=yaml.safe_dump(self._config, default_flow_style=False, allow_unicode=True),
                 )
-
-    @property
-    def moderator_addresses(self):
-        return [
-                m.address
-                for m in self.members
-                if MemberFlag.moderator in m.flags
-                ]
-
-    def member_passing_test(self, test):
-        return next(( m for m in self.members if test(m) ), None)
-
-    def member_with_address(self, address):
-        return self.member_passing_test(lambda m: m.address == address)
-
-    def address_will_modify_address(self, from_address, target_address):
-        if from_address != target_address:
-            from_member = self.member_with_address(from_address)
-            # Only admin members can modify other members.
-            if MemberFlag.admin not in from_member.flags:
-                raise InsufficientPermissions
-            target_member = self.member_with_address(target_address)
-            # Only superAdmin members can modify admin members.
-            if target_member and MemberFlag.admin in target_member.flags and MemberFlag.superAdmin not in from_member.flags:
-                raise InsufficientPermissions
 
     def user_subscribe_user(self, from_user, target_user):
         from_address = address_from_user(from_user)
