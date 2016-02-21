@@ -22,6 +22,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.message import MIMEMessage
 from email.mime.text import MIMEText
 from sestools import msg_get_header
+from email_utils import detect_bounce, ResponseType
 
 import config
 import templates
@@ -406,6 +407,11 @@ class List (ListMemberContainer):
         member = l.member_passing_test(lambda m: l.verp_address(m.address) == bounce_address)
         if not member:
             print('No member found matching the bounce address.')
+            return
+        response_type = detect_bounce(msg)
+        member.add_response(response_type)
+        if response_type == ResponseType.unknown:
+            print('Probably not a bounce.  (Maybe an auto-reply?)')
             return
         member.bounce_count += 1
         print('Incremented bounce count for {} to {}.'.format(member.address, member.bounce_count))

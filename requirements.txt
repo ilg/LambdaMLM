@@ -3,3 +3,4 @@ enum34==1.1.2
 Jinja2==2.8
 PyYAML==3.11
 wheel==0.26.0
+git+https://github.com/ilg/lamson-bsd.git#egg=lamson

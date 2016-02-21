@@ -54,3 +54,9 @@ class ListMember(yaml.YAMLObject):
                         self.flags)
                     ),
                 )
+    def add_response(self, response_type):
+        from datetime import datetime
+        try:
+            self.bounces[datetime.now()] = response_type
+        except AttributeError:
+            self.bounces = { datetime.now(): response_type, }
