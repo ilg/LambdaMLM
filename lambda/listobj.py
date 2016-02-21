@@ -252,7 +252,6 @@ class List (ListMemberContainer):
                 return
 
         # Send to CC lists.
-        print('self.cc_lists: {}; self._config: {}'.format(self.cc_lists, self._config))
         for cc_list in List.lists_for_addresses(self.cc_lists):
             cc_list.send(msg, mod_approved=True)
 
