@@ -1,7 +1,11 @@
 from __future__ import print_function
 import yaml
+from itertools import groupby
+from math import pow
 
 from yaml_enum import YAMLEnum
+
+from email_utils import ResponseType
 
 MemberFlag = YAMLEnum('MemberFlag', u'!flag', [
     #'digest',
@@ -21,6 +25,7 @@ MemberFlag = YAMLEnum('MemberFlag', u'!flag', [
     #'ackPost',
     'echoPost',
     #'hidden',
+    'bouncing',
     ])
 
 MemberFlag.userlevel_flags = classmethod(
@@ -54,9 +59,34 @@ class ListMember(yaml.YAMLObject):
                         self.flags)
                     ),
                 )
+    def can_receive_from(self, from_address):
+        return (
+                MemberFlag.vacation not in self.flags
+                and MemberFlag.bouncing not in self.flags
+                and (
+                    MemberFlag.echoPost in self.flags
+                    or from_address != self.address
+                    )
+                )
     def add_response(self, response_type):
         from datetime import datetime
         try:
             self.bounces[datetime.now()] = response_type
         except AttributeError:
             self.bounces = { datetime.now(): response_type, }
+    def bounce_score(self, weights, decay):
+        try:
+            bounces = {}
+            from datetime import date
+            today = date.today()
+            return sum(
+                    (pow(decay, (today - day).days)
+                        * max(weights[bounce[1]] for bounce in day_bounces))
+                    for day, day_bounces
+                    in groupby(
+                        sorted(self.bounces.iteritems()),
+                        lambda bounce: bounce[0].date()
+                        )
+                    )
+        except AttributeError:
+            return 0

@@ -22,7 +22,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.message import MIMEMessage
 from email.mime.text import MIMEText
 from sestools import msg_get_header
-from email_utils import detect_bounce, ResponseType
+from email_utils import detect_bounce, bounce_defaults
 
 import config
 import templates
@@ -37,7 +37,9 @@ list_properties = [
         'name',
         'members',
         'subject-tag',
-        'bounce-limit',
+        'bounce-score-threshold',
+        'bounce-weights',
+        'bounce-decay-factor',
         'reply-to-list',
         'open-subscription',
         'closed-unsubscription',
@@ -49,8 +51,6 @@ list_properties_protected = [
         'members',
         'cc-lists',
         ]
-
-default_bounce_limit = 5
 
 def address_from_user(user):
     _, address = parseaddr(user)
@@ -81,9 +81,13 @@ class List (ListMemberContainer):
             self.display_address = u'{} <{}>'.format(self.name, self.address)
         else:
             self.display_address = self.address
-        # Default bounce limit.
-        if not self.bounce_limit:
-            self.bounce_limit = default_bounce_limit
+        # Default bounce scoring constants
+        if not self.bounce_score_threshold:
+            self.bounce_score_threshold = getattr(config, 'bounce_score_threshold', bounce_defaults.bounce_score_threshold)
+        if not self.bounce_weights:
+            self.bounce_weights = getattr(config, 'bounce_weights', bounce_defaults.bounce_weights)
+        if not self.bounce_decay_factor:
+            self.bounce_decay_factor = getattr(config, 'bounce_decay_factor', bounce_defaults.bounce_decay_factor)
 
     def __getattr__(self, name):
         prop = name.replace('_', '-')
@@ -201,14 +205,7 @@ class List (ListMemberContainer):
         return [
                 m.address
                 for m in self.members
-                if (
-                    MemberFlag.vacation not in m.flags
-                    and (
-                        MemberFlag.echoPost in m.flags
-                        or from_address != m.address
-                        )
-                    and m.bounce_count <= self.bounce_limit
-                    )
+                if m.can_receive_from(from_address)
                 ]
 
     def list_address_with_tags(self, *tags):
@@ -408,13 +405,12 @@ class List (ListMemberContainer):
         if not member:
             print('No member found matching the bounce address.')
             return
-        response_type = detect_bounce(msg)
-        member.add_response(response_type)
-        if response_type == ResponseType.unknown:
-            print('Probably not a bounce.  (Maybe an auto-reply?)')
-            return
-        member.bounce_count += 1
-        print('Incremented bounce count for {} to {}.'.format(member.address, member.bounce_count))
+        member.add_response(detect_bounce(msg))
+        score = member.bounce_score(weights=l.bounce_weights, decay=l.bounce_decay_factor)
+        print('New bounce score for {} is {}.'.format(member.address, score))
+        if score > l.bounce_score_threshold:
+            print('Score exceeds bounce score threshold, so flagging the member as bouncing.')
+            member.flags.add(MemberFlag.bouncing)
         l._save()
-        # TODO: send email to member and/or admin(s) noting that the bounce limit has been reached?
+        # TODO: send email to member and/or admin(s) noting that the bounce threshold has been reached?
         
