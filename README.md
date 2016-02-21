@@ -6,7 +6,7 @@ A mailing list manager (MLM or email discussion list software) that runs on AWS 
 
 Planned enhancements, bugs, and known limitations are tracked in [GitHub Issues](https://github.com/ilg/LambdaMLM/issues).
 
-Setup requires familiarity with AWS—in particular, having credentials already set up locally and having familiarity with IAM and Lambda will help.  A rough outline of how to set up LambdaMLM is [here](#setup).
+Setup requires familiarity with AWS—in particular, having credentials already set up locally and having familiarity with IAM and Lambda will help.  A rough outline of how to set up LambdaMLM is [here](docs/setup.md).
 
 ## [Documentation](docs/)
 
