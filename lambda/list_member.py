@@ -1,9 +1,9 @@
 from __future__ import print_function
-from enum import IntEnum
-
 import yaml
 
-MemberFlag = IntEnum('MemberFlag', [
+from yaml_enum import YAMLEnum
+
+MemberFlag = YAMLEnum('MemberFlag', u'!flag', [
     #'digest',
     #'digest2',
     'modPost',
@@ -28,15 +28,6 @@ MemberFlag.userlevel_flags = classmethod(
             cls.vacation, 
             cls.echoPost,
             ]
-        )
-
-yaml.SafeDumper.add_representer(
-        MemberFlag,
-        lambda dumper, data: dumper.represent_scalar(u'!flag', data.name)
-        )
-yaml.SafeLoader.add_constructor(
-        u'!flag',
-        lambda loader, node: MemberFlag[loader.construct_scalar(node)]
         )
 
 class ListMember(yaml.YAMLObject):
