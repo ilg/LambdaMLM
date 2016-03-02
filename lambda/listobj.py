@@ -31,7 +31,7 @@ from list_member_container import ListMemberContainer
 from list_exceptions import (
         AlreadySubscribed, ClosedSubscription, ClosedUnsubscription,
         NotSubscribed, UnknownFlag, UnknownOption, ModeratedMessageNotFound,
-        InsufficientPermissions)
+        InsufficientPermissions, UnknownList)
 
 list_properties = [
         'name',
@@ -76,7 +76,10 @@ class List (ListMemberContainer):
             raise ValueError('Invalid list host.')
         self._s3_key = '{}{}/{}.yaml'.format(config.s3_configuration_prefix, self.host, self.username)
         self._s3_moderation_prefix = '{}{}/{}/'.format(config.s3_moderation_prefix, self.host, self.username)
-        config_response = s3.get_object(Bucket=config.s3_bucket, Key=self._s3_key)
+        try:
+            config_response = s3.get_object(Bucket=config.s3_bucket, Key=self._s3_key)
+        except ClientError:
+            raise UnknownList
         self._config = yaml.safe_load(config_response['Body'])
         if self.name:
             self.display_address = u'{} <{}>'.format(self.name, self.address)
