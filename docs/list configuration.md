@@ -15,6 +15,7 @@ List configuration is stored in a [YAML](http://yaml.org/) file on S3.  The conf
 - `closed-unsubscription` Whether the list prevents members from unsubscribing themselves (defaults to `false`).
 - `moderated` Whether posts to the list are, by default, moderated (defaults to `false`).
 - `reject-from-non-members` Whether messages from non-list-members are rejected (versus being moderated; defaults to `false`).
+- `allow-from-non-members` Whether messages from non-list-members are allowed (versus being moderated; defaults to `false`).  If `reject-from-non-members` is present, this is ignored.
 - `cc-lists` A list of other list addresses to which to send copies of any messages sent to this list.  (Note: for security/anti-spam reasons, this property cannot be modified by email command; it must be set manually in the configuration file.)
 
 ### Members
@@ -27,7 +28,7 @@ List configuration is stored in a [YAML](http://yaml.org/) file on S3.  The conf
 
 - `modPost` Posts from the member are moderated, regardless of list settings.
 - `preapprove` Posts from the member are automatically approved (not moderated, regardless of list settings).
-- `noPost` The member cannot post to the list.
+- `noPost` The member cannot post to the list.  This overrides `modPost`.
 - `moderator` The member is a list moderator.
 - `admin` The member is a list administrator.
 - `superAdmin` The member is a super-administrator.

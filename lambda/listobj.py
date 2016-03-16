@@ -45,6 +45,7 @@ list_properties = [
         'closed-unsubscription',
         'moderated',
         'reject-from-non-members',
+        'allow-from-non-members',
         'cc-lists',
         ]
 list_properties_protected = [
@@ -241,11 +242,18 @@ class List (ListMemberContainer):
             if member and MemberFlag.noPost in member.flags:
                 print('{} cannot send email to {} (noPost is set).'.format(from_address, self.address))
                 return
-            if (member is None
-                    or MemberFlag.modPost in member.flags
-                    or (self.moderated and MemberFlag.preapprove not in member.flags)
-                    ):
-                print('Moderating message.')
+            if member is None and not self.allow_from_non_members:
+                print('Moderating message from non-member.')
+                self.moderate(msg)
+                return
+            if member and MemberFlag.modPost in member.flags:
+                print('Moderating message because member has modPost set.')
+                self.moderate(msg)
+                return
+            if self.moderated and (
+                    member is None
+                    or MemberFlag.preapprove not in member.flags):
+                print('Moderating message because list is moderated and message is not from a member with preapprove set.')
                 self.moderate(msg)
                 return
 
