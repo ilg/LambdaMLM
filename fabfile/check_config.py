@@ -4,7 +4,7 @@
 import imp
 import os
 
-from fabric.api import task
+from fabric.api import task, lcd, local
 from fabric.utils import puts, error
 
 from .paths import codedir
