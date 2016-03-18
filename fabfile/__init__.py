@@ -4,7 +4,7 @@
 from fabric.api import lcd, local, task
 
 from .check_config import check_config
-from .aws_lambda import create_lambda_if_needed, update_lambda
+from .aws_lambda import create_lambda, update_lambda
 
 from .paths import basepath
 

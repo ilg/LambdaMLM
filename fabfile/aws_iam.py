@@ -10,6 +10,8 @@ from botocore.exceptions import ClientError
 
 from .check_config import check_config
 
+__all__ = []
+
 iam = boto3.resource('iam')
 
 def create_iam_role_if_needed(config=None):

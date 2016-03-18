@@ -12,6 +12,7 @@ from botocore.exceptions import ClientError
 
 from .check_config import check_config
 from .aws_iam import create_iam_role_if_needed
+from .aws_s3 import create_s3_bucket_if_needed
 from .paths import zipfile, codedir, libdir
 
 __all__ = []
@@ -40,8 +41,9 @@ def update_lambda():
     remove_zip()
 
 @task
-def create_lambda_if_needed():
+def create_lambda():
     config = check_config()
+    create_s3_bucket_if_needed(config)
     client = get_lambda_client(config)
     role = create_iam_role_if_needed(config=config)
     try:
