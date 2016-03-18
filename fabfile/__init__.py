@@ -13,9 +13,6 @@ from fabric.utils import puts, error
 import boto3
 from botocore.exceptions import ClientError
 
-FunctionName = 'LambdaMLM'
-RoleName = 'LambdaMLM'
-
 client = boto3.client('lambda', region_name='us-west-2')
 iam = boto3.resource('iam')
 
@@ -34,11 +31,12 @@ def remove_zip():
     local('rm "{zipfile}"'.format(zipfile=zipfile))
 
 def update_lambda():
+    config = check_config()
     make_zip()
     with open(zipfile) as z:
         pp.pprint(client.update_function_code(
             ZipFile=z.read(),
-            FunctionName=FunctionName,
+            FunctionName=config.lambda_name,
             ))
     remove_zip()
 
@@ -68,15 +66,16 @@ def check_config():
     puts('Your config.py appears to be set up.')
     return config
 
-def create_iam_role_if_needed():
-    config = check_config()
+def create_iam_role_if_needed(config=None):
+    if not config:
+        config = check_config()
     try:
-        role = iam.Role(RoleName)
+        role = iam.Role(config.iam_role_name)
         puts('IAM role already exists (created {}).'.format(role.create_date.isoformat()))
     except ClientError:
         puts('Creating IAM role...')
         role = iam.create_role(
-                RoleName=RoleName,
+                RoleName=config.iam_role_name,
                 AssumeRolePolicyDocument='''{
                       "Version": "2012-10-17",
                       "Statement": [
@@ -91,7 +90,7 @@ def create_iam_role_if_needed():
                     }''',
                 )
     puts('Creating/updating role policy...')
-    role_policy = role.Policy(RoleName)
+    role_policy = role.Policy(config.iam_role_name)
     role_policy.put(
             PolicyDocument=json.dumps({
                 "Version": "2012-10-17",
@@ -141,9 +140,10 @@ def create_iam_role_if_needed():
     return role
 
 def create_lambda_if_needed():
-    role = create_iam_role_if_needed()
+    config = check_config()
+    role = create_iam_role_if_needed(config=config)
     try:
-        fn = client.get_function(FunctionName=FunctionName)
+        fn = client.get_function(FunctionName=config.lambda_name)
         puts('Lambda function already exists (last modified {}).'.format(fn.get('Configuration', {}).get('LastModified')))
     except ClientError as e:
         if e.response['Error']['Code'] != 'ResourceNotFoundException':
@@ -151,7 +151,7 @@ def create_lambda_if_needed():
         make_zip()
         with open(zipfile) as z:
             client.create_function(
-                    FunctionName=FunctionName,
+                    FunctionName=config.lambda_name,
                     Runtime='python2.7',
                     Role=role.arn,
                     Handler='lambda.lambda_handler',

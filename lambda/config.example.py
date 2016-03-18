@@ -5,6 +5,12 @@
 # The user part of the email address at which commands are to be received.
 command_user = 'lambda'
 
+# The name to use for the Lambda function.
+lambda_name = 'LambdaMLM'
+
+# The name to use for the IAM role under which the Lambda function executes.
+iam_role_name = 'LambdaMLM'
+
 # The S3 bucket to use for configuration, incoming SES emails, and moderated emails.
 s3_bucket = 'lambdamlm'
 
