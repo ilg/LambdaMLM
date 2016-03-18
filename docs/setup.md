@@ -24,50 +24,52 @@ The `fab create_lambda` command:
 - does a quick check of your `config.py` file
 - creates the S3 bucket in the specified region.
 - creates an IAM role with the name defined in `config.py` and with policy (where `[s3_bucket]` is the bucket name defined in `config.py`):
-		```json
-		{
-		    "Version": "2012-10-17",
-		    "Statement": [
-		        {
-		            "Effect": "Allow",
-		            "Action": [
-		                "logs:CreateLogGroup",
-		                "logs:CreateLogStream",
-		                "logs:PutLogEvents"
-		            ],
-		            "Resource": "arn:aws:logs:*:*:*"
-		        },
-		        {
-		            "Effect": "Allow",
-		            "Action": [
-		                "s3:GetLifecycleConfiguration"
-		            ],
-		            "Resource": [
-		                "arn:aws:s3:::[s3_bucket]"
-		            ]
-		        },
-		        {
-		            "Effect": "Allow",
-		            "Action": [
-		                "s3:PutObject",
-		                "s3:GetObject",
-		                "s3:DeleteObject"
-		            ],
-		            "Resource": [
-		                "arn:aws:s3:::[s3_bucket]/*"
-		            ]
-		        },
-		        {
-		            "Effect": "Allow",
-		            "Action": [
-		                "SES:SendEmail",
-		                "SES:SendRawEmail"
-		            ],
-		            "Resource": [
-		                "arn:aws:ses:*:*:identity/*"
-		            ]
-		        }
-		    ]
-		}
-		```
+    
+    ```json
+	{
+	    "Version": "2012-10-17",
+	    "Statement": [
+	        {
+	            "Effect": "Allow",
+	            "Action": [
+	                "logs:CreateLogGroup",
+	                "logs:CreateLogStream",
+	                "logs:PutLogEvents"
+	            ],
+	            "Resource": "arn:aws:logs:*:*:*"
+	        },
+	        {
+	            "Effect": "Allow",
+	            "Action": [
+	                "s3:GetLifecycleConfiguration"
+	            ],
+	            "Resource": [
+	                "arn:aws:s3:::[s3_bucket]"
+	            ]
+	        },
+	        {
+	            "Effect": "Allow",
+	            "Action": [
+	                "s3:PutObject",
+	                "s3:GetObject",
+	                "s3:DeleteObject"
+	            ],
+	            "Resource": [
+	                "arn:aws:s3:::[s3_bucket]/*"
+	            ]
+	        },
+	        {
+	            "Effect": "Allow",
+	            "Action": [
+	                "SES:SendEmail",
+	                "SES:SendRawEmail"
+	            ],
+	            "Resource": [
+	                "arn:aws:ses:*:*:identity/*"
+	            ]
+	        }
+	    ]
+	}
+	```
+	
 - creates a Lambda function with name defined in `config.py` using the Python 2.7 runtime, with the handler and role set appropriately
