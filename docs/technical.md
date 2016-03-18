@@ -18,7 +18,7 @@ Bounce handling is loosely based on [`mailman`'s bounce processing](http://www.g
 
 A list member's bounce score is determined by taking the highest-scoring event for each calendar day, decaying events in the past by a factor for each day past, and totalling the day scores.  For example:
 
-- Let hard and soft bounces have weights 1.0 and 0.5, respectively,.
+- Let hard and soft bounces have weights 1.0 and 0.5, respectively.
 - Let the decay factor be 0.8.
 - Suppose a user had:
 	- a hard bounce and a soft bounce today
