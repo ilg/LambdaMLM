@@ -22,7 +22,7 @@ def get_lambda_client(config):
 
 def make_zip():
     with lcd(codedir):
-        local('zip --recurse-paths "{zipfile}" * --exclude "*.pyc"'.format(zipfile=zipfile))
+        local('zip --recurse-paths "{zipfile}" * --exclude "*.pyc" "config.*.py"'.format(zipfile=zipfile))
     with lcd(libdir):
         local('zip --recurse-paths "{zipfile}" * --exclude "*.pyc" "boto*" "pip*" "docutils*" "setuptools*" "wheel*" "pkg_resources*" "*.dist-info/*"'.format(zipfile=zipfile))
 
@@ -30,8 +30,8 @@ def remove_zip():
     local('rm "{zipfile}"'.format(zipfile=zipfile))
 
 @task
-def update_lambda():
-    config = check_config()
+def update_lambda(use_config=None):
+    config = check_config(use_config)
     make_zip()
     with open(zipfile) as z:
         pp.pprint(get_lambda_client(config).update_function_code(
@@ -41,8 +41,8 @@ def update_lambda():
     remove_zip()
 
 @task
-def create_lambda():
-    config = check_config()
+def create_lambda(use_config=None):
+    config = check_config(use_config)
     create_s3_bucket_if_needed(config)
     client = get_lambda_client(config)
     role = create_iam_role_if_needed(config=config)

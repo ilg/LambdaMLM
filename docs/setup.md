@@ -4,7 +4,8 @@ The included `fabfile` can faciliate setting up LambdaMLM.
 
 1. Need [pip](https://pip.pypa.io/), [Virtualenv](https://virtualenv.pypa.io/), and [Fabric](http://fabfile.org/) installed.
 2. Clone this repo.
-3. Copy [`config.example.py`](../lambda/config.example.py) to `config.py` and edit/fill in the appropriate values.  In particular, your S3 bucket name must be globally unique, not just unique within your account.
+3. Copy [`config.example.py`](../lambda/config.example.py) to `config.py` and edit/fill in the appropriate values.  In particular, your S3 bucket name must be globally unique, not just unique within your account.  
+  _Note:_ If you're planning to use multiple configurations, you can keep each configuration in a file named `config.somename.py` and pass `somename` as a parameter to the `fab` commands `create_lambda:somename` and `update_lambda:somename`.  The specific `somename` configuration will be copied over `config.py` before the rest of the `fab` command runs.
 4. In the directory, run `fab setup_virtualenv` to set up the virtual environment for LambdaMLM and install required dependencies.
 5. Run `fab create_lambda` to create the S3 bucket, an IAM role under which LambdaMLM will run (with an appropriate policy), and the lambda function itself.
 6. In SES, in the region defined as `lambda_region` in `config.py`:

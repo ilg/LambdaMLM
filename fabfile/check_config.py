@@ -10,7 +10,10 @@ from fabric.utils import puts, error
 from .paths import codedir
 
 @task
-def check_config():
+def check_config(use_config=None):
+    if use_config:
+        with lcd(codedir):
+            local('cp config.{}.py config.py'.format(use_config))
     try:
         config = imp.load_source('config', os.path.join(codedir, 'config.py'))
     except IOError:
