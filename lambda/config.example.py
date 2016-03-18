@@ -5,6 +5,9 @@
 # The user part of the email address at which commands are to be received.
 command_user = 'lambda'
 
+# The region in which to create the lambda.
+lambda_region = 'us-west-2'
+
 # The name to use for the Lambda function.
 lambda_name = 'LambdaMLM'
 

@@ -13,13 +13,15 @@ from fabric.utils import puts, error
 import boto3
 from botocore.exceptions import ClientError
 
-client = boto3.client('lambda', region_name='us-west-2')
 iam = boto3.resource('iam')
 
 basepath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 codedir = os.path.join(basepath, 'lambda')
 libdir = os.path.join(basepath, '.env/lib/python2.7/site-packages')
 zipfile = os.path.join(basepath, 'lambda.zip')
+
+def get_lambda_client(config):
+    return boto3.client('lambda', region_name=config.lambda_region)
 
 def make_zip():
     with lcd(codedir):
@@ -34,7 +36,7 @@ def update_lambda():
     config = check_config()
     make_zip()
     with open(zipfile) as z:
-        pp.pprint(client.update_function_code(
+        pp.pprint(get_lambda_client(config).update_function_code(
             ZipFile=z.read(),
             FunctionName=config.lambda_name,
             ))
@@ -141,6 +143,7 @@ def create_iam_role_if_needed(config=None):
 
 def create_lambda_if_needed():
     config = check_config()
+    client = get_lambda_client(config)
     role = create_iam_role_if_needed(config=config)
     try:
         fn = client.get_function(FunctionName=config.lambda_name)
