@@ -3,71 +3,66 @@ from __future__ import print_function
 from listobj import List, UnknownList
 
 InternalServerError = {
-        'statusCode': 500,
-        'message': 'Internal Server Error',
+        'StatusCode': 500,
+        'Message': 'Internal Server Error',
         }
 
 def NotFound(obj):
         return {
-                'statusCode': 404,
-                'message': '{} not found.'.format(obj),
+                'StatusCode': 404,
+                'Message': '{} not found.'.format(obj),
                 }
 
 def handle_api(event):
-    method = event.get('method')
-    if not method:
+    action = actions.get(event.get('Action'))
+    if not action:
         return InternalServerError
 
-    list_address = event.get('list')
-    member_address = event.get('member')
-
+    list_address = event.get('ListAddress')
     try:
-        l = List(list_address)
+        event['List'] = List(list_address)
     except (UnknownList, TypeError, ValueError):
-        if method == 'POST' and not member_address:
-            # Create a list.
-            return create_list(list_address)
-        return NotFound('List {}'.format(list_address))
+        event['List'] = None
 
-    if member_address:
-        # List Member API Call
-        m = l.member_with_address(member_address)
-        if method == 'POST':
-            if m:
-                return  # TODO: conflict error?
-            return create_member(l, member_address)
-        if method == 'PUT':
-            return update_member(l, m)
-        if method == 'GET':
-            return get_member(l, m)
-        # Unknown method.
-        return InternalServerError
-
-    # List API Call
-    if method == 'POST':
-        return  # TODO: conflict error?
-    if method == 'PUT':
-        return update_list(l)
-    if method == 'GET':
-        return get_list(l)
-    # Unknown method.
-    return InternalServerError
+    event['Member'] = l.member_with_address(event.get('MemberAddress'))
+    return action(**event)
     
-def create_list(list_address):
+actions = dict(
+        CreateList=create_list,
+        UpdateList=update_list,
+        GetList=get_list,
+        CreateMember=create_member,
+        InviteMember=invite_member,
+        UpdateMember=update_member,
+        GetMember=get_member,
+        UnsubscribeMember=unsubscribe_member,
+        DeleteMember=delete_member,
+        )
+
+def create_list(ListAddress, **kwargs):
     pass
 
-def update_list(l):
+def update_list(List, **kwargs):
     pass
 
-def get_list(l):
+def get_list(List, **kwargs):
     pass
 
-def create_member(l, member_address):
+def create_member(List, MemberAddress, **kwargs):
     pass
 
-def update_member(l, m):
+def invite_member(List, MemberAddress, **kwargs):
     pass
 
-def get_member(l, m):
+def update_member(List, Member, **kwargs):
+    pass
+
+def get_member(List, Member, **kwargs):
+    pass
+
+def unsubscribe_member(List, Member, **kwargs):
+    pass
+
+def delete_member(List, Member, **kwargs):
     pass
 
