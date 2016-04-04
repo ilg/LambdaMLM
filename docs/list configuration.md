@@ -46,7 +46,6 @@ members:
 - !Member
   address: user1@example.com
   flags: !!set {}
-  bounce_count: 3
 - !Member
   address: user2@example.com
   flags: !!set
