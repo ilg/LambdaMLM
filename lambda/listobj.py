@@ -117,28 +117,20 @@ class List (ListMemberContainer):
         from_address = address_from_user(from_user)
         target_address = address_from_user(target_user)
         self.address_will_modify_address(from_address, target_address)
-        if self.member_with_address(target_address):
-            # Address is already subscribed.
-            raise AlreadySubscribed
         if from_address == target_address and not self.open_subscription:
             # List doesn't allow self-subscription.
             raise ClosedSubscription
-        self.members.append(ListMember(target_address))
-        # TODO: store human-readable name?
-        self._save()
+        self.add_member(target_address)
 
     def user_unsubscribe_user(self, from_user, target_user):
         from_address = address_from_user(from_user)
         target_address = address_from_user(target_user)
         self.address_will_modify_address(from_address, target_address)
-        member = self.member_with_address(target_address)
-        if not member:
-            raise NotSubscribed
         if from_address == target_address and self.closed_unsubscription:
             # List doesn't allow self-unsubscription.
             raise ClosedUnsubscription
-        self.members.remove(member)
-        self._save()
+        member = self.member_with_address(target_address)
+        self.remove_member(member)
 
     def user_own_flags(self, user):
         address = address_from_user(user)

@@ -1,4 +1,5 @@
 from list_member import ListMember
+from list_exceptions import AlreadySubscribed, NotSubscribed
 
 from decorators import require_list, require_member
 from results import InternalServerError, NotImplemented, NotFound, BadRequest, Success
@@ -16,11 +17,10 @@ def get_list(List, **kwargs):
 
 @require_list
 def create_member(List, MemberAddress, **kwargs):
-    if List.member_with_address(MemberAddress):
-        # Address is already subscribed.
+    try:
+        List.add_member(MemberAddress)
+    except AlreadySubscribed:
         return BadRequest('{} is already subscribed.'.format(MemberAddress))
-    List.members.append(ListMember(MemberAddress))
-    List._save()
     return Success(code=201)
 
 @require_list
@@ -41,11 +41,12 @@ def unsubscribe_member(List, Member, **kwargs):
 
 @require_member
 def delete_member(List, Member, **kwargs):
-    if not Member:
-        # Address isn't subscribed.
-        return NotFound(kwargs.get('MemberAddress', 'Member'))
-    List.members.remove(Member)
-    List._save()
+    try:
+        List.remove_member(Member)
+    except NotSubscribed:
+        # The require_member decorator already checked that the member was
+        # subscribed, so if we got here, something's very broken.
+        return InternalServerError
     return Success(code=204)
 
 actions = dict(
