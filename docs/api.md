@@ -43,6 +43,7 @@ The response will be a JSON object, containing an HTTP status code indicating if
 
 #### `CreateList`
 
+:warning: ***Not yet implemented*** :warning:  
 Create a list with the given address.
 
 #### `UpdateList`
