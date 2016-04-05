@@ -139,7 +139,7 @@ class List (ListMemberContainer):
         if from_address == target_address and not self.open_subscription:
             # List doesn't allow self-subscription.
             raise ClosedSubscription
-        self.add_member(target_address)
+        self.add_member(target_user)
 
     def user_unsubscribe_user(self, from_user, target_user):
         from_address = address_from_user(from_user)
@@ -262,7 +262,7 @@ class List (ListMemberContainer):
         self.accept_invitation(
                 from_user,
                 token,
-                lambda from_address: self.add_member(from_address),
+                lambda from_address: self.add_member(from_user),
                 )
 
     def accept_unsubscription_invitation(self, from_user, token):

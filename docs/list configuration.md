@@ -21,6 +21,7 @@ List configuration is stored in a [YAML](http://yaml.org/) file on S3.  The conf
 ### Members
 
 - `address` The email address of the member.
+- `name` The name of the member.
 - `flags` The flags set for the user.
 - `bounces` A dictionary mapping when bounces were received for the member to the response type of each bounce.  Used to compute a user's bounce score.
 
