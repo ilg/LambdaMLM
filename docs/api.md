@@ -8,11 +8,12 @@ The invocation payload should be a JSON object:
 {
     "Action": "APIMethodName",
     "ListAddress": "some-list@host.example.com",
+    "MemberAddress": "user@example.com",
     …
 }
 ```
 
-The `Action` and `ListAddress` parameters are always required.  Actions that require a list member address are required to provide it as the `MemberAddress` parameter.
+The `Action` and `ListAddress` parameters are always required.  The `MemberAddress` parameter is required for actions that require a list member address.
 
 The response will be a JSON object, containing an HTTP status code indicating if the response succeeded (e.g., 200, 201, 204 for success; 400, 404, 500 for failure).
 
@@ -62,9 +63,24 @@ Invite a member to a list (sends the prospective list member an email to which t
 
 #### `UpdateMember`
 
+Update the configuration data for a list member.  Takes a data structure like the one returned by `GetMember` as the parameter `Data`.
+
 #### `GetMember`
 
-Return the configuration data for a list member.
+Return the configuration data for a list member.  Example:
+
+```json
+{
+  "Data": {
+    "flags": [
+      "moderator",
+      "echoPost"
+    ],
+    "address": "moderator@example.com"
+  },
+  "StatusCode": 200
+}
+```
 
 #### `UnsubscribeMember`
 

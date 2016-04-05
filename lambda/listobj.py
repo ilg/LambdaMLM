@@ -198,6 +198,10 @@ class List (ListMemberContainer):
                 for m in self.members
                 ]
 
+    def update_member_from_dict(self, member, d):
+        member.update_from_dict(d)
+        self._save()
+
     def invite(self, target_address, command, verb):
         command_address = '{}@{}'.format(config.command_user, self.host)
         from datetime import timedelta

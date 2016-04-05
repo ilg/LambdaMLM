@@ -56,6 +56,16 @@ class ListMember(yaml.YAMLObject):
                         self.flags)
                     ),
                 )
+    def dict(self):
+        return {
+                'address': self.address,
+                'flags': [ f.name for f in self.flags ],
+                }
+    def update_from_dict(self, d):
+        if 'address' in d:
+            self.address = d['address']
+        if 'flags' in d:
+            self.flags = set(MemberFlag[f] for f in d['flags'])
     def can_receive_from(self, from_address):
         return (
                 MemberFlag.vacation not in self.flags
@@ -73,7 +83,6 @@ class ListMember(yaml.YAMLObject):
             self.bounces = { datetime.now(): response_type, }
     def bounce_score(self, weights, decay):
         try:
-            bounces = {}
             from datetime import date
             today = date.today()
             return sum(

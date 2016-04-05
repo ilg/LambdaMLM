@@ -32,12 +32,16 @@ def invite_member(List, MemberAddress, **kwargs):
     return Success(code=204)
 
 @require_member
-def update_member(List, Member, **kwargs):
-    return NotImplemented  # TODO: implement
+def update_member(List, Member, Data, **kwargs):
+    try:
+        List.update_member_from_dict(Member, Data)
+    except KeyError:
+        return BadRequest('Invalid data.')
+    return Success(Member.dict())
 
 @require_member
 def get_member(List, Member, **kwargs):
-    return NotImplemented  # TODO: implement
+    return Success(Member.dict())
 
 @require_member
 def unsubscribe_member(List, Member, **kwargs):
