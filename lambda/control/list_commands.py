@@ -75,6 +75,42 @@ def unsubscribe(ctx, address=None):
     except listobj.ClosedUnsubscription:
         click.echo('{} does not allow members to unsubscribe themselves.  Please contact the list administrator to be removed from the list.'.format(ctx.obj.list_address), err=True)
 
+def accept_invitation(ctx, token, action, success_msg):
+    from control import ExpiredSignatureException, InvalidSignatureException
+    try:
+        action(ctx.obj.user, token)
+        click.echo(success_msg)
+    except ExpiredSignatureException:
+        click.echo('The invitation has expired.', err=True)
+    except InvalidSignatureException:
+        click.echo('The invitation is not valid for {}.'.format(ctx.obj.user), err=True)
+    except listobj.AlreadySubscribed:
+        click.echo('You are already subscribed to {}.'.format(ctx.obj.list_address), err=True)
+    except listobj.NotSubscribed:
+        click.echo('You are not subscribed to {}.'.format(ctx.obj.list_address), err=True)
+
+@list_command.command()
+@click.argument('token')
+@require_list
+def accept_subscription_invitation(ctx, token):
+    accept_invitation(
+            ctx,
+            token,
+            ctx.obj.listobj.accept_subscription_invitation,
+            'You are now subscribed to {}.'.format(ctx.obj.list_address),
+            )
+
+@list_command.command()
+@click.argument('token')
+@require_list
+def accept_unsubscription_invitation(ctx, token):
+    accept_invitation(
+            ctx,
+            token,
+            ctx.obj.listobj.accept_unsubscription_invitation,
+            'You are no longer subscribed to {}.'.format(ctx.obj.list_address),
+            )
+
 def ctx_set_member_flag_value(ctx, address, flag, value):
     if flag is None:
         try:
