@@ -25,7 +25,11 @@ def create_member(List, MemberAddress, **kwargs):
 
 @require_list
 def invite_member(List, MemberAddress, **kwargs):
-    return NotImplemented  # TODO: implement
+    try:
+        List.invite_subscribe_member(MemberAddress)
+    except AlreadySubscribed:
+        return BadRequest('{} is already subscribed.'.format(MemberAddress))
+    return Success(code=204)
 
 @require_member
 def update_member(List, Member, **kwargs):
@@ -37,7 +41,13 @@ def get_member(List, Member, **kwargs):
 
 @require_member
 def unsubscribe_member(List, Member, **kwargs):
-    return NotImplemented  # TODO: implement
+    try:
+        List.invite_unsubscribe_member(Member)
+    except NotSubscribed:
+        # The require_member decorator already checked that the member was
+        # subscribed, so if we got here, something's very broken.
+        return InternalServerError
+    return Success(code=204)
 
 @require_member
 def delete_member(List, Member, **kwargs):
