@@ -107,6 +107,24 @@ class List (ListMemberContainer):
             return
         super(List, self).__setattr__(name, value)
 
+    def dict(self):
+        return {
+                p: (getattr(self, p)
+                    if p != 'members'
+                    else map(lambda m: m.dict(), self.members)
+                    )
+                for p in list_properties
+                }
+
+    def update_from_dict(self, d):
+        if 'members' in d:
+            raise KeyError
+        for k, v in d.iteritems():
+            if k not in list_properties:
+                continue
+            setattr(self, k, v)
+        self._save()
+
     def _save(self):
         response = s3.put_object(
                 Bucket=config.s3_bucket,

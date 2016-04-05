@@ -47,9 +47,55 @@ Create a list with the given address.
 
 #### `UpdateList`
 
+Update the configuration data for a list.  Takes a data structure like the one returned by `GetList` as the parameter `Data`.  The key `members` cannot be present in `Data`.  Only the values for the keys present in `Data` are changed; any list configuration keys not in `Data` are left unchanged.
+
 #### `GetList`
 
-Return the configuration data for a list.
+Return the configuration data for a list.  Example:
+
+```json
+{
+  "Data": {
+    "reply-to-list": true,
+    "name": "Test List",
+    "bounce-weights": null,
+    "open-subscription": true,
+    "reject-from-non-members": true,
+    "closed-unsubscription": false,
+    "bounce-decay-factor": null,
+    "bounce-score-threshold": null,
+    "moderated": false,
+    "cc-lists": null,
+    "members": [
+      {
+        "flags": [
+          "admin"
+        ],
+        "address": "admin@example.com"
+      },
+      {
+        "flags": [],
+        "address": "user1@example.com"
+      },
+      {
+        "flags": [
+          "vacation"
+        ],
+        "address": "user2@example.com"
+      },
+      {
+        "flags": [
+          "bouncing"
+        ],
+        "address": "bounce@simulator.amazonses.com"
+      }
+    ],
+    "allow-from-non-members": null,
+    "subject-tag": "TestList"
+  },
+  "StatusCode": 200
+}
+```
 
 ### Member Actions
 
@@ -63,7 +109,7 @@ Invite a member to a list (sends the prospective list member an email to which t
 
 #### `UpdateMember`
 
-Update the configuration data for a list member.  Takes a data structure like the one returned by `GetMember` as the parameter `Data`.
+Update the configuration data for a list member.  Takes a data structure like the one returned by `GetMember` as the parameter `Data`.  If `flags` is present, the member's entire set of flags is overwritten.
 
 #### `GetMember`
 

@@ -5,15 +5,21 @@ from decorators import require_list, require_member
 from results import InternalServerError, NotImplemented, NotFound, BadRequest, Success
 
 def create_list(ListAddress, **kwargs):
+    if kwargs.get('List'):
+        return BadRequest('{} already exists.'.format(ListAddress))
     return NotImplemented  # TODO: implement
 
 @require_list
-def update_list(List, **kwargs):
-    return NotImplemented  # TODO: implement
+def update_list(List, Data, **kwargs):
+    try:
+        List.update_from_dict(Data)
+    except KeyError:
+        return BadRequest('Invalid data.')
+    return Success(List.dict())
 
 @require_list
 def get_list(List, **kwargs):
-    return NotImplemented  # TODO: implement
+    return Success(List.dict())
 
 @require_list
 def create_member(List, MemberAddress, **kwargs):
