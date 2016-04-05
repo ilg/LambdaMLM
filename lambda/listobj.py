@@ -25,6 +25,7 @@ from sestools import msg_get_header
 from email_utils import detect_bounce, bounce_defaults
 
 import config
+import control
 import templates
 from list_member import ListMember, MemberFlag
 from list_member_container import ListMemberContainer
@@ -196,6 +197,58 @@ class List (ListMemberContainer):
                 '{}: {}'.format(m.address, ', '.join(f.name for f in m.flags))
                 for m in self.members
                 ]
+
+    def invite(self, target_address, command, verb):
+        command_address = '{}@{}'.format(config.command_user, self.host)
+        from datetime import timedelta
+        validity_duration = timedelta(days=3)  # TODO: make this duration configurable
+        token = control.sign(target_address, self.address, validity_duration=validity_duration)
+        cmd = 'list {} {} "{}"'.format(self.address, command, token)
+        list_name = self.name
+        if not list_name:
+            list_name = self.address
+        control.send_response(
+                source=command_address,
+                destination=target_address,
+                subject='Invitation to {} {} - Fwd: {}'.format(
+                    verb,
+                    list_name,
+                    control.sign(cmd, target_address, validity_duration=validity_duration),
+                    ),
+                body='To accept the invitation, reply to this email.  You can leave the body of the reply blank.',
+                )
+
+    def invite_subscribe_member(self, target_address):
+        if self.member_with_address(target_address):
+            # Address is already subscribed.
+            raise AlreadySubscribed
+        self.invite(target_address, 'accept_subscription_invitation', 'join')
+
+    def invite_unsubscribe_member(self, target_member):
+        if not target_member:
+            raise NotSubscribed
+        self.invite(target_member.address, 'accept_unsubscription_invitation', 'leave')
+
+    def accept_invitation(self, from_user, token, action):
+        from_address = address_from_user(from_user)
+        token_address = control.get_signed_command(token, self.address)
+        if token_address != from_address:
+            raise control.InvalidSignatureException
+        action(from_address)
+
+    def accept_subscription_invitation(self, from_user, token):
+        self.accept_invitation(
+                from_user,
+                token,
+                lambda from_address: self.add_member(from_address),
+                )
+
+    def accept_unsubscription_invitation(self, from_user, token):
+        self.accept_invitation(
+                from_user,
+                token,
+                lambda from_address: self.remove_member(self.member_with_address(from_address)),
+                )
 
     def addresses_to_receive_from(self, from_address):
         return [
