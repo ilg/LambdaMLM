@@ -2,10 +2,14 @@ from __future__ import print_function
 
 from sestools import email_message_for_event, event_msg_is_to_command, msg_get_header, recipient_destination_overlap
 from control import handle_command
+from api import handle_api
 
 from listobj import List
 
 def lambda_handler(event, context):
+    if 'Records' not in event:
+        return handle_api(event)
+        # API
     with email_message_for_event(event) as msg:
         # If it's a command, handle it as such.
         command_address = event_msg_is_to_command(event, msg)

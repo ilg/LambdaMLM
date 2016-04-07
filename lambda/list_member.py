@@ -46,16 +46,32 @@ class ListMember(yaml.YAMLObject):
         # Patch default values that might be missing in the YAML, since loading from YAML doesn't call __init__.
         if name == 'flags':
             return set()
+        elif name == 'name':
+            return None
         raise AttributeError(name)
     def __repr__(self):
-        return u'{}({}, flags: {})'.format(
+        return u'{}({} <{}>, flags: {})'.format(
                 self.__class__.__name__,
+                self.name,
                 self.address,
                 ', '.join(
                     map(lambda f: f.name,
                         self.flags)
                     ),
                 )
+    def dict(self):
+        return {
+                'address': self.address,
+                'name': self.name,
+                'flags': [ f.name for f in self.flags ],
+                }
+    def update_from_dict(self, d):
+        if 'address' in d:
+            self.address = d['address']
+        if 'name' in d:
+            self.name = d['name']
+        if 'flags' in d:
+            self.flags = set(MemberFlag[f] for f in d['flags'])
     def can_receive_from(self, from_address):
         return (
                 MemberFlag.vacation not in self.flags
@@ -73,7 +89,6 @@ class ListMember(yaml.YAMLObject):
             self.bounces = { datetime.now(): response_type, }
     def bounce_score(self, weights, decay):
         try:
-            bounces = {}
             from datetime import date
             today = date.today()
             return sum(

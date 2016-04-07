@@ -1,7 +1,8 @@
 from __future__ import print_function
+from email.utils import parseaddr
 
-from list_member import MemberFlag
-from list_exceptions import NotSubscribed, InsufficientPermissions
+from list_member import ListMember, MemberFlag
+from list_exceptions import AlreadySubscribed, NotSubscribed, InsufficientPermissions
 
 class ListMemberContainer (object):
     @property
@@ -28,4 +29,20 @@ class ListMemberContainer (object):
             # Only superAdmin members can modify admin members.
             if target_member and MemberFlag.admin in target_member.flags and MemberFlag.superAdmin not in from_member.flags:
                 raise InsufficientPermissions
+
+    def add_member(self, target_user):
+        target_name, target_address = parseaddr(target_user)
+        if self.member_with_address(target_address):
+            # Address is already subscribed.
+            raise AlreadySubscribed
+        m = ListMember(target_address)
+        m.name = target_name
+        self.members.append(m)
+        self._save()
+
+    def remove_member(self, target_member):
+        if not target_member:
+            raise NotSubscribed
+        self.members.remove(target_member)
+        self._save()
 

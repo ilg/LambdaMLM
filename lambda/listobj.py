@@ -25,13 +25,14 @@ from sestools import msg_get_header
 from email_utils import detect_bounce, bounce_defaults
 
 import config
+import control
 import templates
 from list_member import ListMember, MemberFlag
 from list_member_container import ListMemberContainer
 from list_exceptions import (
         AlreadySubscribed, ClosedSubscription, ClosedUnsubscription,
         NotSubscribed, UnknownFlag, UnknownOption, ModeratedMessageNotFound,
-        InsufficientPermissions)
+        InsufficientPermissions, UnknownList)
 
 list_properties = [
         'name',
@@ -76,7 +77,10 @@ class List (ListMemberContainer):
             raise ValueError('Invalid list host.')
         self._s3_key = '{}{}/{}.yaml'.format(config.s3_configuration_prefix, self.host, self.username)
         self._s3_moderation_prefix = '{}{}/{}/'.format(config.s3_moderation_prefix, self.host, self.username)
-        config_response = s3.get_object(Bucket=config.s3_bucket, Key=self._s3_key)
+        try:
+            config_response = s3.get_object(Bucket=config.s3_bucket, Key=self._s3_key)
+        except ClientError:
+            raise UnknownList
         self._config = yaml.safe_load(config_response['Body'])
         if self.name:
             self.display_address = u'{} <{}>'.format(self.name, self.address)
@@ -103,6 +107,24 @@ class List (ListMemberContainer):
             return
         super(List, self).__setattr__(name, value)
 
+    def dict(self):
+        return {
+                p: (getattr(self, p)
+                    if p != 'members'
+                    else map(lambda m: m.dict(), self.members)
+                    )
+                for p in list_properties
+                }
+
+    def update_from_dict(self, d):
+        if 'members' in d:
+            raise KeyError
+        for k, v in d.iteritems():
+            if k not in list_properties:
+                continue
+            setattr(self, k, v)
+        self._save()
+
     def _save(self):
         response = s3.put_object(
                 Bucket=config.s3_bucket,
@@ -114,28 +136,20 @@ class List (ListMemberContainer):
         from_address = address_from_user(from_user)
         target_address = address_from_user(target_user)
         self.address_will_modify_address(from_address, target_address)
-        if self.member_with_address(target_address):
-            # Address is already subscribed.
-            raise AlreadySubscribed
         if from_address == target_address and not self.open_subscription:
             # List doesn't allow self-subscription.
             raise ClosedSubscription
-        self.members.append(ListMember(target_address))
-        # TODO: store human-readable name?
-        self._save()
+        self.add_member(target_user)
 
     def user_unsubscribe_user(self, from_user, target_user):
         from_address = address_from_user(from_user)
         target_address = address_from_user(target_user)
         self.address_will_modify_address(from_address, target_address)
-        member = self.member_with_address(target_address)
-        if not member:
-            raise NotSubscribed
         if from_address == target_address and self.closed_unsubscription:
             # List doesn't allow self-unsubscription.
             raise ClosedUnsubscription
-        self.members.remove(member)
-        self._save()
+        member = self.member_with_address(target_address)
+        self.remove_member(member)
 
     def user_own_flags(self, user):
         address = address_from_user(user)
@@ -201,6 +215,62 @@ class List (ListMemberContainer):
                 '{}: {}'.format(m.address, ', '.join(f.name for f in m.flags))
                 for m in self.members
                 ]
+
+    def update_member_from_dict(self, member, d):
+        member.update_from_dict(d)
+        self._save()
+
+    def invite(self, target_address, command, verb):
+        command_address = '{}@{}'.format(config.command_user, self.host)
+        from datetime import timedelta
+        validity_duration = timedelta(days=3)  # TODO: make this duration configurable
+        token = control.sign(target_address, self.address, validity_duration=validity_duration)
+        cmd = 'list {} {} "{}"'.format(self.address, command, token)
+        list_name = self.name
+        if not list_name:
+            list_name = self.address
+        control.send_response(
+                source=command_address,
+                destination=target_address,
+                subject='Invitation to {} {} - Fwd: {}'.format(
+                    verb,
+                    list_name,
+                    control.sign(cmd, target_address, validity_duration=validity_duration),
+                    ),
+                body='To accept the invitation, reply to this email.  You can leave the body of the reply blank.',
+                )
+
+    def invite_subscribe_member(self, target_address):
+        if self.member_with_address(target_address):
+            # Address is already subscribed.
+            raise AlreadySubscribed
+        self.invite(target_address, 'accept_subscription_invitation', 'join')
+
+    def invite_unsubscribe_member(self, target_member):
+        if not target_member:
+            raise NotSubscribed
+        self.invite(target_member.address, 'accept_unsubscription_invitation', 'leave')
+
+    def accept_invitation(self, from_user, token, action):
+        from_address = address_from_user(from_user)
+        token_address = control.get_signed_command(token, self.address)
+        if token_address != from_address:
+            raise control.InvalidSignatureException
+        action(from_address)
+
+    def accept_subscription_invitation(self, from_user, token):
+        self.accept_invitation(
+                from_user,
+                token,
+                lambda from_address: self.add_member(from_user),
+                )
+
+    def accept_unsubscription_invitation(self, from_user, token):
+        self.accept_invitation(
+                from_user,
+                token,
+                lambda from_address: self.remove_member(self.member_with_address(from_address)),
+                )
 
     def addresses_to_receive_from(self, from_address):
         return [

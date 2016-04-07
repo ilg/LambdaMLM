@@ -1,3 +1,6 @@
+class UnknownList(Exception):
+    pass
+
 class InsufficientPermissions(Exception):
     pass
 

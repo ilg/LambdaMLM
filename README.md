@@ -21,4 +21,4 @@ Setup requires familiarity with AWS—in particular, having credentials already 
 
 ## Author
 
-[Isaac Greenspan](https://github.com/ilg), with some time contributed by [Vokal](http://vokal.io) Hack Days (February, 2016).
+[Isaac Greenspan](https://github.com/ilg), with some time contributed by [Vokal](http://vokal.io).
