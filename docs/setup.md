@@ -8,7 +8,8 @@ The included `fabfile` can faciliate setting up LambdaMLM.
   _Note:_ If you're planning to use multiple configurations, you can keep each configuration in a file named `config.somename.py` and pass `somename` as a parameter to the `fab` commands `create_lambda:somename` and `update_lambda:somename`.  The specific `somename` configuration will be copied over `config.py` before the rest of the `fab` command runs.
 4. In the directory, run `fab setup_virtualenv` to set up the virtual environment for LambdaMLM and install required dependencies.
 5. Run `fab create_lambda` to create the S3 bucket, an IAM role under which LambdaMLM will run (with an appropriate policy), and the lambda function itself.
-6. In SES, in the region defined as `lambda_region` in `config.py`:
+6. In S3 Console, navigate to your new bucket. Click Permissions tab, then Bucket Policy button. Add in policy from [`s3policy.md`](s3policy.md), replacing `[s3_bucket]` and `[account_id]` (avaiable on the AWS My Account page).
+7. In SES, in the region defined as `lambda_region` in `config.py`:
 	1. Verify all domains to be used for lists.
 	2. Configure DKIM and SPF for domains.
 	3. Create an Email Receiving rule that applies to all domains to be used for lists with two actions:
