@@ -9,7 +9,6 @@ from datetime import timedelta
 import pytest
 from freezegun import freeze_time
 
-import config
 import control
 import golden
 import listobj

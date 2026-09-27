@@ -10,8 +10,7 @@ from freezegun import freeze_time
 import config
 import control
 from control import commands
-from helpers import (HOST, member, parse_message, store_list_config,
-                     stored_list_config)
+from helpers import member, parse_message, store_list_config, stored_list_config
 from list_member import MemberFlag
 
 NOW = '2026-09-14 12:00:00'
@@ -164,11 +163,6 @@ def test_invalid_list_address(aws):
         'not-an-address is not a valid list address.\n'
 
 
-def test_unknown_list_is_internal_error(aws):
-    assert run('a@example.com', 'list nosuch@example.org subscribe') == 'Internal error.'
-
-
-@pytest.mark.xfail(strict=True, reason='Step 3: require_list should catch UnknownList.')
 def test_unknown_list(aws):
     assert run('a@example.com', 'list nosuch@example.org subscribe') == \
         'nosuch@example.org is not a valid list address.\n'

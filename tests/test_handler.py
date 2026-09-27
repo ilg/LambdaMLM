@@ -12,7 +12,6 @@ import sestools
 from helpers import (FIXTURES, member, parse_message, read_bytes, ses_event,
                      store_incoming, incoming_key, store_list_config,
                      stored_list_config)
-from list_exceptions import UnknownList
 
 POST = (b'From: Alice Sender <alice@example.com>\n'
         b'To: test-list@example.org\n'
@@ -175,10 +174,10 @@ def test_command(aws, lambda_handler):
 def test_command_with_other_recipient_is_not_a_command(aws, lambda_handler):
     make_list(aws)
     store_incoming(aws, 'id1', POST.replace(b'To: test-list@example.org', b'To: lambda@example.org'))
-    # lambda@ isn't a list, so treating the message as a list post fails.
-    with pytest.raises(UnknownList):
-        lambda_handler(ses_event('id1', ['lambda@example.org', 'test-list@example.org']), None)
+    # It's handled as a list post; lambda@ isn't a list, so it's skipped.
+    lambda_handler(ses_event('id1', ['lambda@example.org', 'test-list@example.org']), None)
     assert aws.ses.sent_emails == []
+    assert [s['Destinations'] for s in aws.ses.sent_raw_emails] == [['bob@example.com']]
 
 
 @freeze_time('2026-09-14 12:00:00')
@@ -193,19 +192,11 @@ def test_bounce(aws, lambda_handler):
     assert incoming_key('id1') not in keys(aws)
 
 
-def test_mail_to_non_list_address_crashes(aws, lambda_handler):
-    store_incoming(aws, 'id1', POST.replace(b'test-list@', b'someone@'))
-    with pytest.raises(UnknownList):
-        lambda_handler(ses_event('id1', ['someone@example.org']), None)
-    # The message is kept because handling failed.
-    assert incoming_key('id1') in keys(aws)
-
-
-@pytest.mark.xfail(strict=True, raises=UnknownList,
-                   reason='Step 3: mail to an address that isn\'t a list should be ignored.')
 def test_mail_to_non_list_address(aws, lambda_handler):
     store_incoming(aws, 'id1', POST.replace(b'test-list@', b'someone@'))
     lambda_handler(ses_event('id1', ['someone@example.org']), None)
+    assert aws.ses.sent_raw_emails == []
+    assert incoming_key('id1') not in keys(aws)
 
 
 def test_bcc_to_list_is_dropped(aws, lambda_handler):

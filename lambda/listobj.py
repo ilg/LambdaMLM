@@ -480,7 +480,8 @@ class List (ListMemberContainer):
             for a in addresses:
                 try:
                     yield cls(a)
-                except ValueError:
+                except (ValueError, UnknownList):
+                    # Not a list address, or no such list.
                     continue
         except TypeError:
             return

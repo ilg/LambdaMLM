@@ -6,7 +6,6 @@ from datetime import timedelta
 
 import pytest
 import yaml
-from botocore.exceptions import ClientError
 from freezegun import freeze_time
 
 import config
@@ -320,8 +319,8 @@ def test_cc_lists(aws):
 
 
 def test_cc_list_that_does_not_exist(aws):
-    with pytest.raises(UnknownList):
-        make_list(aws, **{'cc-lists': ['nosuch@example.org']}).send(parse_message(raw_message()))
+    make_list(aws, **{'cc-lists': ['nosuch@example.org']}).send(parse_message(raw_message()))
+    assert sent_to(aws) == ['bob@example.com', 'carol@example.com']
 
 
 def test_mutual_cc_lists_recurse_forever(aws):
@@ -344,13 +343,6 @@ def test_lists_for_addresses_none(aws):
     assert list(listobj.List.lists_for_addresses(None)) == []
 
 
-def test_lists_for_addresses_unknown_list_crashes(aws):
-    with pytest.raises(UnknownList):
-        list(listobj.List.lists_for_addresses(['nosuch@example.org']))
-
-
-@pytest.mark.xfail(strict=True, raises=UnknownList,
-                   reason='Step 3: addresses that aren\'t lists should be skipped.')
 def test_lists_for_addresses_skips_unknown_lists(aws):
     make_list(aws)
     lists = list(listobj.List.lists_for_addresses(['nosuch@example.org', 'test-list@example.org']))

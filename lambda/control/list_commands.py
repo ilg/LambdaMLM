@@ -29,7 +29,7 @@ def require_list(f):
     def wrapper(ctx, *args, **kwargs):
         try:
             ctx.obj.listobj = listobj.List(ctx.obj.list_address)
-        except ( ValueError, ClientError, ):
+        except ( ValueError, ClientError, listobj.UnknownList, ):
             handle_invalid_list_address(ctx.obj.list_address)
             ctx.obj.listobj = None
         if ctx.obj.listobj is None:
