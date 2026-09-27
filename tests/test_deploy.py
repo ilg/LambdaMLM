@@ -196,3 +196,25 @@ def test_import_template():
             'Properties': {'BucketName': 'old-bucket'},
         },
     }
+
+
+POLICY = {'Version': '2012-10-17', 'Statement': [{'Effect': 'Allow', 'Principal': {'Service': 'ses.amazonaws.com'},
+                                                   'Action': 's3:PutObject', 'Resource': 'arn:aws:s3:::old-bucket/*'}]}
+
+
+def test_import_template_with_existing_policy():
+    template = json.loads(import_bucket.import_template('old-bucket', POLICY))
+    assert template['Resources']['MailBucketPolicy'] == {
+        'Type': 'AWS::S3::BucketPolicy',
+        'DeletionPolicy': 'Retain',
+        'Properties': {'Bucket': 'old-bucket', 'PolicyDocument': POLICY},
+    }
+
+
+def test_resources_to_import():
+    ids = lambda rs: [r['LogicalResourceId'] for r in rs]
+    assert ids(import_bucket.resources_to_import('b', None, set())) == ['MailBucket']
+    assert ids(import_bucket.resources_to_import('b', POLICY, set())) == ['MailBucket', 'MailBucketPolicy']
+    # After a rolled-back deploy, the stack already holds the bucket.
+    assert ids(import_bucket.resources_to_import('b', POLICY, {'MailBucket'})) == ['MailBucketPolicy']
+    assert import_bucket.resources_to_import('b', POLICY, {'MailBucket', 'MailBucketPolicy'}) == []

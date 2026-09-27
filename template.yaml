@@ -223,6 +223,10 @@ Resources:
       Principal: ses.amazonaws.com
       SourceAccount: !Ref AWS::AccountId
 
+  # Created at the start of the rule set.  It ends with a stop action, so once
+  # it's enabled no later rule sees mail it handles: when moving an existing
+  # deployment, enabling it takes the mail over from the old rules in one step
+  # (and disabling it hands the mail back).
   ReceiptRule:
     Type: AWS::SES::ReceiptRule
     Condition: HasReceiptRuleSet
@@ -242,6 +246,8 @@ Resources:
           - LambdaAction:
               FunctionArn: !GetAtt Function.Arn
               InvocationType: Event
+          - StopAction:
+              Scope: RuleSet
 
   AlarmTopic:
     Type: AWS::SNS::Topic

@@ -88,8 +88,13 @@ def store_key(aws, name, key, force):
                     'signed commands; add --force to do it anyway.'.format(name))
     request = {'Name': name, 'Value': key, 'Type': 'SecureString', 'Overwrite': True,
                'Description': 'LambdaMLM command-signing key'}
-    # The key goes to the AWS CLI on stdin, so it never appears in a process listing.
-    aws.json('ssm', 'put-parameter', '--cli-input-json', 'file:///dev/stdin', input=json.dumps(request))
+    # The key goes to the AWS CLI in a file only the user can read, deleted
+    # straight afterwards, so it never appears in a process listing.
+    with tempfile.TemporaryDirectory() as directory:
+        path = os.path.join(directory, 'request.json')
+        with open(os.open(path, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as f:
+            json.dump(request, f)
+        aws.json('ssm', 'put-parameter', '--cli-input-json', 'file://' + path)
     print('Stored the key in {} (fingerprint {}).'.format(name, fingerprint(key)))
 
 
