@@ -160,15 +160,6 @@ def test_non_ascii_command():
     assert control.signature(u'list alpha-list@example.org subscribe "José <j@example.com>"')
 
 
-def test_impossible_timestamp_crashes():
-    # strptime runs outside the try block meant to catch its ValueError.
-    signed = '{} {}{}'.format(COMMAND, control.signature('x'), '20261399000000')
-    with pytest.raises(ValueError):
-        control.get_signed_command(signed, ADDRESS)
-
-
-@pytest.mark.xfail(strict=True, raises=ValueError,
-                   reason='An impossible timestamp should be an invalid signature.')
 def test_impossible_timestamp_is_invalid():
     signed = '{} {}{}'.format(COMMAND, control.signature('x'), '20261399000000')
     with pytest.raises(control.InvalidSignatureException):

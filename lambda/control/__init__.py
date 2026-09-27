@@ -119,13 +119,14 @@ def get_signed_command(subject, address):
     timestamp = match.group('timestamp')
     if not sig or not timestamp:
         raise NotSignedException
-    expiration = datetime.datetime.strptime(timestamp, timestamp_format)
     try:
-        # Check that the timestamp is recent enough.
-        if datetime.datetime.now() > expiration:
-            raise ExpiredSignatureException
+        expiration = datetime.datetime.strptime(timestamp, timestamp_format)
     except ValueError:
+        # Not a real date and time (month 13, say), so we didn't sign it.
         raise InvalidSignatureException
+    # Check that the timestamp is recent enough.
+    if datetime.datetime.now() > expiration:
+        raise ExpiredSignatureException
     if not check_signature(cmd, address, timestamp, sig):
         # Maybe the command was signed for a bare email address, but the address passed in had a name with it?
         _, address = parseaddr(address)
