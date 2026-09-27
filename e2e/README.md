@@ -13,7 +13,7 @@ Everything is run through `scripts/e2e`.  Commands that change anything only pri
 ## Setting up
 
 1. `scripts/e2e inbox setup ENV --apply` creates the test inboxes: a bucket (tagged `lambdamlm:e2e`, with a 7-day expiry), and one SES receipt rule per inbox address at the start of the active rule set, which stores that address's mail in the bucket and stops, so no later rule sees it.
-2. `scripts/e2e lists setup ENV --apply` adds test lists (`e2e-test`, `e2e-moderated` and `e2e-bounces`) to the deployment's bucket.  Their members are the test inboxes and mail accounts.  It never touches other lists and never replaces an existing one.
+2. `scripts/e2e lists setup ENV --apply` adds test lists (`e2e-test`, `e2e-moderated`, `e2e-bounces` and `e2e-subscribe`) to the deployment's bucket.  Their members are the test inboxes and mail accounts, except `e2e-subscribe`, which the subscription scenarios join and leave.  It never touches other lists and never replaces an existing one, so rerun it after new test lists are added here to create just those.
 
 ## Running
 

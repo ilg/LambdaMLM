@@ -79,6 +79,11 @@ def planned_lists(env, real_mailboxes):
              ('bounce@simulator.amazonses.com', None, ()),
              ('complaint@simulator.amazonses.com', None, ())],
             name='E2E Bounces', **{'allow-from-non-members': True})
+    # A list the subscription scenarios join and leave, so the other lists'
+    # members never change.
+    lists[(hosts[0], LIST_PREFIX + 'subscribe')] = _config(
+            [(admin, 'E2E Admin', ('admin',))],
+            name='E2E Subscribe', **{'open-subscription': True})
     return lists
 
 
