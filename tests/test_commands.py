@@ -151,6 +151,88 @@ def test_hyphenated_command_name():
         'Internal error.'
 
 
+@pytest.mark.parametrize('cmd', [
+    '',
+    'about extra',
+    'echo -x',
+    'list test-list@example.org',
+    'list test-list@example.org accept_subscription_invitation',
+    'list test-list@example.org set moderated --int x',
+    'list test-list@example.org set moderated --bogus',
+    ])
+def test_usage_errors(aws, cmd):
+    make_list(aws)
+    assert run('admin@example.com', cmd) == 'Internal error.'
+
+
+def test_exception_in_command(aws, monkeypatch):
+    make_list(aws)
+
+    def fail(*args, **kwargs):
+        raise RuntimeError('boom')
+    monkeypatch.setattr('listobj.List.user_get_members', fail)
+    assert run('admin@example.com', 'list test-list@example.org members') == 'Internal error.'
+
+
+def test_help():
+    assert run('a@example.com', '--help') == (
+        'Usage: command [OPTIONS] USER COMMAND [ARGS]...\n'
+        '\n'
+        'Options:\n'
+        '  --help  Show this message and exit.\n'
+        '\n'
+        'Commands:\n'
+        '  about\n'
+        '  echo\n'
+        '  list\n')
+
+
+def test_subcommand_help():
+    # Click 8 includes the parent's arguments in the usage line; Click 7 didn't
+    # ('Usage: command about [OPTIONS]').
+    assert run('a@example.com', 'about --help') == (
+        'Usage: command USER about [OPTIONS]\n'
+        '\n'
+        'Options:\n'
+        '  --help  Show this message and exit.\n')
+
+
+LIST_HELP = (
+    'Options:\n'
+    '  --help  Show this message and exit.\n'
+    '\n'
+    'Commands:\n'
+    '  accept_subscription_invitation\n'
+    '  accept_unsubscription_invitation\n'
+    '  members\n'
+    '  mod\n'
+    '  set\n'
+    '  setflag\n'
+    '  subscribe\n'
+    '  unsetflag\n'
+    '  unsubscribe\n')
+
+
+@pytest.mark.parametrize('cmd', ['list', 'list --help', 'list test-list@example.org --help'])
+def test_list_help(cmd):
+    # A group given no arguments replies with its help, as --help does.
+    assert run('a@example.com', cmd) == \
+        'Usage: command USER list [OPTIONS] LIST_ADDRESS COMMAND [ARGS]...\n\n' + LIST_HELP
+
+
+def test_mod_help(aws):
+    make_list(aws)
+    assert run('a@example.com', 'list test-list@example.org mod') == (
+        'Usage: command USER list LIST_ADDRESS mod [OPTIONS] COMMAND [ARGS]...\n'
+        '\n'
+        'Options:\n'
+        '  --help  Show this message and exit.\n'
+        '\n'
+        'Commands:\n'
+        '  approve\n'
+        '  reject\n')
+
+
 def test_invalid_list_address(aws):
     assert run('a@example.com', 'list not-an-address subscribe') == \
         'not-an-address is not a valid list address.\n'

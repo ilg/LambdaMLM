@@ -31,10 +31,18 @@ def echo(ctx, stuff, **kwargs):
     else:
         click.echo('[no parameters]')
 
+def is_help_for_missing_arguments(exception):
+    # A group invoked with no arguments replies with its help.  Click 7 exited
+    # with status 0 for that; Click 8.2+ exits with status 2, from inside its
+    # handler for NoArgsIsHelpError.
+    return (isinstance(exception, SystemExit)
+            and isinstance(exception.__context__, click.exceptions.NoArgsIsHelpError))
+
 def run(user, cmd):
-    result = runner.invoke(command, [user,] + shlex.split(cmd))
+    # prog_name keeps the help text's usage line as it was under Click 7.
+    result = runner.invoke(command, [user,] + shlex.split(cmd), prog_name='command')
     print('run result: {}'.format(result))
-    if result.exception:
+    if result.exception and not is_help_for_missing_arguments(result.exception):
         print('Exception: {}\nTraceback:\n {}'.format(result.exception, ''.join(format_exception(*result.exc_info))))
         return 'Internal error.'
     return result.output
