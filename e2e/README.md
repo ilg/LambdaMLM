@@ -19,6 +19,8 @@ Everything is run through `scripts/e2e`.  Commands that change anything only pri
 
 `scripts/e2e run ENV LABEL [SCENARIO ...]` runs the scenarios (all of them by default; `scripts/e2e run ENV --list` lists them).  Each sends its mail, waits for what arrives at every inbox and account (including spam folders), and saves the raw messages, a summary and the function's log lines in `~/.cache/lambdamlm-test/results/ENV/LABEL/SCENARIO/`, outside the repository because they contain the accounts' addresses.  Use a label per run, such as `py2-baseline` for the old code and `py3` for the new.
 
+`scripts/e2e compare ENV/LABEL ENV/LABEL` compares two runs scenario by scenario: how many copies each recipient got, the differences in the delivered messages' main headers and text bodies, other recorded results, and errors in the function's logs.
+
 `scripts/e2e inbox list ENV` lists what the test inboxes have received.
 
 ## Tearing down
