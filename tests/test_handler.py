@@ -144,22 +144,14 @@ def two_lists(aws):
     return ses_event('id1', ['test-list@example.org', 'other@example.org'])
 
 
-def test_post_to_two_lists_second_list_sees_rewritten_message(aws, lambda_handler):
-    # The first list rewrites the shared message in place (including From),
-    # so the second list sees a non-member sender and moderates the post.
-    # Which list goes first depends on set iteration order.
-    lambda_handler(two_lists(aws), None)
-    sent = [d for s in aws.ses.sent_raw_emails for d in s['Destinations']]
-    assert sent in (['bob@example.com'], ['bob@example.com', 'carol@example.com'])
-    assert len([k for k in keys(aws) if k.startswith('moderation/')]) == 1
-
-
-@pytest.mark.xfail(strict=True, reason='Step 3: each list should get its own copy of the incoming message.')
 def test_post_to_two_lists(aws, lambda_handler):
     lambda_handler(two_lists(aws), None)
     # Bob is on both lists and gets two copies.
     assert sorted(d for s in aws.ses.sent_raw_emails for d in s['Destinations']) == \
         ['bob@example.com', 'bob@example.com', 'carol@example.com']
+    # Each list rewrote its own copy of the original message.
+    for s in aws.ses.sent_raw_emails:
+        assert parse_message(s['Data'])['X-Original-From'] == 'Alice Sender <alice@example.com>'
 
 
 @freeze_time('2026-09-14 12:00:00')

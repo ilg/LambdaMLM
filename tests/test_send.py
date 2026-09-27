@@ -316,10 +316,11 @@ def test_cc_lists(aws):
     make_list(aws, 'other', members=[member('dave@example.com'), member('alice@example.com')])
     make_list(aws, **{'cc-lists': ['other@example.org', 'not a list', 'nosuch-but-valid@bad_host']}).send(
             parse_message(raw_message()))
-    # The cc-list is sent to first, with its own rewriting, then this list.
+    # The cc-list is sent to first, then this list, each rewriting its own copy.
     assert sent_to(aws) == ['dave@example.com', 'bob@example.com', 'carol@example.com']
     assert unfold(sent_message(aws, 0)['From']).startswith('"Alice Sender \\(via other@example.org\\)"')
-    assert sent_message(aws, 1)['X-Original-From'] is not None
+    assert unfold(sent_message(aws, 1)['From']).startswith('"Alice Sender \\(via test-list@example.org\\)"')
+    assert sent_message(aws, 1)['X-Original-From'] == 'Alice Sender <alice@example.com>'
 
 
 def test_cc_list_that_does_not_exist(aws):

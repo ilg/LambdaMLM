@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import copy
+
 import yaml
 from enum import Enum
 
@@ -330,7 +332,8 @@ class List (ListMemberContainer):
 
         # Send to CC lists.
         for cc_list in List.lists_for_addresses(self.cc_lists):
-            cc_list.send(msg, mod_approved=True)
+            # send() rewrites the message's headers, so each list gets its own copy.
+            cc_list.send(copy.deepcopy(msg), mod_approved=True)
 
         # Strip out any exising DKIM signature.
         self.msg_replace_header(msg, 'DKIM-Signature')
