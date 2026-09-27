@@ -8,7 +8,7 @@ Email is very easy to forge.  To ensure that a command came from the email addre
 
 Let the command string be `[command string]`, coming from `[from address]`, and expiring at `[expiration YYYYMMDDHHMMSS]`.
 
-- The signature itself is the SHA1-HMAC, with a secret from [`config.py`](../lambda/config.example.py), of the string formed by joining the from-address, the expiration date-time string, and the command string:  
+- The signature itself is the SHA1-HMAC, with the deployment's signing key (kept in SSM Parameter Store; see [Setup](setup.md)), of the string formed by joining the from-address, the expiration date-time string, and the command string:  
 `[signature] = SHA1-HMAC("[from address] [expiration YYYYMMDDHHMMSS] [command string]")`
 - A signed command is the command followed by a space, the Base64 encoding of the signature, and the expiration date-time string.
 
