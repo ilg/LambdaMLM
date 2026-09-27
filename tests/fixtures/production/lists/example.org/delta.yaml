@@ -1,0 +1,26 @@
+allow-from-non-members: true
+members:
+- !Member
+  address: mihopame@tutim.example.com
+  flags: !!set
+    !flag 'echoPost': null
+- !Member
+  address: epikoteri@ezup.example.org
+  bounces:
+    2025-05-16 12:59:53.436369: !bouncekind 'unknown'
+    2025-06-23 16:54:44.007253: !bouncekind 'unknown'
+    2025-06-26 01:01:08.400104: !bouncekind 'unknown'
+    2025-06-28 14:54:07.151951: !bouncekind 'unknown'
+    2025-07-28 02:52:35.269972: !bouncekind 'unknown'
+    2025-08-06 03:55:26.620168: !bouncekind 'unknown'
+    2025-08-30 04:50:19.905725: !bouncekind 'unknown'
+    2025-10-02 03:58:22.137441: !bouncekind 'unknown'
+    2025-10-08 18:38:33.489251: !bouncekind 'unknown'
+    2025-10-30 21:37:42.137284: !bouncekind 'unknown'
+  flags: !!set
+    !flag 'echoPost': null
+- !Member
+  address: ifoga@omup086.example.org
+  flags: !!set
+    !flag 'echoPost': null
+name: XMPL Delta

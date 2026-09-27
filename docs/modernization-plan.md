@@ -57,7 +57,7 @@ These must survive the port unchanged, unless a step below changes one deliberat
 - **Step 9 (redesigns)** is part of this effort, but it gets its own design and review when reached.
 - **Production fixtures** go into the repo only after further sanitizing: list names are replaced, and member counts and bounce dates are faked where practical.
 - **The existing backlog expires.** The lifecycle rules added in step 6 apply to existing objects too, so held moderation messages and undelivered incoming mail from the past ten years expire rather than being reviewed or re-sent. Moderators start receiving notices once moderation works; that's expected.
-- **The current function's automatic retries go to 0 now**, before any of the steps below. Today no retry ever succeeds: each one either finds the message already deleted, or runs out of memory again and re-sends to the same members.
+- **The current function's automatic retries are 0** (set on 2026-09-26, before any of the steps below). No retry had ever succeeded: each one either found the message already deleted, or ran out of memory again and re-sent to the same members. AWS's block on updating Python 2.7 functions doesn't cover this setting.
 - **Escape hatch, not planned:** Lambda's block on updating Python 2.7 functions applies to zip deployments only. A container image built on AWS's still-published `public.ecr.aws/lambda/python:2.7` base image could be deployed if something goes badly wrong.
 
 ## Steps

@@ -1,0 +1,26 @@
+allow-from-non-members: true
+bounce-score-threshold: 100000
+members:
+- !Member
+  address: g@ik--ugu.example.net
+  bounces:
+    2024-09-07 19:32:24.956855: !bouncekind 'hard'
+    2024-09-14 04:50:49.821940: !bouncekind 'hard'
+    2024-10-07 09:15:37.544358: !bouncekind 'hard'
+    2024-10-08 17:12:31.432868: !bouncekind 'soft'
+    2024-11-13 00:18:18.806395: !bouncekind 'hard'
+    2024-12-14 13:43:03.172663: !bouncekind 'hard'
+    2025-01-08 14:54:45.817937: !bouncekind 'hard'
+    2025-02-11 21:35:11.980523: !bouncekind 'hard'
+    2025-02-22 01:55:46.829355: !bouncekind 'soft'
+    2025-03-29 04:07:52.717861: !bouncekind 'hard'
+  flags: !!set
+    !flag 'echoPost': null
+  name: Setub Pozizavip
+- !Member
+  address: oro+ivam@lovow.example.com
+  bounces:
+    2021-11-14 22:26:19.407434: !bouncekind 'hard'
+  flags: !!set
+    !flag 'echoPost': null
+  name: XMPL Kilo

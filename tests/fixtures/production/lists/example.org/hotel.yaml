@@ -1,0 +1,19 @@
+allow-from-non-members: true
+bounce-score-threshold: 100000
+members:
+- !Member
+  address: inalomocawu@webu-kehu.isojetewu.example.com
+  bounces:
+    2019-05-24 19:14:09.628941: !bouncekind 'hard'
+    2019-06-13 15:11:07.759901: !bouncekind 'hard'
+    2019-07-02 17:09:25.313427: !bouncekind 'hard'
+    2019-07-28 00:11:18.801538: !bouncekind 'hard'
+    2019-07-31 10:12:54.497454: !bouncekind 'hard'
+    2019-09-09 01:26:58.578984: !bouncekind 'hard'
+    2019-09-13 16:38:40.852385: !bouncekind 'hard'
+    2019-10-06 04:17:51.188358: !bouncekind 'hard'
+    2019-10-09 01:59:01.659656: !bouncekind 'hard'
+    2019-11-03 07:32:42.006044: !bouncekind 'hard'
+  flags: !!set
+    !flag 'echoPost': null
+  name: XMPL Zulebigo

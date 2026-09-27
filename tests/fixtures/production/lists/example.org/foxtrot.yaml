@@ -1,0 +1,8 @@
+allow-from-non-members: true
+bounce-score-threshold: 100000
+members:
+- !Member
+  address: oro+ivam@usuh.example.com
+  flags: !!set
+    !flag 'echoPost': null
+  name: Setub Pozizavip
