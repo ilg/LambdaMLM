@@ -112,13 +112,6 @@ def test_auto_submitted_no_is_processed(aws):
     assert len(aws.ses.sent_emails) == 1
 
 
-def test_subjectless_command_crashes(aws):
-    with pytest.raises(AttributeError):
-        control.handle_command(COMMAND_ADDRESS, command_message(None))
-
-
-@pytest.mark.xfail(strict=True, raises=AttributeError,
-                   reason='Step 3: command mail with no subject should be ignored.')
 def test_subjectless_command_is_ignored(aws):
     control.handle_command(COMMAND_ADDRESS, command_message(None))
     assert aws.ses.sent_emails == []

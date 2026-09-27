@@ -228,16 +228,15 @@ def test_subject_tag_already_present(aws):
     assert sent_message(aws)['X-Original-Subject'] is None
 
 
-def test_subjectless_post_with_subject_tag_crashes(aws):
-    with pytest.raises(TypeError):
-        make_list(aws, **{'subject-tag': 'Tag'}).send(parse_message(raw_message(subject=None)))
-
-
-@pytest.mark.xfail(strict=True, raises=TypeError,
-                   reason='Step 3: a missing subject should be treated as empty.')
 def test_subjectless_post_with_subject_tag(aws):
     make_list(aws, **{'subject-tag': 'Tag'}).send(parse_message(raw_message(subject=None)))
     assert sent_message(aws)['Subject'] == '[Tag] '
+    assert sent_message(aws)['X-Original-Subject'] is None
+
+
+def test_subjectless_post_without_subject_tag(aws):
+    make_list(aws).send(parse_message(raw_message(subject=None)))
+    assert sent_message(aws)['Subject'] is None
 
 
 def test_from_without_at_sign_crashes(aws):

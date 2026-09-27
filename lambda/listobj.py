@@ -366,7 +366,7 @@ class List (ListMemberContainer):
         # See if the list has a subject tag.
         if self.subject_tag:
             prefix = u'[{}] '.format(self.subject_tag)
-            subject = msg_get_header(msg, 'Subject')
+            subject = msg_get_header(msg, 'Subject') or u''
             if prefix not in subject:
                 self.msg_replace_header(msg, 'Subject', Header(u'{}{}'.format(prefix, subject)))
 

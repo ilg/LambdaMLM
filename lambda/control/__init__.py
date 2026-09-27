@@ -41,7 +41,13 @@ def handle_command(command_address, msg):
     if reply_to is None:
         print("Failed to get an email address from the Reply-To, From, or Sender headers.")
         return
-    subject = msg_get_header(msg, 'subject').replace('\n', '').replace('\r', '')
+    subject = msg_get_header(msg, 'subject')
+    if subject is None:
+        # Commands are in the subject.  Replying to subjectless mail would
+        # also risk loops with auto-responders.
+        print("Message has no subject, so ignoring it.")
+        return
+    subject = subject.replace('\n', '').replace('\r', '')
     print("Subject: " + subject)
     print("Responding to: " + reply_to)
 
