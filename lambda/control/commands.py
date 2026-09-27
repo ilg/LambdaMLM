@@ -16,12 +16,12 @@ runner = CliRunner()
 def command(ctx, user, **kwargs):
     ctx.obj = Obj(user=user)
 
-@command.command()
+@command.command(name='about')
 @click.pass_context
 def about(ctx, **kwargs):
     click.echo('This is the about command.')
 
-@command.command()
+@command.command(name='echo')
 @click.argument('stuff', nargs=-1, required=False)
 @click.pass_context
 def echo(ctx, stuff, **kwargs):

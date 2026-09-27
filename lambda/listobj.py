@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import copy
+
 import yaml
 from enum import Enum
 
@@ -254,7 +256,7 @@ class List (ListMemberContainer):
     def accept_invitation(self, from_user, token, action):
         from_address = address_from_user(from_user)
         token_address = control.get_signed_command(token, self.address)
-        if token_address != from_address:
+        if token_address.lower() != from_address:
             raise control.InvalidSignatureException
         action(from_address)
 
@@ -298,12 +300,15 @@ class List (ListMemberContainer):
         if new_value:
             msg[header] = new_value
 
-    def send(self, msg, mod_approved=False):
+    def send(self, msg, mod_approved=False, cc_chain=()):
+        # cc_chain holds the addresses of the lists that cc'd this one, so
+        # cc-lists that refer back to each other don't loop forever.
         from_user = msg_get_header(msg, 'From')
         from_name, from_address = parseaddr(from_user)
         from_address = from_address.lower()
         if not from_name:
-            from_name, _ = from_address.split('@', 1)
+            # Use the local part (or the whole address, if it has no @).
+            from_name = from_address.split('@', 1)[0]
         if not mod_approved:
             member = self.member_with_address(from_address)
             if member is None and self.reject_from_non_members:
@@ -328,8 +333,12 @@ class List (ListMemberContainer):
                 return
 
         # Send to CC lists.
+        cc_chain = cc_chain + (self.address,)
         for cc_list in List.lists_for_addresses(self.cc_lists):
-            cc_list.send(msg, mod_approved=True)
+            if cc_list.address in cc_chain:
+                continue
+            # send() rewrites the message's headers, so each list gets its own copy.
+            cc_list.send(copy.deepcopy(msg), mod_approved=True, cc_chain=cc_chain)
 
         # Strip out any exising DKIM signature.
         self.msg_replace_header(msg, 'DKIM-Signature')
@@ -359,14 +368,21 @@ class List (ListMemberContainer):
         # See if replies should default to the list.
         if self.reply_to_list:
             self.msg_replace_header(msg, 'Reply-to', Header(self.display_address))
-            msg['CC'] = Header(from_user)
+            # Cc the sender so replies reach them too, in a single Cc: header
+            # that keeps anyone who was already Cc'd.
+            existing_cc = [re.sub(r'\r?\n[ \t]', ' ', v) for v in msg.get_all('CC', [])]
+            if existing_cc:
+                cc = ', '.join(existing_cc + [Header(from_user).encode()])
+            else:
+                cc = Header(from_user)
+            self.msg_replace_header(msg, 'CC', cc)
         else:
             self.msg_replace_header(msg, 'Reply-to', Header(from_user))
 
         # See if the list has a subject tag.
         if self.subject_tag:
             prefix = u'[{}] '.format(self.subject_tag)
-            subject = msg_get_header(msg, 'Subject')
+            subject = msg_get_header(msg, 'Subject') or u''
             if prefix not in subject:
                 self.msg_replace_header(msg, 'Subject', Header(u'{}{}'.format(prefix, subject)))
 
@@ -383,6 +399,30 @@ class List (ListMemberContainer):
                     RawMessage={ 'Data': msg.as_string(), },
                     )
             
+    @staticmethod
+    def moderation_expiration_days(default=3):
+        """The number of days after which held messages expire.
+
+        Read from the bucket's lifecycle rule for the moderation prefix, in
+        either the older form with a top-level Prefix or the current form
+        with a Filter.  Falls back to `default` if there's no such rule.
+        """
+        try:
+            lifecycle = s3.get_bucket_lifecycle_configuration(Bucket=config.s3_bucket)
+        except ClientError as e:
+            # Most likely NoSuchLifecycleConfiguration.
+            print('Unable to read the bucket lifecycle configuration: {}'.format(e))
+            return default
+        for rule in lifecycle.get('Rules', []):
+            if rule.get('Status', 'Enabled') != 'Enabled':
+                continue
+            rule_filter = rule.get('Filter') or {}
+            prefix = rule.get('Prefix', rule_filter.get('Prefix', (rule_filter.get('And') or {}).get('Prefix')))
+            days = (rule.get('Expiration') or {}).get('Days')
+            if prefix == config.s3_moderation_prefix and days:
+                return days
+        return default
+
     def moderate(self, msg):
         # For some reason, this import doesn't work at the file level.
         from control import sign
@@ -398,16 +438,11 @@ class List (ListMemberContainer):
                 Body=msg.as_string(),
                 )
         # Get the moderation auto-deletion/auto-rejection interval from the S3 bucket lifecycle configuration.
-        lifecycle = s3.get_bucket_lifecycle_configuration(Bucket=config.s3_bucket)
         from datetime import timedelta
-        mod_interval = timedelta(days=next((
-            r['Expiration']['Days']
-            for r in lifecycle.get('Rules', [])
-            if r['Prefix'] == config.s3_moderation_prefix
-            ), 3))
+        mod_interval = timedelta(days=self.moderation_expiration_days())
         # Wrap the moderated message for inclusion in the notification to mods.
         forward_mime = MIMEMessage(msg)
-        control_address = 'lambda@{}'.format(self.host)
+        control_address = '{}@{}'.format(config.command_user, self.host)
         for moderator in self.moderator_addresses:
             # Build up the notification email per-moderator so that we can include
             # pre-signed moderation commands specific to that moderator.
@@ -461,7 +496,8 @@ class List (ListMemberContainer):
             for a in addresses:
                 try:
                     yield cls(a)
-                except ValueError:
+                except (ValueError, UnknownList):
+                    # Not a list address, or no such list.
                     continue
         except TypeError:
             return
@@ -479,7 +515,7 @@ class List (ListMemberContainer):
         if not l:
             raise ValueError('Bounced-to address does not resolve to a known list.')
         print('Bounce received for list {}.'.format(l.display_address))
-        member = l.member_passing_test(lambda m: l.verp_address(m.address) == bounce_address)
+        member = l.member_passing_test(lambda m: l.verp_address(m.address).lower() == bounce_address.lower())
         if not member:
             print('No member found matching the bounce address.')
             return

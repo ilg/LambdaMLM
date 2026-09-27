@@ -112,16 +112,16 @@ Each fix flips a pinned test from step 2. Keep this step to fixes that have test
 - **Give every Click command an explicit `name=`.** This must come before the Click 7 upgrade, which turns underscores in function-derived names into dashes.
 - **Use `config.command_user` in `moderate()`** instead of the hardcoded `lambda@`.
 - **Tolerate a missing or `Filter`-style lifecycle configuration in `moderate()`.** Use `.get()` throughout: `Filter` may hold `Prefix` directly or under `And`, and `Expiration` and `Status` may be absent. Fall back to the existing 3-day default.
-- **Make member lookups ignore case.** This covers `member_with_address` and the VERP match in `handle_bounce_to`. Lowercasing new addresses in `add_member` alone wouldn't fix members already stored in mixed case.
+- **Make member lookups ignore case.** This covers `member_with_address`, the own-post check in `can_receive_from`, the VERP match in `handle_bounce_to`, and invitation acceptance (where it caused the "Invalid signature" rejections seen in production). Lowercasing new addresses in `add_member` alone wouldn't fix members already stored in mixed case, so stored addresses are left as they are.
 - **Catch `UnknownList`** in `List.lists_for_addresses` (today mail to a non-list address crashes the handler) and in `require_list` in `control/list_commands.py` (today a command for an unknown list replies "Internal error.").
 - **Mail with no subject:**
   - Ignore command mail with no subject. Replying with a signed empty command would be an auto-responder anyone could trigger.
   - Treat a missing subject on list posts as empty.
 - **BCC'd list mail:** route on `receipt.recipients` alone instead of intersecting it with the header-derived `mail.destination`. Keep the requirement that commands be addressed in `To:`.
   - This is a behavior change: BCC'd spam to a list, which is currently dropped, will be processed under the list's own policy. With `allow-from-non-members: true`, that means relayed to every member. Document it in the commit and in [List Configuration](list%20configuration.md).
-- **`reply-to-list`:** replace any existing `Cc` header rather than adding a second one.
+- **`reply-to-list`:** add the sender to any existing `Cc` header rather than adding a second one.
 - **A `From` address with no `@`:** handle it instead of crashing `send()`.
-- **Posts to more than one list:** give each list its own copy of the incoming message. Today the first list rewrites the shared message in place, so the next list sees the rewritten `From` and moderates the post as coming from a non-member.
+- **Posts to more than one list:** give each list, and each `cc-lists` list, its own copy of the incoming message. Today the first list rewrites the shared message in place, so the next list sees the rewritten `From` and moderates the post as coming from a non-member.
 - **The `set` command:** store the value it was given. Under Click 6 the shared `--true`/`--false` destination defaults to `False`, so every form except `--true` stores `false`.
 - **Impossible signature timestamps** (for example month 13): reject them as invalid signatures instead of crashing `handle_command` with `ValueError`.
 - **Optional:** return `InsufficientPermissions` rather than crashing when a non-member acts on another address, and add a cycle guard for `cc-lists`.
@@ -157,7 +157,7 @@ Target `python3.13` or `python3.14`. `python3.10` is deprecated on Lambda from O
 - Replacing `lamson.encoding` with the adapter also removes its `EncodingError`, which one recorded sample raises today. That sample's golden result changes deliberately in the adapter commit.
 - Keep moderation keys exactly as today, including a leading space from a folded `Message-ID`. Python 3's email parser must be checked for this specifically.
 - The signing-key tests include a key longer than 64 bytes, matching production.
-- Expect the strict xfails for Python 2 non-ASCII crashes to start passing, and flip them.
+- Expect the strict xfails for Python 2 non-ASCII crashes (commands, raw 8-bit headers, non-ASCII sender names, short unicode keys) to start passing, and flip them.
 
 ### 6. Deploy tooling: AWS SAM
 

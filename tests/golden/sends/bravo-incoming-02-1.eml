@@ -75,18 +75,13 @@ X-Original-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  bh=Dd/U0uMmMYD+U1myM2dumMYD/3UmyMMdYDummUydMum=;
  b=DUM01dM2umYD3myUMdumMmYyDdu/mm+UyduMMYDU4mmyd56MumMmY7y/DdUM89uMYmmy0DUdM1uMm+YmyDU2Md+u3Mm4m56/Y7yDU8d9uM0Mm+YmDyUMMY+d1DuUMmmydMuYmmyDUMdumm2MyYDdUumMM3mY/yDUdMuMmYDUMmy=
 X-Original-Return-path: <ifoga@facu.b45.va.example.com>
-X-Original-From: "Mavo, Olihebe" <ifoga@facu.b45.va.example.com>
-X-Original-Subject: ANIM/Esse 0 Eros Donec
-X-Original-Sender: XMPL Charlie <charlie-sub-list@example.org>
 Sender: XMPL Bravo <bravo-roster@example.org>
-X-Original-From: "Mavo, Olihebe \(via XMPL Charlie\)"
- <charlie-sub-list+ifoga=facu.b45.va.example.com+from@example.org>
+X-Original-From: "Mavo, Olihebe" <ifoga@facu.b45.va.example.com>
 From: "Mavo, Olihebe \(via XMPL Bravo\)"
  <bravo-roster+ifoga=facu.b45.va.example.com+from@example.org>
-X-Original-Reply-to: "Mavo, Olihebe" <ifoga@facu.b45.va.example.com>
 Reply-to: "Mavo, Olihebe" <ifoga@facu.b45.va.example.com>
-X-Original-Subject: [XMPL Charlie] ANIM/Esse 0 Eros Donec
-Subject: [XMPL Bravo] [XMPL Charlie] ANIM/Esse 0 Eros Donec
+X-Original-Subject: ANIM/Esse 0 Eros Donec
+Subject: [XMPL Bravo] ANIM/Esse 0 Eros Donec
 
 --_004_BY2PR01MB179932F65A838DF51F5FAC5BC6D00BY2PR01MB1799prod_
 Content-Type: multipart/alternative;

@@ -1,6 +1,8 @@
 from __future__ import print_function
 
-from sestools import email_message_for_event, event_msg_is_to_command, msg_get_header, recipient_destination_overlap
+import copy
+
+from sestools import email_message_for_event, event_msg_is_to_command, msg_get_header, event_recipients
 from control import handle_command
 from api import handle_api
 
@@ -19,7 +21,7 @@ def lambda_handler(event, context):
             return
         
         print('Message from {}.'.format(msg_get_header(msg, 'from')))
-        recipients = recipient_destination_overlap(event)
+        recipients = event_recipients(event)
 
         # See if the message looks like it's a bounce.
         for r in recipients:
@@ -31,4 +33,5 @@ def lambda_handler(event, context):
         # See if the message was sent to any known lists.
         for l in List.lists_for_addresses(recipients):
             print('Sending to list {}.'.format(l.address))
-            l.send(msg)
+            # send() rewrites the message's headers, so each list gets its own copy.
+            l.send(copy.deepcopy(msg))

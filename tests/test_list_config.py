@@ -9,7 +9,6 @@ from datetime import timedelta
 import pytest
 from freezegun import freeze_time
 
-import config
 import control
 import golden
 import listobj
@@ -407,12 +406,11 @@ def test_accept_invitation_from_other_address(aws):
 
 
 def test_accept_invitation_for_mixed_case_address(aws):
-    # The replying address is lowercased but the token keeps the invited
-    # address's case, so the invitation can't be accepted.
     token = invitation_token('New@Example.com')
     with freeze_time(NOW):
-        with pytest.raises(control.InvalidSignatureException):
-            admin_list(aws).accept_subscription_invitation('New@Example.com', token)
+        admin_list(aws).accept_subscription_invitation('New@Example.com', token)
+    # The member is stored with the address as given.
+    assert members_of(aws)[-1].address == 'New@Example.com'
 
 
 def test_accept_expired_invitation(aws):

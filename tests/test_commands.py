@@ -10,8 +10,7 @@ from freezegun import freeze_time
 import config
 import control
 from control import commands
-from helpers import (HOST, member, parse_message, store_list_config,
-                     stored_list_config)
+from helpers import member, parse_message, store_list_config, stored_list_config
 from list_member import MemberFlag
 
 NOW = '2026-09-14 12:00:00'
@@ -113,13 +112,6 @@ def test_auto_submitted_no_is_processed(aws):
     assert len(aws.ses.sent_emails) == 1
 
 
-def test_subjectless_command_crashes(aws):
-    with pytest.raises(AttributeError):
-        control.handle_command(COMMAND_ADDRESS, command_message(None))
-
-
-@pytest.mark.xfail(strict=True, raises=AttributeError,
-                   reason='Step 3: command mail with no subject should be ignored.')
 def test_subjectless_command_is_ignored(aws):
     control.handle_command(COMMAND_ADDRESS, command_message(None))
     assert aws.ses.sent_emails == []
@@ -138,6 +130,17 @@ def test_echo():
         'This is the echo command.  You are a@example.com.\n[no parameters]\n'
 
 
+def test_command_names():
+    # Invitation emails embed these names, so they must never change.  Each
+    # command names itself explicitly so a Click upgrade can't rename it.
+    from control import list_commands
+    assert sorted(commands.command.commands) == ['about', 'echo', 'list']
+    assert sorted(list_commands.list_command.commands) == [
+        'accept_subscription_invitation', 'accept_unsubscription_invitation',
+        'members', 'mod', 'set', 'setflag', 'subscribe', 'unsetflag', 'unsubscribe']
+    assert sorted(list_commands.moderate.commands) == ['approve', 'reject']
+
+
 def test_unknown_command():
     assert run('a@example.com', 'nope') == 'Internal error.'
 
@@ -153,11 +156,6 @@ def test_invalid_list_address(aws):
         'not-an-address is not a valid list address.\n'
 
 
-def test_unknown_list_is_internal_error(aws):
-    assert run('a@example.com', 'list nosuch@example.org subscribe') == 'Internal error.'
-
-
-@pytest.mark.xfail(strict=True, reason='Step 3: require_list should catch UnknownList.')
 def test_unknown_list(aws):
     assert run('a@example.com', 'list nosuch@example.org subscribe') == \
         'nosuch@example.org is not a valid list address.\n'
@@ -360,27 +358,15 @@ def test_set_lists_options_insufficient(aws):
 @pytest.mark.parametrize('args, output, stored', [
     ('moderated --true', 'Set moderated to True', b'moderated: true'),
     ('moderated --false', 'Set moderated to False', b'moderated: false'),
-    # --true and --false share a destination whose default under Click 6 is
-    # False, not None, so every other form stores False.
-    ('subject-tag New', 'Set subject-tag to False', b'subject-tag: false'),
-    ('bounce-score-threshold --int 5', 'Set bounce-score-threshold to False', b'bounce-score-threshold: false'),
-    ('moderated true', 'Set moderated to False', b'moderated: false'),
+    ('subject-tag New', 'Set subject-tag to New', b'subject-tag: New'),
+    ('bounce-score-threshold --int 5', 'Set bounce-score-threshold to 5', b'bounce-score-threshold: 5'),
+    # Without --true or --false, the value is stored as a string.
+    ('moderated true', 'Set moderated to true', b"moderated: 'true'"),
     ])
 def test_set_option(aws, args, output, stored):
     make_list(aws)
     assert run('admin@example.com', 'list test-list@example.org set ' + args) == \
         output + ' on test-list@example.org.\n'
-    assert stored in stored_list_config(aws, 'test-list')
-
-
-@pytest.mark.xfail(strict=True, reason='Step 3: set should store the value it was given.')
-@pytest.mark.parametrize('args, stored', [
-    ('subject-tag New', b'subject-tag: New'),
-    ('bounce-score-threshold --int 5', b'bounce-score-threshold: 5'),
-    ])
-def test_set_option_value(aws, args, stored):
-    make_list(aws)
-    run('admin@example.com', 'list test-list@example.org set ' + args)
     assert stored in stored_list_config(aws, 'test-list')
 
 

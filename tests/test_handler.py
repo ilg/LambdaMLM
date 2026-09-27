@@ -12,7 +12,6 @@ import sestools
 from helpers import (FIXTURES, member, parse_message, read_bytes, ses_event,
                      store_incoming, incoming_key, store_list_config,
                      stored_list_config)
-from list_exceptions import UnknownList
 
 POST = (b'From: Alice Sender <alice@example.com>\n'
         b'To: test-list@example.org\n'
@@ -63,10 +62,10 @@ def test_msg_get_response_address(headers, expected):
     assert sestools.msg_get_response_address(parse_message(headers + b'\n')) == expected
 
 
-def test_recipient_destination_overlap():
+def test_event_recipients():
     event = ses_event('id', recipients=['a@example.org', 'b@example.org'],
                       destination=['b@example.org', 'c@example.net'])
-    assert sestools.recipient_destination_overlap(event) == set(['b@example.org'])
+    assert sestools.event_recipients(event) == set(['a@example.org', 'b@example.org'])
 
 
 COMMAND = parse_message(b'From: a@example.com\nTo: Lists <lambda@example.org>\nSubject: about\n\n')
@@ -96,15 +95,6 @@ def test_email_message_for_event(aws):
     assert incoming_key('id1') not in keys(aws)
 
 
-def test_email_message_for_event_deletes_on_error(aws):
-    store_incoming(aws, 'id1', POST)
-    with pytest.raises(RuntimeError):
-        with sestools.email_message_for_event(ses_event('id1', ['test-list@example.org'])):
-            raise RuntimeError('handling failed')
-    assert incoming_key('id1') not in keys(aws)
-
-
-@pytest.mark.xfail(strict=True, reason='Step 3: keep incoming mail when handling fails.')
 def test_email_message_for_event_keeps_message_on_error(aws):
     store_incoming(aws, 'id1', POST)
     with pytest.raises(RuntimeError):
@@ -154,24 +144,14 @@ def two_lists(aws):
     return ses_event('id1', ['test-list@example.org', 'other@example.org'])
 
 
-def test_post_to_two_lists_second_list_sees_rewritten_message(aws, lambda_handler):
-    # The first list rewrites the shared message in place (including From),
-    # so the second list sees a non-member sender and moderates the post.
-    # Which list goes first depends on set iteration order.
-    with pytest.raises(ClientError) as e:
-        lambda_handler(two_lists(aws), None)
-    assert e.value.response['Error']['Code'] == 'NoSuchLifecycleConfiguration'
-    sent = [d for s in aws.ses.sent_raw_emails for d in s['Destinations']]
-    assert sent in (['bob@example.com'], ['bob@example.com', 'carol@example.com'])
-
-
-@pytest.mark.xfail(strict=True, raises=ClientError,
-                   reason='Step 3: each list should get its own copy of the incoming message.')
 def test_post_to_two_lists(aws, lambda_handler):
     lambda_handler(two_lists(aws), None)
     # Bob is on both lists and gets two copies.
     assert sorted(d for s in aws.ses.sent_raw_emails for d in s['Destinations']) == \
         ['bob@example.com', 'bob@example.com', 'carol@example.com']
+    # Each list rewrote its own copy of the original message.
+    for s in aws.ses.sent_raw_emails:
+        assert parse_message(s['Data'])['X-Original-From'] == 'Alice Sender <alice@example.com>'
 
 
 @freeze_time('2026-09-14 12:00:00')
@@ -186,10 +166,10 @@ def test_command(aws, lambda_handler):
 def test_command_with_other_recipient_is_not_a_command(aws, lambda_handler):
     make_list(aws)
     store_incoming(aws, 'id1', POST.replace(b'To: test-list@example.org', b'To: lambda@example.org'))
-    # lambda@ isn't a list, so treating the message as a list post fails.
-    with pytest.raises(UnknownList):
-        lambda_handler(ses_event('id1', ['lambda@example.org', 'test-list@example.org']), None)
+    # It's handled as a list post; lambda@ isn't a list, so it's skipped.
+    lambda_handler(ses_event('id1', ['lambda@example.org', 'test-list@example.org']), None)
     assert aws.ses.sent_emails == []
+    assert [s['Destinations'] for s in aws.ses.sent_raw_emails] == [['bob@example.com']]
 
 
 @freeze_time('2026-09-14 12:00:00')
@@ -204,34 +184,35 @@ def test_bounce(aws, lambda_handler):
     assert incoming_key('id1') not in keys(aws)
 
 
-def test_mail_to_non_list_address_crashes(aws, lambda_handler):
-    store_incoming(aws, 'id1', POST.replace(b'test-list@', b'someone@'))
-    with pytest.raises(UnknownList):
-        lambda_handler(ses_event('id1', ['someone@example.org']), None)
-    # The message was deleted anyway.
-    assert incoming_key('id1') not in keys(aws)
-
-
-@pytest.mark.xfail(strict=True, raises=UnknownList,
-                   reason='Step 3: mail to an address that isn\'t a list should be ignored.')
 def test_mail_to_non_list_address(aws, lambda_handler):
     store_incoming(aws, 'id1', POST.replace(b'test-list@', b'someone@'))
     lambda_handler(ses_event('id1', ['someone@example.org']), None)
-
-
-def test_bcc_to_list_is_dropped(aws, lambda_handler):
-    make_list(aws)
-    store_incoming(aws, 'id1', POST.replace(b'To: test-list@example.org', b'To: undisclosed-recipients:;'))
-    lambda_handler(ses_event('id1', ['test-list@example.org'], destination=[]), None)
     assert aws.ses.sent_raw_emails == []
+    assert incoming_key('id1') not in keys(aws)
 
 
-@pytest.mark.xfail(strict=True, reason='Step 3: BCC\'d list mail should be delivered.')
 def test_bcc_to_list_is_delivered(aws, lambda_handler):
     make_list(aws)
     store_incoming(aws, 'id1', POST.replace(b'To: test-list@example.org', b'To: undisclosed-recipients:;'))
     lambda_handler(ses_event('id1', ['test-list@example.org'], destination=[]), None)
-    assert aws.ses.sent_raw_emails
+    assert [s['Destinations'] for s in aws.ses.sent_raw_emails] == [['bob@example.com']]
+
+
+def test_bcc_from_non_member_follows_list_policy(aws, lambda_handler):
+    # Bcc'd mail is no longer silently dropped, so it's subject to the list's
+    # policy for non-members like any other post.
+    make_list(aws, **{'allow-from-non-members': True})
+    store_incoming(aws, 'id1', POST.replace(b'To: test-list@example.org', b'To: undisclosed-recipients:;')
+                   .replace(b'alice@example.com', b'stranger@example.net'))
+    lambda_handler(ses_event('id1', ['test-list@example.org'], destination=[]), None)
+    assert sorted(d for s in aws.ses.sent_raw_emails for d in s['Destinations']) == \
+        ['alice@example.com', 'bob@example.com']
+
+
+def test_bcc_to_command_address_is_not_a_command(aws, lambda_handler):
+    store_incoming(aws, 'id1', b'From: a@example.com\nTo: someone@example.net\nSubject: about\n\n')
+    lambda_handler(ses_event('id1', ['lambda@example.org'], destination=['someone@example.net']), None)
+    assert aws.ses.sent_emails == []
 
 
 def test_eight_bit_from_crashes_before_routing(aws, lambda_handler):
@@ -239,7 +220,7 @@ def test_eight_bit_from_crashes_before_routing(aws, lambda_handler):
     store_incoming(aws, 'id1', POST.replace(b'Alice Sender', b'Al\xc3\xafce Sender'))
     with pytest.raises(UnicodeDecodeError):
         lambda_handler(ses_event('id1', ['test-list@example.org']), None)
-    assert incoming_key('id1') not in keys(aws)
+    assert incoming_key('id1') in keys(aws)
 
 
 def test_non_ses_event_without_action(aws, lambda_handler):

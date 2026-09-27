@@ -99,9 +99,9 @@ def test_can_receive_from(member_flags, from_address, expected):
     assert m.can_receive_from(from_address) is expected
 
 
-def test_can_receive_from_is_case_sensitive():
+def test_can_receive_from_ignores_case():
     m = ListMember('A@example.com')
-    assert m.can_receive_from('a@example.com') is True
+    assert m.can_receive_from('a@example.com') is False
 
 
 @freeze_time('2026-09-14 12:00:00.123456')
@@ -191,12 +191,10 @@ def test_member_with_address():
     assert c.member_with_address('z@example.com') is None
 
 
-def test_member_with_address_is_case_sensitive():
-    c = Container(member('Mixed.Case@example.com'))
-    assert c.member_with_address('mixed.case@example.com') is None
+def test_member_with_address_none():
+    assert Container(member('a@example.com')).member_with_address(None) is None
 
 
-@pytest.mark.xfail(strict=True, reason='Step 3: member lookups should ignore case.')
 def test_member_with_address_ignores_case():
     m = member('Mixed.Case@example.com')
     assert Container(m).member_with_address('mixed.case@example.com') is m
@@ -236,12 +234,6 @@ class TestAddressWillModifyAddress(object):
         with pytest.raises(InsufficientPermissions):
             self.container().address_will_modify_address('superonly@example.com', 'plain@example.com')
 
-    def test_non_member_acting_on_another_address_crashes(self):
-        with pytest.raises(AttributeError):
-            self.container().address_will_modify_address('x@example.com', 'plain@example.com')
-
-    @pytest.mark.xfail(strict=True, raises=AttributeError,
-                       reason='Step 3 (optional): a non-member should get InsufficientPermissions.')
     def test_non_member_acting_on_another_address(self):
         with pytest.raises(InsufficientPermissions):
             self.container().address_will_modify_address('x@example.com', 'plain@example.com')
@@ -276,10 +268,10 @@ def test_add_member_already_subscribed():
     assert c.saves == 0
 
 
-def test_add_member_already_subscribed_is_case_sensitive():
+def test_add_member_already_subscribed_ignores_case():
     c = Container(member('alice@example.com'))
-    c.add_member('ALICE@example.com')
-    assert len(c.members) == 2
+    with pytest.raises(AlreadySubscribed):
+        c.add_member('ALICE@example.com')
 
 
 def test_remove_member():
