@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# End-to-end test tooling (see e2e/README.md).  Runs with boto3 via uv.
+#
+#   scripts/e2e mailboxes check
+#   scripts/e2e inbox setup|teardown|list <env> [--apply]
+#   scripts/e2e lists setup|teardown <env> [--apply]
+#   scripts/e2e run <env> <label> [scenario ...] | scripts/e2e run <env> --list
+#   scripts/e2e compare <env>/<label> <env>/<label>
+set -euo pipefail
+cd "$(dirname "$0")/.."
+command="${1:-}"
+shift || true
+case "$command" in
+    mailboxes) exec python3 -m e2e.mailboxes "$@" ;;
+    inbox|lists|run|compare) module=$(case "$command" in inbox) echo ses_inbox ;; *) echo "$command" ;; esac)
+        exec uv run --quiet --no-project --with 'boto3[crt]==1.43.103' python -c \
+        "import sys; from e2e import $module; $module.main(sys.argv[1:])" "$@" ;;
+    *) echo "usage: scripts/e2e mailboxes check | scripts/e2e inbox|lists setup|teardown <env> [--apply] | scripts/e2e inbox list <env>" >&2; exit 2 ;;
+esac
