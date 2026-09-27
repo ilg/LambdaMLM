@@ -1,0 +1,185 @@
+closed-unsubscription: true
+members:
+- !Member
+  address: sem@lovow.example.com
+  flags: !!set
+    !flag 'preapprove': null
+    !flag 'moderator': null
+    !flag 'superAdmin': null
+    !flag 'admin': null
+    !flag 'echoPost': null
+  name: Setub Pozizavip
+- !Member
+  address: ifoga@facu.b45.va.example.com
+  flags: !!set
+    !flag 'preapprove': null
+    !flag 'moderator': null
+    !flag 'echoPost': null
+  name: Olihebe Mavo
+- !Member
+  address: edenadazu@tutim.example.com
+  flags: !!set
+    !flag 'preapprove': null
+    !flag 'moderator': null
+    !flag 'echoPost': null
+  name: Ifajus Umare-Cipu
+- !Member
+  address: paheful@p194.example.org
+  bounces:
+    2025-05-03 21:37:45.349070: !bouncekind 'soft'
+    2025-05-16 03:46:48.706867: !bouncekind 'hard'
+    2025-05-22 15:19:13.908127: !bouncekind 'hard'
+    2025-06-27 21:14:07.159163: !bouncekind 'hard'
+    2025-07-21 17:47:38.465404: !bouncekind 'hard'
+    2025-08-22 20:51:03.779125: !bouncekind 'hard'
+  flags: !!set
+    !flag 'preapprove': null
+    !flag 'echoPost': null
+  name: Lonal Fododi
+- !Member
+  address: l+anujetumoge@be.example.com
+  bounces:
+    2023-03-20 22:40:31.697595: !bouncekind 'hard'
+    2023-04-10 13:29:21.050269: !bouncekind 'hard'
+    2023-04-10 19:08:05.394442: !bouncekind 'hard'
+    2023-05-06 04:00:09.979438: !bouncekind 'hard'
+    2023-06-10 13:29:34.996420: !bouncekind 'hard'
+    2023-07-18 15:29:08.123312: !bouncekind 'hard'
+    2023-07-28 15:00:29.662811: !bouncekind 'hard'
+    2023-07-29 09:13:24.866818: !bouncekind 'hard'
+    2023-08-02 08:03:57.079883: !bouncekind 'hard'
+  flags: !!set
+    !flag 'echoPost': null
+    !flag 'bouncing': null
+  name: Setub Pozizavip (ahu)
+- !Member
+  address: kudovu@afilasibip016.example.org
+  flags: !!set
+    !flag 'echoPost': null
+  name: Hil Efuto
+- !Member
+  address: piroju.senatozu@i988.example.org
+  bounces:
+    2024-08-22 01:44:52.767874: !bouncekind 'unknown'
+  flags: !!set
+    !flag 'echoPost': null
+  name: Jekega  Ohalejud
+- !Member
+  address: vozozowun@rota.example.org
+  flags: !!set
+    !flag 'echoPost': null
+  name: Jodomuvep Zefesime
+- !Member
+  address: penefafaj@p194.example.org
+  bounces:
+    2017-07-09 13:57:57.374261: !bouncekind 'hard'
+    2017-08-04 11:29:36.579258: !bouncekind 'hard'
+    2017-08-31 08:38:38.544467: !bouncekind 'hard'
+    2017-09-30 13:14:40.761157: !bouncekind 'hard'
+    2017-10-30 06:41:44.665950: !bouncekind 'hard'
+  flags: !!set
+    !flag 'echoPost': null
+  name: Mebon Ebirunoh
+- !Member
+  address: cupenebufi@diwecatod382.example.org
+  flags: !!set
+    !flag 'echoPost': null
+  name: Boza Otefanovo
+- !Member
+  address: iveb.vowojut@B787.example.org
+  flags: !!set
+    !flag 'echoPost': null
+  name: Olihebe Dahovec
+- !Member
+  address: Powudena.V.Egedekuk@o678.example.org
+  bounces:
+    2020-07-08 10:26:02.250425: !bouncekind 'unknown'
+    2020-08-15 01:12:46.438825: !bouncekind 'unknown'
+    2020-09-22 03:21:19.110218: !bouncekind 'unknown'
+  flags: !!set
+    !flag 'echoPost': null
+- !Member
+  address: palajeg@omup086.example.org
+  flags: !!set
+    !flag 'preapprove': null
+  name: Ifajus Kovoru
+- !Member
+  address: veniraga@diwecatod382.example.org
+  flags: !!set
+    !flag 'preapprove': null
+    !flag 'moderator': null
+  name: Foken Jorunoh
+- !Member
+  address: zipezit@cusu.example.net
+  flags: !!set {}
+  name: ''
+- !Member
+  address: Epikoteri@ezup.example.org
+  bounces:
+    2022-01-30 15:55:16.897812: !bouncekind 'unknown'
+  flags: !!set {}
+  name: Egonuto Enebumep
+- !Member
+  address: ofilazule@cewakisekozoh.example.org
+  flags: !!set {}
+  name: ''
+- !Member
+  address: regikep.emadak@i988.example.org
+  bounces:
+    2018-04-23 12:12:49.708816: !bouncekind 'unknown'
+    2018-05-22 23:22:38.939401: !bouncekind 'unknown'
+  flags: !!set {}
+  name: Jisiboz Ojopaw
+- !Member
+  address: bunivo-rihe@iku.example.com
+  bounces:
+    2019-07-26 03:39:16.012102: !bouncekind 'hard'
+    2019-07-30 11:34:54.576329: !bouncekind 'hard'
+    2019-08-01 21:31:39.038221: !bouncekind 'hard'
+    2019-08-04 01:06:50.761188: !bouncekind 'hard'
+    2019-08-31 02:12:55.264891: !bouncekind 'hard'
+  flags: !!set {}
+  name: Umare-Cipu, Ifajus
+- !Member
+  address: ''
+  flags: !!set {}
+  name: ' '
+- !Member
+  address: titejuh@j525.example.org
+  flags: !!set {}
+  name: ''
+- !Member
+  address: UDuc.Otihe@i988.example.org
+  flags: !!set {}
+  name: Ipog Emivo
+- !Member
+  address: lefuzu@e152.example.org
+  flags: !!set {}
+  name: Ifola Hicuwabage
+- !Member
+  address: udohev@iwiwe.example.com
+  flags: !!set {}
+  name: ''
+- !Member
+  address: FEretac@atipobinor963.example.org
+  flags: !!set {}
+  name: Evorip  Vibosi
+- !Member
+  address: firotudeb@emumo.example.org
+  flags: !!set {}
+  name: ''
+- !Member
+  address: ipotej@osen566.example.org
+  flags: !!set {}
+  name: Elid Azetu
+- !Member
+  address: ocinome@p194.example.org
+  flags: !!set {}
+  name: Opet Vibohe
+- !Member
+  address: asafibogu@iku.example.com
+  flags: !!set {}
+  name: 'Ozetuf Ejohuni '
+moderated: true
+name: XMPL Charlie
+subject-tag: XMPL Charlie

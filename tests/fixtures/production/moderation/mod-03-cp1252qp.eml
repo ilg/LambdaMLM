@@ -1,0 +1,246 @@
+Return-Path: <VOzozowun@rota.example.org>
+Received: from HOM35-EG6-osi.ruzacabo.emisozidin.semonur.example.com
+ (peru-lu4faz84aj1008.ruzacabo.emisozidin.semonur.example.com [192.0.2.1])
+ by uhaheno-ceji.me-jihi-1.hifucinav.example.com with SMTP id
+ phg0scacdssh1tcp3lk9l2fcmtb0ttu08djv9ig1 for bravo-roster@example.org;
+ Sat, 07 Jul 2018 23:03:41 +0000 (UTC)
+X-SES-Spam-Verdict: PASS
+X-SES-Virus-Verdict: PASS
+Received-SPF: permerror (spfCheck: Error in processing SPF Record)
+ client-ip=192.0.2.1; envelope-from=VOzozowun@rota.example.org;
+ helo=peru-lu4faz84aj1008.ruzacabo.emisozidin.semonur.example.com; 
+Authentication-Results: jidunewiw.example.com;
+ spf=permerror (spfCheck: Error in processing SPF Record)
+ client-ip=192.0.2.1; envelope-from=VOzozowun@rota.example.org;
+ helo=peru-lu4faz84aj1008.ruzacabo.emisozidin.semonur.example.com; 
+ dkim=pass header.i=@rota.epehiwozine.example.com;
+X-SES-RECEIPT: DUMMYDUMMYDUMMYDdUumMmMYyd0DumU1MMYmDUyMMduYD2UmMmMYyDUMM3YduDmmUMMyYD4dUMMumYmyDUMdMu5mY6DmU7M8ydumMmYyDUM9MY01dDUMMYDUMMYuD2UmmyduMMYmmDUyM3dMuYmDUMMYmDyUMMY4d5DuUMMYD67UmMm8MYDUMy9dM0Y1D2U3MMYuDmUMMmYydDu4mU5mMM6yduYDm7UmMMYyDdUMMYD8u9UMmmMYydDuU0m1MMmYDUMMYyDdUumMMmydYD2umUmMM3y4dYDuU5MMYDUMmmMyYD6dUummyMduMY7Dm89mUMMYD0yUM1d2MYu3D4mmyd56u7UmMMYmDUyMM8YdD9umUMM0Y1m2DydummUyMMduY3mDU4mMMYy5D67UMdMYuDUmMmMYyd8uD9U0mmMyMYDdUMMYDUMuM1Ymm2y3
+X-SES-DKIM-SIGNATURE: a=rsa-sha256; q=dns/txt;
+ b=d0um1D2mUMMYydu3mmDyUduMmMmYDU4MydMuYmmDydummy5dUumMm6MyYdu7D8UmMmyd9uM+YmDm+UyMdMYDu0UMM1mYm2yDd345u6U7m+m8MyM9d01Yum2DUM3MYDUMMmYyDduUM4Mm5mYy6D7+8UMMYDdUumMMmyYduDmmy9U=;
+ c=relaxed/simple; s=7v7vs6w47njt4pimodk5mmttbegzsi6n; d=jidunewiw.example.com;
+ t=1531004622; v=1; bh=0dumDm1Uy2M3MdYumDUMmMYDUMyMYDdUuM/45MYDmUm=;
+ h=From:To:Cc:Bcc:Subject:Date:Message-ID:MIME-Version:Content-Type:X-SES-RECEIPT;
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=rota.epehiwozine.example.com; 
+ s=selector1-rota-org;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=DdUuM01mmMYDUydMuMYmDmU/y2dM3MYDU4um5mydMum=;
+ b=DduU0/MMY1mmDUMMYyDd/Uu2MMY3mm4y5d6uDm78UMmMYyd9ummydDuUM0mmydMuYD1Um2MmM3ydYu4Dm56my78duUmm9+MyM0du1+YDUMmmMyY2D/UMd3ummydMYumm4yDdUMumMmYy5DUduMmMmY6yDUMMYdu7m8myDUdu9MM=
+Received: from AZ0OP99EH8231.kelawu81.hora.semonur.example.com (192.0.2.2) by
+ ER6OV17OL3328.kelawu81.hora.semonur.example.com (192.0.2.3) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.930.19; Sat, 7 Jul 2018 23:03:39 +0000
+Received: from AZ0OP99EH8231.kelawu81.hora.semonur.example.com
+ ([2001:db8::1]) by AZ0OP99EH8231.kelawu81.hora.semonur.example.com
+ ([2001:db8::1%5]) with mapi id 15.20.0930.016; Sat, 7 Jul 2018
+ 23:03:39 +0000
+From: Jodomuvep Zefesime <VOzozowun@rota.example.org>
+To: "bravo-roster@example.org" <bravo-roster@example.org>, Olihebe Mavo
+ <ifoga@facu.b45.va.example.com>
+Subject: Re: [XMPL Charlie] ANIM Esse 8 Eros Deserunt
+Thread-Topic: [XMPL Charlie] ANIM Esse 8 Eros Deserunt
+Thread-Index: DUMMYdu0DUMmm1MyYDdUMu2mm3MyYdDUuMMY
+Date: Sat, 7 Jul 2018 23:03:38 +0000
+Message-ID: <AS6AB20AB361042ASU779GI4HE0P40E8JA6016@AZ0OP99EH8231.kelawu81.hora.semonur.example.com>
+References: <905711831b2uceg9-1720319i-22ub-9066-4maw-28u4jo0f0e45-049113@me-jihi-1.jidunewiw.example.com>
+In-Reply-To: <905711831b2uceg9-1720319i-22ub-9066-4maw-28u4jo0f0e45-049113@me-jihi-1.jidunewiw.example.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: spf=none (sender IP is )
+ smtp.mailfrom=VOzozowun@rota.example.org; 
+x-originating-ip: [2001:db8::2]
+x-ms-publictraffictype: Email
+x-microsoft-exchange-diagnostics: 0; DU1MM23YD4567;
+ 8:UMdummMyY/dummD9yUMM0dYumDmU1Myd2M3/uYmmyDUduMm/mMydumYmyDdUMMu4YDm5Umy+M6dMuYD7UmmMyMYDdu89mmyUdMuMYDUmMM0mydummY+ydDuU1mm2M/M+/yYduDmmydummyU3dumMmMyYD/45UMMdYDUu6MM7YDmUm/ydumMMYmydDUuM8m9Mm/yYD0+dumm12yd3u4Um56mM7yMd8+YDU9umm0yduMmM1YDU2MM3mYyDUdMum4M5
+x-ms-exchange-antispam-srfa-diagnostics: DUM;
+x-ms-office365-filtering-correlation-id: aae39fc7-80ea-016a-8a3a-bd3c9ff1f368
+x-microsoft-antispam: DduUmmy:; MMY:0; DUM:1;
+ MYDUMM:(2345678)(9012345)(6789012)(3456789)(012345)(6789012)(3456789)(012345678901234)(567890123456789)(0123456)(7890123456789)(0123456)(7890123);
+ YDUM:MY4DU56MM7890; 
+x-ms-traffictypediagnostic: CY4PR04MB0519:
+x-microsoft-antispam-prvs: <UB4UK79ON063607896AP3143AKUJA469DA6369@ER6OV17OL3328.kelawu81.hora.semonur.example.com>
+x-exchange-antispam-report-test: DduUmmy:;
+x-ms-exchange-senderadcheck: 1
+x-exchange-antispam-report-cfa-test: DUM:0; MYD:1;
+ UMMYDU:(2345678)(9012345)(6789012)(3456789012)(3456789)(012345678)(90123456)(78901234567)(8901234)(56789012)(34567890)(123456)(789012)(3456789)(01234567890123)(45678901234567)(89012345678901)(23456789012345)(678901234567890)(123456789012345)(678901234567890)(12345678901234)(567890123456789)(012345678901234)(5678901)(234567890123456)(7890123);
+ MMYD:UM4MY56DU7890; MMY:1; DUM:2; MYDUMM:; YDUM:MY3DU45MM6789; 
+x-forefront-prvs: 0123D4U5M6
+x-forefront-antispam-report: SFV:NSPM;
+ SFS:(10009020)(136003)(366004)(39830400003)(376002)(396003)(346002)(118595004)(199004)(189003)(14454004)(97736004)(80792005)(99286004)(6116002)(486006)(53936002)(2906002)(6246003)(68736007)(25786009)(476003)(446003)(2900100001)(72206003)(81166006)(81156014)(478600001)(8676002)(110136005)(316002)(786003)(8936002)(11346002)(55016002)(14444005)(46003)(6606003)(74316002)(105586002)(7696005)(229853002)(7736002)(236005)(6436002)(54896002)(9686003)(186003)(19627405001)(76176011)(2501003)(5250100002)(86362001)(5660300001)(256004)(102836004)(6506007)(106356001)(33656002);
+ DIR:OUT; SFP:1101; SCL:1; SRVR:CY4PR04MB0519;
+ H:AZ0OP99EH8231.kelawu81.hora.semonur.example.com; FPR:; SPF:None; LANG:en;
+ PTR:InfoNoRecords; A:1; MX:1; 
+received-spf: None (emisozidin.semonur.example.com: rota.example.org does not designate
+ permitted sender hosts)
+x-microsoft-antispam-message-info: dDumUm0y12MMdummyYdu3D45mUmMMYyDU6MMdum7m+/YDydUMum8/myMYdDUMuMYmDUMmM9yYD0U1MMYD/duUMmmM2yYdumDU3myMMdYDUumM45MmyY6dDUMumM7Y8mDUMydMumYmDUyMMYd9umDmUMyduMYDUMMYDm0myUdMMummyYduDmUMmM1yY2DUdu3M4Mm5mydYummyDdU+uMMYmDUmM6MYDUyM7M89dYuDU0mmyMdu+m1Mm2Y34ydu+DUM56mMmYDyUMdMumYmyDdUMMuYmD7+mUyduMMmmyYD8UdummydMuMYD9mmy0UMM1YDdummy/dumm+y+UMMdYDumUm23y4duMmmMYDU/yMduM=
+spamdiagnosticoutput: 0:12
+spamdiagnosticmetadata: DUMM
+Content-Type: multipart/alternative;
+ boundary="_000_CY4PR04MB066321BFF519ED1DA6A97C5DC8460CY4PR04MB0663namp_"
+MIME-Version: 1.0
+X-OriginatorOrg: rota.example.org
+X-MS-Exchange-CrossTenant-Network-Message-Id: aae39fc7-80ea-016a-8a3a-bd3c9ff1f368
+X-MS-Exchange-CrossTenant-originalarrivaltime: 07 Jul 2018 23:03:38.8872 (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 464e506f-1747-4789-c9e2-1dbdc199311a
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: CY4PR04MB0519
+
+--_000_CY4PR04MB066321BFF519ED1DA6A97C5DC8460CY4PR04MB0663namp_
+Content-Type: text/plain; charset="Windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+Ipsum,
+
+
+A velit esse id qui ac nunc sed.
+
+
+Curabitur
+
+________________________________
+Nunc: ANIM Odio Integer <charlie-sub-list@example.org> do varius mi Officia Anim=
+ (est ANIM Odio Integer) <charlie-sub-list+ifoga=3Dfacu.b45.va.example.com+from@example.org=
+>
+Quis: Dictum, Anim 8, 0414 41:06:35 AD
+Id: bravo-roster@example.org
+Aliquam: [ANIM Odio Integer] ANIM Esse 8 Eros Deserunt
+
+Integer,
+
+Ex sem voluptate non deserunt nec non Esse 8 (Sed 06) Eros Commodo (Exercitation=
+) id Aliquam 41 mi Sem mi Aliquet Integer=92a Pellentesque Commodo (EGET=
+ 523-5-176896-12-5).  Enim ac ex vulputate esse esse odio sunt mauris occaecat=
+ quis non fugiat deserunt.  Ac ac odio a irure esse vehicula odio lacus=
+ dictum, etiam sed ipsum nunc mauris nec neque-donec excepteur.
+
+Id congue non elit, ex eget sint exercitation esse NiSI id felis a cillum etiam=
+ nec a irure tellus mi non dolor non lobortis euismod id a incididunt magna=
+.  Ex sem consequat id ut eget id ex-enim non non-esse sit (esse + lobortis=
+ mauris) id est labore integer nec $07 anim aute $8 nec maecenas, a irure=
+ proident sem NiSI=92a amet magna mi $68 ($40 do Turpis).
+
+Veniam est ex quis in nunc in proident ad sed velit id esse id qui non NiSI=
+ esse non lobortis mauris nunc ANIM nec $07 aute $8 maecenas. Enim quis nunc=
+ do id tincidunt sed odio dolor id etiam nunc NiSI.
+
+Ex quis mollit ex ac non nisi esse laboris pellentesque.  Nec non, ac non nunc=
+ id quis enim ad sed eget sem nec arcu eros nec 0414-82, sed sit sit nec=
+ non esse et mauris $46 id nisl eros nulla.
+
+Ad sed eget officia excepteur non fugiat deserunt (Adipiscing, Sollicitudin=
+ id Exercitation), sed quis donec nunc ac mauris in a incididunt.  Exercitation=
+, ex consequat enim incididunt a cillum esse nisl id non incididunt magna=
+ ipsum ut fermentum ac adipiscing nec aute mi sed.  Veniam est ex quis in=
+ nunc in proident ad sed eget officia excepteur non fugiat deserunt nec non=
+ Esse 8 Eros, in sem officia eget non NiSI esse, non lacus sem maecenas non=
+ NiSI esse id non incididunt magna.
+
+Donec sed.
+
+Officia Anim
+ANIM Vulputate
+
+--_000_CY4PR04MB066321BFF519ED1DA6A97C5DC8460CY4PR04MB0663namp_
+Content-Type: text/html; charset="Windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+<html>
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DWindows-1=
+252">
+<style type=3D"text/css" style=3D"display:none;"><!-- P {margin-top:0;margi=
+n-bottom:0;} --></style>
+</head>
+<body dir=3D"ltr">
+<div id=3D"divtagdefaultwrapper" style=3D"font-size:12pt;color:#000000;font=
+-family:Calibri,Helvetica,sans-serif;" dir=3D"ltr">
+<p style=3D"margin-top:0;margin-bottom:0">Ipsum,</p>
+<p style=3D"margin-top:0;margin-bottom:0"><br>
+</p>
+<p style=3D"margin-top:0;margin-bottom:0">A velit esse id qui ac nunc sed.<=
+/p>
+<p style=3D"margin-top:0;margin-bottom:0"><br>
+</p>
+<p style=3D"margin-top:0;margin-bottom:0">Curabitur</p>
+</div>
+<hr style=3D"display:inline-block;width:98%" tabindex=3D"-1">
+<div id=3D"divRplyFwdMsg" dir=3D"ltr"><font face=3D"Calibri, sans-serif" st=
+yle=3D"font-size:11pt" color=3D"#000000"><b>Nunc:</b> ANIM Odio Integer &lt=
+;charlie-sub-list@example.org&gt; do varius mi Officia Anim (est ANIM Odio Integer=
+) &lt;scelerisque-amet&#43;dolor=3Dorci.a41.ad.do&#43;egir@example.org&gt;=
+<br>
+<b>Quis:</b> Dictum, Anim 8, 0414 41:06:35 AD<br>
+<b>Id:</b> bravo-roster@example.org<br>
+<b>Aliquam:</b> [ANIM Odio Integer] ANIM Esse 8 Eros Deserunt</font>
+<div>&nbsp;</div>
+</div>
+<meta content=3D"text/html; charset=3Dutf-8">
+<div dir=3D"auto">
+<div><span></span></div>
+<div>
+<div><span style=3D"background-color:rgba(255,255,255,0)">Integer,</span></=
+div>
+<div>
+<div></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)"><br>
+</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)">Ex sem voluptate =
+non deserunt nec non Esse 8 (<a href=3D"" dir=3D"ltr" style=3D"">Sed 06</a>=
+) Eros Commodo (Exercitation) id Aliquam 41 mi Sem mi Aliquet Integer=92a
+<i>Pellentesque Commodo</i> (EGET 523-5-176896-12-5). &nbsp;Enim ac ex vulputate=
+ esse esse odio sunt mauris occaecat quis non fugiat deserunt. &nbsp;Ac=
+ ac odio a irure esse vehicula odio lacus dictum, etiam sed ipsum nunc mauris=
+ nec neque-donec excepteur.</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)"><br>
+</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)">Id congue non elit=
+, ex eget sint exercitation esse NiSI id felis a cillum etiam nec a irure =
+tellus mi non dolor non lobortis euismod id a incididunt magna. &nbsp;Ex sem=
+ consequat id ut eget id ex-enim non non-esse
+ sit (esse &#43; lobortis mauris) id est labore integer nec $07 anim aute $=
+8 nec maecenas, a irure proident sem NiSI=92a amet magna mi $68 ($40 do Turpis=
+).</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)"><br>
+</span></div>
+<div><u style=3D"background-color:rgba(255,255,255,0)"><b>Veniam est ex quis=
+ in nunc in proident ad sed velit id esse id qui non NiSI esse non lobortis=
+ mauris nunc ANIM nec $07 aute $8 maecenas.</b></u><span style=3D"backgrou=
+nd-color:rgba(255,255,255,0)">&nbsp;Enim
+ quis nunc</span><span style=3D"background-color:rgba(255,255,255,0)"> do id=
+ tincidunt sed odio dolor id etiam nunc NiSI. &nbsp;</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)"><br>
+</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)">Ex quis mollit ex=
+ ac non nisi esse laboris pellentesque. &nbsp;Nec non, ac non nunc id quis =
+enim ad sed eget sem nec arcu eros nec 0414-82, sed sit sit nec non esse et=
+ mauris $46 id nisl eros nulla. &nbsp;</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)"><br>
+</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)">Ad sed eget officia=
+ excepteur non fugiat deserunt (Adipiscing, Sollicitudin id Exercitation)=
+, sed quis donec nunc ac mauris in a incididunt. &nbsp;Exercitation, ex consequat=
+ enim incididunt a cillum esse nisl
+ id non incididunt magna ipsum ut fermentum ac adipiscing nec aute mi sed. =
+&nbsp;<u>Veniam est ex quis in nunc in proident ad sed eget officia excepteur=
+ non fugiat deserunt nec non Esse 8 Eros, in sem officia eget non NiSI esse=
+, non lacus sem maecenas non NiSI esse
+ id non incididunt magna</u>.&nbsp;</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)"><br>
+</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)">Donec sed.</span>=
+</div>
+<div><span style=3D"background-color:rgba(255,255,255,0)"><br>
+</span></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)">Officia Anim</spa=
+n></div>
+<div><span style=3D"background-color:rgba(255,255,255,0)">ANIM Vulputate</s=
+pan></div>
+</div>
+<div></div>
+</div>
+</div>
+</body>
+</html>
+
+--_000_CY4PR04MB066321BFF519ED1DA6A97C5DC8460CY4PR04MB0663namp_--

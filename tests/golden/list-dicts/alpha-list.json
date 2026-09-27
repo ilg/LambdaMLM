@@ -1,0 +1,113 @@
+{
+  "allow-from-non-members": null,
+  "bounce-decay-factor": null,
+  "bounce-score-threshold": null,
+  "bounce-weights": null,
+  "cc-lists": null,
+  "closed-unsubscription": true,
+  "members": [
+    {
+      "address": "sem@lovow.example.com",
+      "flags": [
+        "admin",
+        "echoPost",
+        "moderator",
+        "superAdmin"
+      ],
+      "name": "Setub Pozizavip"
+    },
+    {
+      "address": "g@be.example.com",
+      "flags": [
+        "admin",
+        "echoPost",
+        "moderator",
+        "superAdmin"
+      ],
+      "name": "Setub Pozizavip (ahu)"
+    },
+    {
+      "address": "vozozowun@rota.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Jodomuvep Zefesime"
+    },
+    {
+      "address": "cupenebufi@diwecatod382.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Boza Otefanovo"
+    },
+    {
+      "address": "ifoga@facu.b45.va.example.com",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Olihebe Mavo"
+    },
+    {
+      "address": "fakotunodis@e-89.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Tuhi Ejemuka"
+    },
+    {
+      "address": "kudovu@afilasibip016.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Hil Efuto"
+    },
+    {
+      "address": "ocinome@p194.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Opet Vibohe"
+    },
+    {
+      "address": "akos.iropuhava@tutim.example.com",
+      "flags": [],
+      "name": "XMPL Tigejocug"
+    },
+    {
+      "address": "edenadazu@tutim.example.com",
+      "flags": [],
+      "name": "Ifajus Umare-Cipu"
+    },
+    {
+      "address": "ogaw@e916.example.org",
+      "flags": [],
+      "name": "UGad"
+    },
+    {
+      "address": "penefafaj@p194.example.org",
+      "flags": [],
+      "name": "Asuzahuniva C. Ebirunoh"
+    },
+    {
+      "address": "epikoteri@ezup.example.org",
+      "flags": [],
+      "name": "Egonuto Enebumep"
+    },
+    {
+      "address": "bunivo-rihe@iku.example.com",
+      "flags": [],
+      "name": "Umare-Cipu, Ifajus"
+    },
+    {
+      "address": "aposuju.ewafu@i988.example.org",
+      "flags": [],
+      "name": "Jovuwob Mibok"
+    }
+  ],
+  "moderated": null,
+  "name": "XMPL Alpha",
+  "open-subscription": null,
+  "reject-from-non-members": null,
+  "reply-to-list": true,
+  "subject-tag": "XMPL Alpha"
+}

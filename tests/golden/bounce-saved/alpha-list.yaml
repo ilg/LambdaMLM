@@ -1,0 +1,9 @@
+members:
+- !Member
+  address: member@example.com
+  bounces:
+    2026-09-14 12:00:00: !bouncekind 'hard'
+  flags: !!set {}
+- !Member
+  address: other@example.com
+  flags: !!set {}

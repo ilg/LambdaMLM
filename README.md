@@ -15,6 +15,16 @@ Setup requires familiarity with AWS—in particular, having credentials already 
 - [Setup](docs/setup.md)
 - [Technical](docs/technical.md)
 
+## Tests
+
+The test suite runs on Python 2.7 in Docker (see the [modernization plan](docs/modernization-plan.md)):
+
+```sh
+scripts/test-py2
+```
+
+Arguments are passed through to `pytest`.  Tests never contact AWS: S3 and SES are replaced with in-memory fakes, and any real AWS request fails the test.
+
 ## License
 
 [MIT License](LICENSE)

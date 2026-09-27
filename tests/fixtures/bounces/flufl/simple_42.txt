@@ -1,0 +1,54 @@
+From: Mail Delivery System <Mailer-Daemon@smtp13.example.com>
+To: python-dev-bounces+python=david...@python.org
+Content-Type: multipart/report; report-type=delivery-status; boundary=1578513971-eximdsn-503222498
+MIME-Version: 1.0
+Subject: Mail delivery failed: returning message to sender
+Message-Id: <E1ipHal-0002LO-QD@smtp13.example.com>
+Date: Wed, 08 Jan 2020 20:06:11 +0000
+
+--1578513971-eximdsn-503222498
+Content-type: text/plain; charset=us-ascii
+
+This message was created automatically by mail delivery software.
+
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
+
+  david...@gmail.com
+    (generated from python@david...)
+    host gmail-smtp-in.l.google.com [108.177.119.27]
+    SMTP error from remote mail server after end of data:
+    550-5.7.1 [94.136.40.141      12] Our system has detected that this message is
+    550-5.7.1 likely unsolicited mail. To reduce the amount of spam sent to Gmail,
+    550-5.7.1 this message has been blocked. Please visit
+    550-5.7.1  https://support.google.com/mail/?p=UnsolicitedMessageError
+    550 5.7.1  for more information. c11si2772404eds.65 - gsmtp
+
+--1578513971-eximdsn-503222498
+Content-type: message/delivery-status
+
+Reporting-MTA: dns; smtp13.mailcore.me
+
+Action: failed
+Final-Recipient: rfc822;david...@gmail.com
+Status: 5.0.0
+Remote-MTA: dns; gmail-smtp-in.l.google.com
+Diagnostic-Code: smtp; 550-5.7.1 [94.136.40.141      12] Our system has detected that this message is
+ 550-5.7.1 likely unsolicited mail. To reduce the amount of spam sent to Gmail,
+ 550-5.7.1 this message has been blocked. Please visit
+ 550-5.7.1  https://support.google.com/mail/?p=UnsolicitedMessageError
+ 550 5.7.1  for more information. c11si2772404eds.65 - gsmtp
+
+--1578513971-eximdsn-503222498
+Content-type: text/rfc822-headers
+
+Return-path: <python-dev-bounces+python=david...@python.org>
+Received: from mail.python.org ([188.166.95.178])
+	by smtp13.mailcore.me with esmtp (Exim 4.92.3)
+	(envelope-from <python-dev-bounces+python=david...@python.org>)
+	id 1ipHak-0002Kp-UJ
+	for python@david...; Wed, 08 Jan 2020 20:06:11 +0000
+X-Comment: Remainder removed, not needed for test.
+
+--1578513971-eximdsn-503222498--
+

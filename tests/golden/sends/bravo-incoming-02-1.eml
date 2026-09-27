@@ -1,0 +1,230 @@
+Received: from IBA96-GA8-moc.ruzacabo.emisozidin.semonur.example.com
+ (ujac-od3uda29ru2062.ruzacabo.emisozidin.semonur.example.com [192.0.2.7])
+ by uhaheno-ceji.me-jihi-1.hifucinav.example.com with SMTP id
+ 3s16o6k4ok0kc897k046j4an6vbbroc9v5pe3no1
+ for bravo-roster@example.org; Mon, 17 Oct 2016 17:14:42 +0000 (UTC)
+X-SES-Spam-Verdict: PASS
+X-SES-Virus-Verdict: PASS
+Received-SPF: pass (spfCheck: domain of facu.b45.va.example.com designates
+ 192.0.2.7 as permitted sender) client-ip=192.0.2.7;
+ envelope-from=ifoga@facu.b45.va.example.com;
+ helo=ujac-od3uda29ru2062.ruzacabo.emisozidin.semonur.example.com; 
+Authentication-Results: jidunewiw.example.com;
+ spf=pass (spfCheck: domain of facu.b45.va.example.com designates 192.0.2.7 as
+ permitted sender) client-ip=192.0.2.7;
+ envelope-from=ifoga@facu.b45.va.example.com;
+ helo=ujac-od3uda29ru2062.ruzacabo.emisozidin.semonur.example.com; 
+ dkim=pass header.i=@cife59.epehiwozine.example.com;
+X-SES-RECEIPT: DUMMYDUMMYDUMMYDUMMYdDUMMu0mYDUMMYmydDUMMY1uD2mmUMyMdYDuUMMmY3DmyUM4MYdDUuMmMmYyDUMMYdDUMMumYD5UM6myMYduDmUmMyM7Y8DdUMMuYmDmU9ydM0u1M2mmydYuDUm3M4mydMYDUummMMy5dYu6m7DmUMMYDyd8uU9MMYDmUMMYm0DyUMd1MYDUMMYDU2M3MuYDUmMMY4D5UmMMyY6DdummUMMyYDUdumMMYDUmMyMYDdU7umMmMYyDUdMMummyYDUMMd8uYmmyDdUuMMY9DUMmMY0DUmMyMdYuDUMmMY1mDUydMuMmYDmUMM2yd3umYDU4MmM5ydu6mYmyDU78MMYdDuU9MM01mmYyDUdMumMYDmUMyM==
+X-SES-DKIM-SIGNATURE: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
+ s=gdwg2y3kokkkj5a55z2ilkup5wp5hhxx; d=jidunewiw.example.com; t=1476724478;
+ h=X-SES-RECEIPT:From:To:Subject:Date:Message-ID:Content-Type:MIME-Version;
+ bh=d+u0m/DmydUM1umMmyYd+u/m2/m34yDUMdMuY5D6mm7=;
+ b=dummydu0mDmyUd1ummyduMmMm2Yy3D4UMMdu+Ym56DmUMyduMmm78YydDu9UmmMM
+ YDUMyMd0uY12DU3Mm45MY6DmUydu7mMMmyd890Y1uDUm/Mmy2MYd+DuU3MmMY4DUm5y
+ dumMmMyYD6UMdM7YDuUMmmydumMY8+DUMmyMYdu9=
+Received: from LA0FA64SE0177.hora.lizuzonuneno.example.com (192.0.2.8) by
+ VO2BE19KO0873.hora.lizuzonuneno.example.com (192.0.2.9) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384_P384) id
+ 15.1.659.11; Mon, 17 Oct 2016 17:14:38 +0000
+Received: from LA0FA64SE0177.hora.lizuzonuneno.example.com ([192.0.2.8]) by
+ LA0FA64SE0177.hora.lizuzonuneno.example.com ([192.0.2.8]) with mapi id
+ 15.01.0659.025; Mon, 17 Oct 2016 17:14:39 +0000
+To: "bravo-roster@example.org" <bravo-roster@example.org>
+Thread-Topic: ANIM/Esse 0 Eros Donec
+Thread-Index: DdUumMMmyYd0DUMMYuDU1M+MYmm2yD==
+Date: Mon, 17 Oct 2016 17:14:38 +0000
+Message-ID: <NE7DI92MI181561K86O061BE70R9EJA9NA6D21@LA0FA64SE0177.hora.lizuzonuneno.example.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: yes
+X-MS-TNEF-Correlator: 
+authentication-results: spf=none (sender IP is )
+ smtp.mailfrom=ifoga@facu.b45.va.example.com; 
+x-originating-ip: [192.0.2.10]
+x-ms-office365-filtering-correlation-id: b75304a7-b26d-98f1-cffe-27f3c2d1b3f3
+x-microsoft-exchange-diagnostics: 0; DU1MM23YD4567;
+ 89:dUumMmyMdYDu+U0mMm1M/23yduYDUmmyd4Mum5myMdYuDmUmMMyduYDU6mmyduMMmmy7YdDumUMmMydYDuUM8MYDmmydUMumMYmDUydMMum+my+d9YDuU+mM0MmYyDdUumMmMYyDUMMdYD1UumMm2MYDydU3Mumm4MYyduDU5m6=
+x-microsoft-antispam: DduUmmy:;MMY:0;DUM:1;MYDUMM:;YDUM:MY2DU34MM5678;
+x-microsoft-antispam-prvs: <EH2IJ43EJ8355118735I0C8A8889N8U57C3O09@VO2BE19KO0873.hora.lizuzonuneno.example.com>
+x-exchange-antispam-report-test: DduUmmy:(01234567890123);
+x-exchange-antispam-report-cfa-test: DUM:0; MYD:1;
+ UMMYDU:(234567890)(1234567)(8901234)(5678901234)(5678901)(2345678)(90123456789);
+ MMYD:UM0MY12DU3456; MMY:7; DUM:8; MYDUMM:; YDUM:MY9DU01MM2345; 
+x-forefront-prvs: 0123DU4M5M
+x-forefront-antispam-report: SFV:NSPM;
+ SFS:(10009020)(6039001)(6009001)(7916002)(189002)(199003)(450100001)(7846002)(110136003)(86362001)(7696004)(790700001)(97736004)(122556002)(2900100001)(16236675004)(2501003)(3280700002)(102836003)(6116002)(3846002)(74316002)(10400500002)(3660700001)(586003)(8936002)(5660300001)(9686002)(15975445007)(42882006)(66066001)(81166006)(8676002)(81156014)(5630700001)(19609705001)(5640700001)(2351001)(229853001)(99936001)(74482002)(77096005)(54356999)(101416001)(7736002)(6916009)(87936001)(106356001)(19300405004)(68736007)(86372001)(2906002)(92566002)(50986999)(19625215002)(33656002)(5002640100001)(19580395003)(5890100001)(107886002)(189998001)(105586002);
+ DIR:OUT; SFP:1101; SCL:1; SRVR:BY2PR01MB1798;
+ H:LA0FA64SE0177.hora.lizuzonuneno.example.com; FPR:; SPF:None;
+ PTR:InfoNoRecords; MX:1; A:1; LANG:en; 
+received-spf: None (emisozidin.semonur.example.com: facu.b45.va.example.com
+ does not designate permitted sender hosts)
+spamdiagnosticoutput: 0:12
+spamdiagnosticmetadata: DUMM
+Content-Type: multipart/mixed;
+ boundary="_004_BY2PR01MB179932F65A838DF51F5FAC5BC6D00BY2PR01MB1799prod_"
+MIME-Version: 1.0
+X-OriginatorOrg: facu.b45.va.example.com
+X-MS-Exchange-CrossTenant-originalarrivaltime: 17 Oct 2016 17:14:38.9393 (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b055ad37-a37a-38a0-c535-aa6e067a2d52
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: BY2PR01MB1798
+X-Original-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=cife59.epehiwozine.example.com; s=selector1-facu-b45-va-us;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version;
+ bh=Dd/U0uMmMYD+U1myM2dumMYD/3UmyMMdYDummUydMum=;
+ b=DUM01dM2umYD3myUMdumMmYyDdu/mm+UyduMMYDU4mmyd56MumMmY7y/DdUM89uMYmmy0DUdM1uMm+YmyDU2Md+u3Mm4m56/Y7yDU8d9uM0Mm+YmDyUMMY+d1DuUMmmydMuYmmyDUMdumm2MyYDdUumMM3mY/yDUdMuMmYDUMmy=
+X-Original-Return-path: <ifoga@facu.b45.va.example.com>
+X-Original-From: "Mavo, Olihebe" <ifoga@facu.b45.va.example.com>
+X-Original-Subject: ANIM/Esse 0 Eros Donec
+X-Original-Sender: XMPL Charlie <charlie-sub-list@example.org>
+Sender: XMPL Bravo <bravo-roster@example.org>
+X-Original-From: "Mavo, Olihebe \(via XMPL Charlie\)"
+ <charlie-sub-list+ifoga=facu.b45.va.example.com+from@example.org>
+From: "Mavo, Olihebe \(via XMPL Bravo\)"
+ <bravo-roster+ifoga=facu.b45.va.example.com+from@example.org>
+X-Original-Reply-to: "Mavo, Olihebe" <ifoga@facu.b45.va.example.com>
+Reply-to: "Mavo, Olihebe" <ifoga@facu.b45.va.example.com>
+X-Original-Subject: [XMPL Charlie] ANIM/Esse 0 Eros Donec
+Subject: [XMPL Bravo] [XMPL Charlie] ANIM/Esse 0 Eros Donec
+
+--_004_BY2PR01MB179932F65A838DF51F5FAC5BC6D00BY2PR01MB1799prod_
+Content-Type: multipart/alternative;
+ boundary="_000_BY2PR01MB179932F65A838DF51F5FAC5BC6D00BY2PR01MB1799prod_"
+
+--_000_BY2PR01MB179932F65A838DF51F5FAC5BC6D00BY2PR01MB1799prod_
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Integer,
+
+AMET qui veniam eros dictum nec 0554 (nec pharetra).   Est Esse 0 Eros Donec=
+ ac "Non Commodo mi Felis" (odio in AMET EU Occaecat).  Non deserunt ac Aliquam=
+ 5, ut. 5-06, mi Nullam Malesuada, Nostrud Commodo non Voluptate Pariatur=
+, 4153 Ac., ac non Luctus Officia Turpis.
+
+Est Eros Commodo Risus eget elit ullamco id minim reprehenderit ac non pellentesque=
+ et amet eros quam nostrud id Esse 0, incididunt esse non AMET eros=
+ commodo.   Veniam magna id non risus veniam do ANIM.nec nec aliquet.
+
+Donec sed.
+
+Officia Anim
+Lobortis Faucibus Enim Nullam
+ANIM Vulputate
+
+
+
+--_000_BY2PR01MB179932F65A838DF51F5FAC5BC6D00BY2PR01MB1799prod_
+Content-Type: text/html; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml" xmlns:o=3D"urn:schemas-micr=
+osoft-com:office:office" xmlns:w=3D"urn:schemas-microsoft-com:office:word" =
+xmlns:m=3D"http://schemas.microsoft.com/office/2004/12/omml" xmlns=3D"http:=
+//www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dus-ascii"=
+>
+<meta name=3D"Generator" content=3D"Microsoft Word 14 (filtered medium)">
+<style><!--
+/* Font Definitions */
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";}
+a:link, span.MsoHyperlink
+	{mso-style-priority:99;
+	color:blue;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{mso-style-priority:99;
+	color:purple;
+	text-decoration:underline;}
+span.EmailStyle17
+	{mso-style-type:personal-compose;
+	font-family:"Calibri","sans-serif";
+	color:windowtext;}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	font-family:"Calibri","sans-serif";}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;}
+div.WordSection1
+	{page:WordSection1;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext=3D"edit" spidmax=3D"1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext=3D"edit">
+<o:idmap v:ext=3D"edit" data=3D"1" />
+</o:shapelayout></xml><![endif]-->
+</head>
+<body lang=3D"EN-US" link=3D"blue" vlink=3D"purple">
+<div class=3D"WordSection1">
+<p class=3D"MsoNormal">Integer,<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal">AMET qui veniam eros dictum nec 0554 (nec pharetra).=
+&nbsp;&nbsp; Est Esse 0 Eros Donec ac &#8220;Non Commodo mi Felis&#8221; (odio=
+ in AMET EU Occaecat).&nbsp; Non deserunt ac Aliquam 5, ut. 5-06, mi Nullam=
+ Malesuada,
+<i>Nostrud Commodo non Voluptate Pariatur</i>, 4153 Ac., ac non Luctus Officia=
+ Turpis.&nbsp;
+<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal">Est Eros Commodo Risus eget elit ullamco id minim reprehenderit=
+ ac non pellentesque et amet eros quam nostrud id Esse 0, incididunt=
+ esse non AMET eros commodo.&nbsp;&nbsp; Veniam magna id non risus veniam=
+ do ANIM.nec nec aliquet.<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal">Donec sed.<o:p></o:p></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal">Officia Anim<o:p></o:p></p>
+<p class=3D"MsoNormal">Lobortis Faucibus Enim Nullam<o:p></o:p></p>
+<p class=3D"MsoNormal">ANIM Vulputate<o:p></o:p></p>
+<p class=3D"MsoNormal" style=3D"mso-margin-top-alt:auto;mso-margin-bottom-a=
+lt:auto"><o:p>&nbsp;</o:p></p>
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt;font-family:&quot;Ca=
+libri&quot;,&quot;sans-serif&quot;"><o:p>&nbsp;</o:p></span></p>
+</div>
+</body>
+</html>
+
+--_000_BY2PR01MB179932F65A838DF51F5FAC5BC6D00BY2PR01MB1799prod_--
+
+--_004_BY2PR01MB179932F65A838DF51F5FAC5BC6D00BY2PR01MB1799prod_
+Content-Type: application/pdf; name="AMET EROS DICTUM 0554.pdf"
+Content-Description: AMET EROS DICTUM 0554.pdf
+Content-Disposition: attachment; filename="AMET EROS DICTUM 0554.pdf";
+ size=256012; creation-date="Mon, 17 Oct 2016 15:27:18 GMT";
+ modification-date="Mon, 17 Oct 2016 15:27:18 GMT"
+Content-Transfer-Encoding: base64
+
+TGFtYmRhTUxNIGZpeHR1cmUgcGxhY2Vob2xkZXIgYXR0YWNobWVudCBkYXRhLiBMYW1iZGFNTE0g
+Zml4dHVyZSBwbGFjZWhvbGRlciBhdHRhY2htZW50IGRhdGEuIExhbWJkYU1MTSBmaXh0dXJlIHBs
+YWNlaG9sZGVyIGF0dGFjaG1lbnQgZGF0YS4gTGFtYmRhTUxNIGZpeHR1cmUgcGxhY2Vob2xkZXIg
+YXR0YWNobWVudCBkYXRhLiBMYW1iZGFNTE0gZml4dHVyZSBwbGFjZWhvbGRlciBhdHRhY2htZW50
+IGRhdGEuIExhbWJkYU1MTSBmaXh0dXJlIHBsYWNlaG9sZGVyIGF0dGFjaG1lbnQgZGF0YS4gTGFt
+YmRhTUxNIGZpeHR1cmUgcGxhY2Vob2xkZXIgYXR0YWNobWVudCBkYXRhLiBMYW1iZGFNTE0gZml4
+dHVyZSBwbGFjZWhvbGRlciBhdHRhY2htZW50IGRhdGEuIExhbWJkYU1MTSBmaXh0dXJlIHBsYWNl
+aG9sZGVyIGF0dGFjaG1lbnQgZGF0YS4gTGFtYmRhTUxNIGZpeHR1cmUgcGxhY2Vob2xkZXIgYXR0
+YWNobWVudCBkYXRhLiBMYW1iZGFNTE0gZml4dHVyZSBwbGFjZWhvbGRlciBhdHRhY2htZW50IGRh
+dGEuIExhbWJkYU1MTSBmaXh0dXJlIHBsYWNlaG9sZGVyIGF0dGFjaG1lbnQgZGF0YS4gTGFtYmRh
+TUxNIGZpeHR1cmUgcGxhY2Vob2xkZXIgYXR0YWNobWVudCBkYXRhLiBMYW1iZGFNTE0gZml4dHVy
+ZSBwbGFjZWhvbGRlciBhdHRhY2htZW50IGRhdGEuIExhbWJkYU1MTSBmaXh0dXJlIHBsYWNlaG9s
+ZGVyIGF0dGFjaG1lbnQgZGF0YS4gTGFtYmRhTUxNIGZpeHR1cmUgcGxhY2Vob2xkZXIgYXR0YWNo
+bWVudCBkYXRhLiBMYW1iZGFNTE0gZml4dHVyZSBwbGFjZWhvbGRlciBhdHRhY2htZW50IGRhdGEu
+IExhbWJkYU1MTSBmaXh0dXJlIHBsYWNlaG9sZGVyIGF0dGFjaG1lbnQgZGF0YS4gTGFtYmRhTUxN
+IGZpeHR1cmUgcGxhY2Vob2xkZXIgYXR0YWNobWVudCBkYXRhLiBMYW1iZGFNTE0gZml4dHVyZSBw
+bGFjZWhvbGRlciBhdHRhY2htZW50IGRhdGEuIExhbWJkYU1MTSBmaXh0dXJlIHBsYWNlaG9sZGVy
+IGF0dGFjaG1lbnQgZGF0YS4gTGFtYmRhTUxNIGZpeHR1cmUgcGxhY2Vob2xkZXIgYXR0YWNobWVu
+dCBkYXRhLiBMYW1iZGFNTE0gZml4dHVyZSBwbGFjZWhvbGRlciBhdHRhY2htZW50IGRhdGEuIExh
+bWJkYU1MTSBmaXh0dXJlIHBsYWNlaG9sZGVyIGF0dGFjaG1lbnQgZGF0YS4gTGFtYmRhTUxNIGZp
+bGRlciBhdHRhY2htZW50IGRhdGEuIExhbQ==
+
+--_004_BY2PR01MB179932F65A838DF51F5FAC5BC6D00BY2PR01MB1799prod_--

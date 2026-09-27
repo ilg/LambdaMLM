@@ -1,0 +1,27 @@
+Message-ID: <67a1453b-17524854f0951b44@vsel1nmtai01p.internal.vadesecure.com>
+In-Reply-To: <message-id@example.com>
+Auto-Submitted: auto-replied
+From: MAILER-DAEMON <mailer-daemon@earthlink-vadesecure.net>
+To: listname-bounces+subscriber=earthlink.net@example.com
+Subject: Undeliverable: some subject
+Date: Mon, 03 Apr 2023 01:25:40 +0000
+Content-Type: text/plain
+
+Delivery has failed to these recipients or distribution lists:
+
+Server "24.41.66.180:25" returned an error:
+
+	* [subscriber@earthlink.net]: 550 subscriber@earthlink.net...User account is overquota
+
+
+Original message details:
+
+	* Received on: 2023-04-03 01:25:40.542717341 +0000 UTC
+	* From: user@example.com
+	* To: recip@example.com
+	* Subject: some subject
+
+
+Original message headers:
+
+...

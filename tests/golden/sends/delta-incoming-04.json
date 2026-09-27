@@ -1,0 +1,23 @@
+[
+  {
+    "data": 0,
+    "destinations": [
+      "mihopame@tutim.example.com"
+    ],
+    "source": "delta+mihopame=tutim.example.com+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "epikoteri@ezup.example.org"
+    ],
+    "source": "delta+epikoteri=ezup.example.org+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "ifoga@omup086.example.org"
+    ],
+    "source": "delta+ifoga=omup086.example.org+bounce@example.org"
+  }
+]

@@ -1,0 +1,28 @@
+allow-from-non-members: true
+members:
+- !Member
+  address: sem@lovow.example.com
+  flags: !!set
+    !flag 'echoPost': null
+- !Member
+  address: veniraga@diwecatod382.example.org
+  bounces:
+    2025-09-04 21:28:11.078368: !bouncekind 'unknown'
+    2025-09-21 13:26:41.420616: !bouncekind 'unknown'
+    2025-10-13 04:55:27.202632: !bouncekind 'unknown'
+    2025-11-02 14:06:40.959639: !bouncekind 'unknown'
+    2025-11-24 07:43:31.458331: !bouncekind 'unknown'
+    2025-12-09 18:21:45.990435: !bouncekind 'unknown'
+    2025-12-25 01:25:19.123992: !bouncekind 'unknown'
+    2025-12-28 06:20:33.333290: !bouncekind 'unknown'
+  flags: !!set
+    !flag 'echoPost': null
+- !Member
+  address: ifoga@facu.b45.va.example.com
+  flags: !!set
+    !flag 'echoPost': null
+- !Member
+  address: kudovu@afilasibip016.example.org
+  flags: !!set
+    !flag 'echoPost': null
+name: XMPL Echo

@@ -1,0 +1,51 @@
+Return-Path: <>
+Received: from sonic.gate.mail.ne1.yahoo.com by sonic303.consmr.mail.ne1.yahoo.com with HTTP; Fri, 11 Jun 2021 13:59:55 +0000
+Date: Fri, 11 Jun 2021 13:59:55 +0000
+From: MAILER-DAEMON@yahoo.com
+To: user_name@yahoo.com
+Message-ID:
+ <278929949.490718.1623419995815@sonic303.consmr.mail.ne1.yahoo.com>
+Subject: Failure Notice
+Content-Type: multipart/report; report-type=delivery-status;
+ boundary="-=Part.77cde.7cbe8eccd6310fd8.179fb5f46a7.49c125a19f0a1035=-"
+Content-Length: 5236
+
+---=Part.77cde.7cbe8eccd6310fd8.179fb5f46a7.49c125a19f0a1035=-
+Content-Type: text/plain; charset=UTF-8
+
+Sorry, we were unable to deliver your message to the following address.
+
+<bogus-address@example.net>:
+550: 5.1.1 <bogus-address@example.net>: Recipient address rejected: User unknown in local recipient table
+
+---------- Forwarded message ----------
+
+---=Part.77cde.7cbe8eccd6310fd8.179fb5f46a7.49c125a19f0a1035=-
+Content-Type: message/rfc822
+
+X-Sonic-MF: <user_name@yahoo.com>
+Received: from sonic.gate.mail.ne1.yahoo.com by sonic303.consmr.mail.ne1.yahoo.com with HTTP; Fri, 11 Jun 2021 13:59:55 +0000
+Received: by kubenode558.mail-prod1.omega.gq1.yahoo.com (VZM Hermes SMTP Server) with ESMTPA ID 007ece6be172ed81332d038abbd95120;
+          Fri, 11 Jun 2021 13:57:53 +0000 (UTC)
+To: bogus-address@example.net
+From: Some User <user_name@yahoo.com>
+Subject: bounce me
+Message-ID: <130907fb-848c-d154-8e59-ed1e08319fcf@yahoo.com>
+Date: Fri, 11 Jun 2021 06:57:50 -0700
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
+ Gecko/20100101 Thunderbird/78.11.0
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+References: <130907fb-848c-d154-8e59-ed1e08319fcf.ref@yahoo.com>
+X-Mailer: WebService/1.1.18368 mail.backend.jedi.jws.acl:role.jedi.acl.token.atz.jws.hermes.yahoo
+Content-Length: 163
+
+this should bounce.
+
+This is somewhat bogus and contrived to test the separator.
+-- 
+<user_name@yahoo.com>:   My sig
+
+---=Part.77cde.7cbe8eccd6310fd8.179fb5f46a7.49c125a19f0a1035=---
