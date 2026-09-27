@@ -10,7 +10,7 @@ timestamp_format = '%Y%m%d%H%M%S'
 
 signed_cmd_regex = re.compile(r'^(?P<cmd>.+)\s+(?P<signature>[\da-zA-Z+/]{27}=)(?P<timestamp>\d{14})$')
 
-from config import signing_key, signed_validity_interval
+import settings
 from sestools import msg_get_header, msg_get_response_address
 from email.utils import parseaddr
 
@@ -137,11 +137,14 @@ def get_signed_command(subject, address):
 def signature(cmd):
     # HMAC works on bytes.  For an ASCII key and command, UTF-8 gives the same
     # bytes, and so the same signatures, as the Python 2 code did.
+    signing_key = settings.signing_key()
     key = signing_key if isinstance(signing_key, bytes) else signing_key.encode('utf-8')
     digest = hmac.new(key, cmd.strip().encode('utf-8'), hashlib.sha1).digest()
     return base64.b64encode(digest).decode('ascii')
 
-def sign(subject, reply_to, validity_duration=signed_validity_interval):
+def sign(subject, reply_to, validity_duration=None):
+    if validity_duration is None:
+        validity_duration = settings.signed_validity_interval
     timestamp = (datetime.datetime.now() + validity_duration).strftime(timestamp_format)
     return '{} {}{}'.format(
             subject,

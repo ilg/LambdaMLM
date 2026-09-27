@@ -27,7 +27,7 @@ from email.mime.text import MIMEText
 from sestools import msg_get_header
 from email_utils import detect_bounce, bounce_defaults
 
-import config
+import settings
 import control
 import templates
 from list_member import ListMember, MemberFlag
@@ -98,10 +98,10 @@ class List (ListMemberContainer):
             raise ValueError('Invalid list username.')
         if not host_regex.match(self.host):
             raise ValueError('Invalid list host.')
-        self._s3_key = '{}{}/{}.yaml'.format(config.s3_configuration_prefix, self.host, self.username)
-        self._s3_moderation_prefix = '{}{}/{}/'.format(config.s3_moderation_prefix, self.host, self.username)
+        self._s3_key = '{}{}/{}.yaml'.format(settings.s3_configuration_prefix, self.host, self.username)
+        self._s3_moderation_prefix = '{}{}/{}/'.format(settings.s3_moderation_prefix, self.host, self.username)
         try:
-            config_response = s3.get_object(Bucket=config.s3_bucket, Key=self._s3_key)
+            config_response = s3.get_object(Bucket=settings.s3_bucket, Key=self._s3_key)
         except ClientError:
             raise UnknownList
         self._config = yaml.safe_load(config_response['Body'])
@@ -111,11 +111,11 @@ class List (ListMemberContainer):
             self.display_address = self.address
         # Default bounce scoring constants
         if not self.bounce_score_threshold:
-            self.bounce_score_threshold = getattr(config, 'bounce_score_threshold', bounce_defaults.bounce_score_threshold)
+            self.bounce_score_threshold = getattr(settings, 'bounce_score_threshold', bounce_defaults.bounce_score_threshold)
         if not self.bounce_weights:
-            self.bounce_weights = getattr(config, 'bounce_weights', bounce_defaults.bounce_weights)
+            self.bounce_weights = getattr(settings, 'bounce_weights', bounce_defaults.bounce_weights)
         if not self.bounce_decay_factor:
-            self.bounce_decay_factor = getattr(config, 'bounce_decay_factor', bounce_defaults.bounce_decay_factor)
+            self.bounce_decay_factor = getattr(settings, 'bounce_decay_factor', bounce_defaults.bounce_decay_factor)
 
     def __getattr__(self, name):
         prop = name.replace('_', '-')
@@ -150,7 +150,7 @@ class List (ListMemberContainer):
 
     def _save(self):
         response = s3.put_object(
-                Bucket=config.s3_bucket,
+                Bucket=settings.s3_bucket,
                 Key=self._s3_key,
                 Body=yaml.safe_dump(self._config, default_flow_style=False, allow_unicode=True),
                 )
@@ -244,7 +244,7 @@ class List (ListMemberContainer):
         self._save()
 
     def invite(self, target_address, command, verb):
-        command_address = '{}@{}'.format(config.command_user, self.host)
+        command_address = '{}@{}'.format(settings.command_user, self.host)
         from datetime import timedelta
         validity_duration = timedelta(days=3)  # TODO: make this duration configurable
         token = control.sign(target_address, self.address, validity_duration=validity_duration)
@@ -440,7 +440,7 @@ class List (ListMemberContainer):
         with a Filter.  Falls back to `default` if there's no such rule.
         """
         try:
-            lifecycle = s3.get_bucket_lifecycle_configuration(Bucket=config.s3_bucket)
+            lifecycle = s3.get_bucket_lifecycle_configuration(Bucket=settings.s3_bucket)
         except ClientError as e:
             # Most likely NoSuchLifecycleConfiguration.
             print('Unable to read the bucket lifecycle configuration: {}'.format(e))
@@ -451,7 +451,7 @@ class List (ListMemberContainer):
             rule_filter = rule.get('Filter') or {}
             prefix = rule.get('Prefix', rule_filter.get('Prefix', (rule_filter.get('And') or {}).get('Prefix')))
             days = (rule.get('Expiration') or {}).get('Days')
-            if prefix == config.s3_moderation_prefix and days:
+            if prefix == settings.s3_moderation_prefix and days:
                 return days
         return default
 
@@ -465,7 +465,7 @@ class List (ListMemberContainer):
         message_id = message_id.replace(':', '_')  # Make it safe for subject-command.
         # Put the email message into the list's moderation holding space on S3.
         response = s3.put_object(
-                Bucket=config.s3_bucket,
+                Bucket=settings.s3_bucket,
                 Key=self._s3_moderation_prefix + message_id,
                 Body=msg.as_bytes(policy=SEND_POLICY),
                 )
@@ -474,7 +474,7 @@ class List (ListMemberContainer):
         mod_interval = timedelta(days=self.moderation_expiration_days())
         # Wrap the moderated message for inclusion in the notification to mods.
         forward_mime = MIMEMessage(msg)
-        control_address = '{}@{}'.format(config.command_user, self.host)
+        control_address = '{}@{}'.format(settings.command_user, self.host)
         for moderator in self.moderator_addresses:
             # Build up the notification email per-moderator so that we can include
             # pre-signed moderation commands specific to that moderator.
@@ -506,7 +506,7 @@ class List (ListMemberContainer):
             raise InsufficientPermissions
         try:
             return action(
-                    Bucket=config.s3_bucket,
+                    Bucket=settings.s3_bucket,
                     Key=self._s3_moderation_prefix + message_id,
                     )
         except ClientError:

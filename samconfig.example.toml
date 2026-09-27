@@ -1,0 +1,25 @@
+# LambdaMLM deployment environments.  Copy to samconfig.toml (which git
+# ignores) and edit, or let `scripts/pull-config` write environments from
+# deployed stacks.
+#
+# Each [<name>.deploy.parameters] section is one deployment, used as
+# `scripts/deploy --env <name>`: its AWS CLI profile (and so its account),
+# region, stack name and template parameter values.  The deployed stack is the
+# source of truth; see docs/setup.md.  The parameters are listed, with their
+# defaults, in template.yaml; only BucketName is required.
+#
+# The command-signing key isn't here: it's in SSM Parameter Store, managed
+# with scripts/signing-key.
+version = 0.1
+
+[example.deploy.parameters]
+stack_name = "LambdaMLM"
+profile = "default"
+region = "us-west-2"
+parameter_overrides = [
+    "BucketName=example-lambdamlm-bucket",
+    "ReceiptRuleSetName=default-rule-set",
+    "ReceiptRuleEnabled=true",
+    "ReceiptRuleRecipients=lists.example.org",
+    "AlarmEmail=ops@example.org",
+]

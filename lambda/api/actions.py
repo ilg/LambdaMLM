@@ -69,6 +69,23 @@ def delete_member(List, Member, **kwargs):
         return InternalServerError
     return Success(code=204)
 
+def verify_signed_command(Subject, Address, **kwargs):
+    """Report whether a signed command is valid for an address.
+
+    For scripts/signing-key, to check that the deployed function validates
+    signatures made with the stored key.  Only the verdict is returned.
+    """
+    import control
+    try:
+        command = control.get_signed_command(Subject, Address)
+    except control.NotSignedException:
+        return Success({'Result': 'NotSigned'})
+    except control.ExpiredSignatureException:
+        return Success({'Result': 'Expired'})
+    except control.InvalidSignatureException:
+        return Success({'Result': 'Invalid'})
+    return Success({'Result': 'Valid', 'Command': command})
+
 actions = dict(
         CreateList=create_list,
         UpdateList=update_list,
@@ -79,5 +96,6 @@ actions = dict(
         GetMember=get_member,
         UnsubscribeMember=unsubscribe_member,
         DeleteMember=delete_member,
+        VerifySignedCommand=verify_signed_command,
         )
 

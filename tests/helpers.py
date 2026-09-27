@@ -6,7 +6,7 @@ import os
 
 import yaml
 
-import config
+import settings
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.join(TESTS_DIR, 'fixtures')
@@ -27,14 +27,14 @@ def parse_message(data):
 
 
 def config_key(list_name, host=HOST):
-    return '{}{}/{}.yaml'.format(config.s3_configuration_prefix, host, list_name)
+    return '{}{}/{}.yaml'.format(settings.s3_configuration_prefix, host, list_name)
 
 
 def store_list_config(aws, list_name, data, host=HOST):
     """Store a list config (bytes, or a dict to be dumped as YAML)."""
     if isinstance(data, dict):
         data = yaml.safe_dump(data, default_flow_style=False, allow_unicode=True)
-    aws.s3.put(config.s3_bucket, config_key(list_name, host), data)
+    aws.s3.put(settings.s3_bucket, config_key(list_name, host), data)
 
 
 def store_production_list(aws, list_name):
@@ -44,7 +44,7 @@ def store_production_list(aws, list_name):
 
 
 def stored_list_config(aws, list_name, host=HOST):
-    return aws.s3.body(config.s3_bucket, config_key(list_name, host))
+    return aws.s3.body(settings.s3_bucket, config_key(list_name, host))
 
 
 def member(address, *flags, **extra):
@@ -74,8 +74,8 @@ def ses_event(message_id, recipients, destination=None):
 
 
 def store_incoming(aws, message_id, data):
-    aws.s3.put(config.s3_bucket, config.s3_incoming_email_prefix + message_id, data)
+    aws.s3.put(settings.s3_bucket, settings.s3_incoming_email_prefix + message_id, data)
 
 
 def incoming_key(message_id):
-    return config.s3_incoming_email_prefix + message_id
+    return settings.s3_incoming_email_prefix + message_id

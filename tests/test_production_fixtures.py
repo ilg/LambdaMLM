@@ -7,7 +7,7 @@ import os
 
 import pytest
 
-import config
+import settings
 import listobj
 
 FIXTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'production')
@@ -24,8 +24,8 @@ def list_name(path):
 def store_list(aws, path):
     with open(path, 'rb') as f:
         aws.s3.put(
-                config.s3_bucket,
-                '{}example.org/{}.yaml'.format(config.s3_configuration_prefix, list_name(path)),
+                settings.s3_bucket,
+                '{}example.org/{}.yaml'.format(settings.s3_configuration_prefix, list_name(path)),
                 f.read())
 
 

@@ -8,7 +8,7 @@ import boto3
 
 s3 = boto3.client('s3')
 
-from config import command_user, s3_bucket, s3_incoming_email_prefix
+from settings import command_user, s3_bucket, s3_incoming_email_prefix
 command_address_prefix = command_user + '@'
 
 @contextmanager

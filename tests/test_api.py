@@ -178,3 +178,20 @@ def test_delete_unknown_member(aws):
     assert call(Action='DeleteMember', ListAddress='test-list@example.org',
                 MemberAddress='x@example.com') == \
         {'StatusCode': 404, 'Message': 'Member x@example.com not found.'}
+
+
+def test_verify_signed_command(aws):
+    import control
+    with freeze_time('2026-09-14 12:00:00'):
+        signed = control.sign('about', 'admin@example.com')
+        assert call(Action='VerifySignedCommand', Subject=signed, Address='admin@example.com') == \
+            {'StatusCode': 200, 'Data': {'Result': 'Valid', 'Command': 'about'}}
+        assert call(Action='VerifySignedCommand', Subject=signed.replace('about', 'abort'),
+                    Address='admin@example.com')['Data'] == {'Result': 'Invalid'}
+        assert call(Action='VerifySignedCommand', Subject=signed, Address='other@example.com')['Data'] == \
+            {'Result': 'Invalid'}
+        assert call(Action='VerifySignedCommand', Subject='about', Address='admin@example.com')['Data'] == \
+            {'Result': 'NotSigned'}
+    with freeze_time('2026-09-14 13:00:01'):
+        assert call(Action='VerifySignedCommand', Subject=signed, Address='admin@example.com')['Data'] == \
+            {'Result': 'Expired'}

@@ -7,7 +7,7 @@ import pytest
 import yaml
 from freezegun import freeze_time
 
-import config
+import settings
 import control
 from control import commands
 from helpers import member, parse_message, store_list_config, stored_list_config
@@ -394,7 +394,7 @@ def test_members_insufficient(aws):
 # ---------------------------------------------------------------- run: moderation
 
 def store_held(aws):
-    aws.s3.put(config.s3_bucket, 'moderation/example.org/test-list/<m1@example.com>',
+    aws.s3.put(settings.s3_bucket, 'moderation/example.org/test-list/<m1@example.com>',
                b'From: stranger@example.net\nTo: test-list@example.org\nSubject: Hi\n'
                b'Message-ID: <m1@example.com>\n\nHello.\n')
 
