@@ -234,12 +234,6 @@ class TestAddressWillModifyAddress(object):
         with pytest.raises(InsufficientPermissions):
             self.container().address_will_modify_address('superonly@example.com', 'plain@example.com')
 
-    def test_non_member_acting_on_another_address_crashes(self):
-        with pytest.raises(AttributeError):
-            self.container().address_will_modify_address('x@example.com', 'plain@example.com')
-
-    @pytest.mark.xfail(strict=True, raises=AttributeError,
-                       reason='Step 3 (optional): a non-member should get InsufficientPermissions.')
     def test_non_member_acting_on_another_address(self):
         with pytest.raises(InsufficientPermissions):
             self.container().address_will_modify_address('x@example.com', 'plain@example.com')

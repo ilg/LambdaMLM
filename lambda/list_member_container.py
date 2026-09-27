@@ -27,7 +27,7 @@ class ListMemberContainer (object):
         if from_address != target_address:
             from_member = self.member_with_address(from_address)
             # Only admin members can modify other members.
-            if MemberFlag.admin not in from_member.flags:
+            if from_member is None or MemberFlag.admin not in from_member.flags:
                 raise InsufficientPermissions
             target_member = self.member_with_address(target_address)
             # Only superAdmin members can modify admin members.
