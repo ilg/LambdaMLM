@@ -62,10 +62,10 @@ def test_msg_get_response_address(headers, expected):
     assert sestools.msg_get_response_address(parse_message(headers + b'\n')) == expected
 
 
-def test_recipient_destination_overlap():
+def test_event_recipients():
     event = ses_event('id', recipients=['a@example.org', 'b@example.org'],
                       destination=['b@example.org', 'c@example.net'])
-    assert sestools.recipient_destination_overlap(event) == set(['b@example.org'])
+    assert sestools.event_recipients(event) == set(['a@example.org', 'b@example.org'])
 
 
 COMMAND = parse_message(b'From: a@example.com\nTo: Lists <lambda@example.org>\nSubject: about\n\n')
@@ -199,19 +199,28 @@ def test_mail_to_non_list_address(aws, lambda_handler):
     assert incoming_key('id1') not in keys(aws)
 
 
-def test_bcc_to_list_is_dropped(aws, lambda_handler):
-    make_list(aws)
-    store_incoming(aws, 'id1', POST.replace(b'To: test-list@example.org', b'To: undisclosed-recipients:;'))
-    lambda_handler(ses_event('id1', ['test-list@example.org'], destination=[]), None)
-    assert aws.ses.sent_raw_emails == []
-
-
-@pytest.mark.xfail(strict=True, reason='Step 3: BCC\'d list mail should be delivered.')
 def test_bcc_to_list_is_delivered(aws, lambda_handler):
     make_list(aws)
     store_incoming(aws, 'id1', POST.replace(b'To: test-list@example.org', b'To: undisclosed-recipients:;'))
     lambda_handler(ses_event('id1', ['test-list@example.org'], destination=[]), None)
-    assert aws.ses.sent_raw_emails
+    assert [s['Destinations'] for s in aws.ses.sent_raw_emails] == [['bob@example.com']]
+
+
+def test_bcc_from_non_member_follows_list_policy(aws, lambda_handler):
+    # Bcc'd mail is no longer silently dropped, so it's subject to the list's
+    # policy for non-members like any other post.
+    make_list(aws, **{'allow-from-non-members': True})
+    store_incoming(aws, 'id1', POST.replace(b'To: test-list@example.org', b'To: undisclosed-recipients:;')
+                   .replace(b'alice@example.com', b'stranger@example.net'))
+    lambda_handler(ses_event('id1', ['test-list@example.org'], destination=[]), None)
+    assert sorted(d for s in aws.ses.sent_raw_emails for d in s['Destinations']) == \
+        ['alice@example.com', 'bob@example.com']
+
+
+def test_bcc_to_command_address_is_not_a_command(aws, lambda_handler):
+    store_incoming(aws, 'id1', b'From: a@example.com\nTo: someone@example.net\nSubject: about\n\n')
+    lambda_handler(ses_event('id1', ['lambda@example.org'], destination=['someone@example.net']), None)
+    assert aws.ses.sent_emails == []
 
 
 def test_eight_bit_from_crashes_before_routing(aws, lambda_handler):
