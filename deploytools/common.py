@@ -166,9 +166,13 @@ def aws_for(env):
 
 def describe_stack(aws, stack_name):
     """The stack's description, or None if it doesn't exist."""
-    result = aws.json('cloudformation', 'describe-stacks', '--stack-name', stack_name, check=False)
-    if not result:
-        return None
+    try:
+        result = aws.json('cloudformation', 'describe-stacks', '--stack-name', stack_name)
+    except Error as e:
+        # Report any other failure, such as expired credentials, as it is.
+        if 'does not exist' in str(e):
+            return None
+        raise
     return result['Stacks'][0]
 
 
