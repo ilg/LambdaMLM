@@ -250,18 +250,12 @@ def test_subjectless_post_without_subject_tag(aws):
     assert sent_message(aws)['Subject'] is None
 
 
-def test_from_without_at_sign_crashes(aws):
-    with pytest.raises(ValueError):
-        make_list(aws, **{'allow-from-non-members': True}).send(
-                parse_message(raw_message(from_='postmaster')))
-
-
-@pytest.mark.xfail(strict=True, raises=ValueError,
-                   reason='Step 3: a From address with no @ should not crash send().')
 def test_from_without_at_sign(aws):
     make_list(aws, **{'allow-from-non-members': True}).send(
             parse_message(raw_message(from_='postmaster')))
-    assert sent_to(aws)
+    assert sent_to(aws) == ['alice@example.com', 'bob@example.com', 'carol@example.com']
+    assert unfold(sent_message(aws)['From']) == \
+        '"postmaster \\(via test-list@example.org\\)" <test-list+postmaster+from@example.org>'
 
 
 EIGHT_BIT_BODY = (b'From: Alice Sender <alice@example.com>\n'

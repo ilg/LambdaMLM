@@ -303,7 +303,8 @@ class List (ListMemberContainer):
         from_name, from_address = parseaddr(from_user)
         from_address = from_address.lower()
         if not from_name:
-            from_name, _ = from_address.split('@', 1)
+            # Use the local part (or the whole address, if it has no @).
+            from_name = from_address.split('@', 1)[0]
         if not mod_approved:
             member = self.member_with_address(from_address)
             if member is None and self.reject_from_non_members:
