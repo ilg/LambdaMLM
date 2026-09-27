@@ -2,7 +2,7 @@
 
     scripts/e2e compare ENV/LABEL ENV/LABEL
 
-For example, `scripts/e2e compare 2718/py2-baseline 2718-py3/py3`.  For each
+For example, `scripts/e2e compare staging/py2-baseline staging/py3`.  For each
 scenario it shows how many copies each recipient got in each run, the
 differences between the delivered messages' main headers and text bodies
 (with each run's token normalized away), other recorded results (moderation

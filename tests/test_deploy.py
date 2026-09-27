@@ -55,12 +55,12 @@ def test_environments_round_trip(tmp_path):
     environments = {
         'prod': common.Environment('prod', 'default', 'us-west-2', 'LambdaMLM',
                                    {'BucketName': 'b', 'AlarmEmail': '', 'ReceiptRuleRecipients': 'a.org,b.org'}),
-        'test': common.Environment('test', '2718', 'us-west-2', 'LambdaMLM-test', {'BucketName': 'c'}),
+        'staging': common.Environment('staging', 'staging-profile', 'us-west-2', 'LambdaMLM', {'BucketName': 'c'}),
     }
     path = str(tmp_path / 'samconfig.toml')
     common.save_environments(environments, path)
     loaded = common.load_environments(path)
-    assert sorted(loaded) == ['prod', 'test']
+    assert sorted(loaded) == ['prod', 'staging']
     for name, env in environments.items():
         got = loaded[name]
         assert (got.profile, got.region, got.stack_name, got.parameters) == (
@@ -218,3 +218,21 @@ def test_resources_to_import():
     # After a rolled-back deploy, the stack already holds the bucket.
     assert ids(import_bucket.resources_to_import('b', POLICY, {'MailBucket'})) == ['MailBucketPolicy']
     assert import_bucket.resources_to_import('b', POLICY, {'MailBucket', 'MailBucketPolicy'}) == []
+
+
+# ---------------------------------------------------------------- find-deployments
+
+def test_bucket_from_an_earlier_storing_rule():
+    from deploytools import find_deployments
+    arn = 'arn:aws:lambda:us-west-2:1:function:LambdaMLM'
+    rule_set = {'Metadata': {'Name': 'default-rule-set'}, 'Rules': [
+        {'Name': 'other', 'Recipients': ['other.example'], 'Actions': [{'S3Action': {'BucketName': 'wrong'}}]},
+        {'Name': 'store-to-s3', 'Enabled': True, 'Actions': [{'S3Action': {'BucketName': 'lists-bucket'}}]},
+        {'Name': 'LambdaMLM', 'Enabled': True, 'Actions': [{'LambdaAction': {'FunctionArn': arn}}]},
+    ]}
+
+    class AWS(object):
+        def json(self, *args, **kwargs):
+            return rule_set
+    assert find_deployments.rules_invoking(AWS(), arn) == [
+        ('default-rule-set', 'LambdaMLM', True, ['(all verified domains)'], 'lists-bucket')]

@@ -63,8 +63,9 @@ class Context(object):
     def command_address(self, host=None):
         return 'lambda@{}'.format(host or self.inbox1.split('@', 1)[1])
 
-    def mailbox(self, domain):
-        return next(m for m in self.real if m.address.endswith('@' + domain))
+    def mailbox(self, number):
+        """The first (0), second (1), ... enabled real mailbox."""
+        return self.real[number]
 
     # Sending
     def message(self, sender, to, subject='', body=None, **headers):
@@ -235,18 +236,18 @@ def post_ses(ctx):
 
 
 @scenario
-def post_gmail(ctx):
-    """A member posts from Gmail, so the list relays a DKIM-signed Gmail message."""
-    sender = ctx.mailbox('gmail.com')
+def post_mailbox_1(ctx):
+    """A member posts from the first real mailbox, so the list relays a provider's DKIM-signed message."""
+    sender = ctx.mailbox(0)
     to = ctx.list_address('e2e-test')
     _post(ctx, sender.address, to,
           lambda: ctx.send_smtp(sender, ctx.message(sender.address, to), [to]))
 
 
 @scenario
-def post_gmx(ctx):
-    """A member posts from GMX."""
-    sender = ctx.mailbox('gmx.com')
+def post_mailbox_2(ctx):
+    """A member posts from the second real mailbox (ideally at a different provider)."""
+    sender = ctx.mailbox(1)
     to = ctx.list_address('e2e-test')
     _post(ctx, sender.address, to,
           lambda: ctx.send_smtp(sender, ctx.message(sender.address, to), [to]))

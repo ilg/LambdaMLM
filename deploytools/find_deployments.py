@@ -62,13 +62,30 @@ def is_lambdamlm(aws, function):
     return 'listobj.py' in names and 'lambda.py' in names
 
 
+def _bucket(rule):
+    return next((a['S3Action']['BucketName'] for a in rule.get('Actions', []) if 'S3Action' in a), None)
+
+
+def _covers(earlier, rule):
+    """Whether an earlier rule receives (at least) the mail the rule receives."""
+    return not earlier.get('Recipients') or set(rule.get('Recipients') or ()) <= set(earlier['Recipients'])
+
+
 def rules_invoking(aws, function_arn):
+    """(rule set, rule, enabled, recipients, bucket) for each active rule invoking the function.
+
+    The bucket is the rule's own S3 action's, or else that of an earlier rule
+    covering the same mail (the fabfile-era setup used a separate rule to
+    store it).
+    """
     active = aws.json('ses', 'describe-active-receipt-rule-set', check=False) or {}
+    all_rules = active.get('Rules', [])
     rules = []
-    for rule in active.get('Rules', []):
+    for index, rule in enumerate(all_rules):
         for action in rule.get('Actions', []):
             if (action.get('LambdaAction') or {}).get('FunctionArn') == function_arn:
-                bucket = next((a['S3Action']['BucketName'] for a in rule['Actions'] if 'S3Action' in a), None)
+                bucket = _bucket(rule) or next(
+                        (_bucket(r) for r in reversed(all_rules[:index]) if _bucket(r) and _covers(r, rule)), None)
                 rules.append((active['Metadata']['Name'], rule['Name'], rule.get('Enabled'),
                               rule.get('Recipients') or ['(all verified domains)'], bucket))
     return rules
