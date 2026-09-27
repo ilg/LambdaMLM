@@ -1,0 +1,7 @@
+allow-from-non-members: true
+members:
+- !Member
+  address: kudovu@afilasibip016.example.org
+  flags: !!set
+    !flag 'echoPost': null
+name: XMPL India

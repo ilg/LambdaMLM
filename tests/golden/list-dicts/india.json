@@ -1,0 +1,23 @@
+{
+  "allow-from-non-members": true,
+  "bounce-decay-factor": null,
+  "bounce-score-threshold": null,
+  "bounce-weights": null,
+  "cc-lists": null,
+  "closed-unsubscription": null,
+  "members": [
+    {
+      "address": "kudovu@afilasibip016.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": null
+    }
+  ],
+  "moderated": null,
+  "name": "XMPL India",
+  "open-subscription": null,
+  "reject-from-non-members": null,
+  "reply-to-list": null,
+  "subject-tag": null
+}

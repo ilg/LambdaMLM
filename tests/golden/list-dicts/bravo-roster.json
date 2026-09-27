@@ -1,0 +1,187 @@
+{
+  "allow-from-non-members": null,
+  "bounce-decay-factor": null,
+  "bounce-score-threshold": null,
+  "bounce-weights": null,
+  "cc-lists": [
+    "charlie-sub-list@example.org"
+  ],
+  "closed-unsubscription": null,
+  "members": [
+    {
+      "address": "sem@lovow.example.com",
+      "flags": [
+        "admin",
+        "echoPost",
+        "moderator",
+        "preapprove",
+        "superAdmin"
+      ],
+      "name": "Setub Pozizavip"
+    },
+    {
+      "address": "kilo-desk@example.org",
+      "flags": [
+        "echoPost",
+        "moderator",
+        "preapprove"
+      ],
+      "name": "XMPL Kilo"
+    },
+    {
+      "address": "veniraga@diwecatod382.example.org",
+      "flags": [
+        "echoPost",
+        "moderator",
+        "preapprove"
+      ],
+      "name": "Foken Jorunoh"
+    },
+    {
+      "address": "ifoga@facu.b45.va.example.com",
+      "flags": [
+        "echoPost",
+        "moderator",
+        "preapprove"
+      ],
+      "name": "Olihebe Mavo"
+    },
+    {
+      "address": "edenadazu@tutim.example.com",
+      "flags": [
+        "echoPost",
+        "moderator",
+        "preapprove"
+      ],
+      "name": "Ifajus Umare-Cipu"
+    },
+    {
+      "address": "palajeg@facu.b45.va.example.com",
+      "flags": [
+        "echoPost",
+        "preapprove"
+      ],
+      "name": "Ifajus Kovoru"
+    },
+    {
+      "address": "paheful@p194.example.org",
+      "flags": [
+        "echoPost",
+        "preapprove"
+      ],
+      "name": "Lonal Fododi"
+    },
+    {
+      "address": "g@be.example.com",
+      "flags": [
+        "echoPost",
+        "preapprove"
+      ],
+      "name": "Setub Pozizavip"
+    },
+    {
+      "address": "acad.bahucab@i988.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Siza Idoriwi"
+    },
+    {
+      "address": "ZAkuDuha@weci915.abuc.b45.va.example.com",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Fuse EpoNeme"
+    },
+    {
+      "address": "zamaz@p194.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Ihute Owaz"
+    },
+    {
+      "address": "fakotunodis@e-89.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Tuhi Ejemuka"
+    },
+    {
+      "address": "abavubiz@diganoha.b45.va.example.com",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Cinup Robuholaz"
+    },
+    {
+      "address": "kudovu@afilasibip016.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Hil Efuto"
+    },
+    {
+      "address": "kokul@Afilasibip016.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Uceg Ez Uni"
+    },
+    {
+      "address": "kasero_gojo@kezi.example.org",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Ehufeb Pate"
+    },
+    {
+      "address": "Omofopopo_Suzijun@Ofipamus.b45.od.example.com",
+      "flags": [
+        "echoPost"
+      ],
+      "name": "Ebahipadu Tanicef"
+    },
+    {
+      "address": "bunivo-rihe@iku.example.com",
+      "flags": [],
+      "name": "Umare-Cipu, Ifajus"
+    },
+    {
+      "address": "urelegilujih@ezup.example.org",
+      "flags": [],
+      "name": "Zabesi Badoducuhej"
+    },
+    {
+      "address": "enedudu_ocadadaw@kezi.example.org",
+      "flags": [],
+      "name": "Epiziric, Fepihum"
+    },
+    {
+      "address": "lopejij@p194.example.org",
+      "flags": [],
+      "name": "Bujo Evigew"
+    },
+    {
+      "address": "ratehen@osen566.example.org",
+      "flags": [],
+      "name": "Elolu Ejizok"
+    },
+    {
+      "address": "jozeric@bevenojik.example.net",
+      "flags": [],
+      "name": "Wirimoc Jiceho"
+    },
+    {
+      "address": "lafuwel.cevahu@i988.example.org",
+      "flags": [],
+      "name": "Jovuwob Nesowe"
+    }
+  ],
+  "moderated": true,
+  "name": "XMPL Bravo",
+  "open-subscription": true,
+  "reject-from-non-members": null,
+  "reply-to-list": null,
+  "subject-tag": "XMPL Bravo"
+}
