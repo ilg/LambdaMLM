@@ -184,6 +184,26 @@ def test_key_from_function_without_config(monkeypatch):
         signing_key.key_from_function(FakeAWS(None), 'LambdaMLM')
 
 
+class FailingAWS(object):
+    def __init__(self, stderr):
+        self.stderr = stderr
+
+    def json(self, *args, **kwargs):
+        raise common.Error('aws {} failed: {}'.format(' '.join(args[:2]), self.stderr))
+
+
+def test_describe_stack_missing():
+    aws = FailingAWS('An error occurred (ValidationError) when calling the DescribeStacks '
+                     'operation: Stack with id LambdaMLM does not exist')
+    assert common.describe_stack(aws, 'LambdaMLM') is None
+
+
+def test_describe_stack_other_failure():
+    aws = FailingAWS("Your session has expired. Please reauthenticate using 'aws login'.")
+    with pytest.raises(common.Error, match='session has expired'):
+        common.describe_stack(aws, 'LambdaMLM')
+
+
 # ---------------------------------------------------------------- import
 
 def test_import_template():
