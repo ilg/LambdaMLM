@@ -24,6 +24,8 @@ class Environment(object):
         self.list_bucket = section['list_bucket']
         self.inboxes = [a.strip() for a in section['inboxes'].split(',') if a.strip()]
         self.function = section.get('function')
+        self.log_group = section.get('log_group') or (
+                '/aws/lambda/{}'.format(self.function) if self.function else None)
         self._inbox_bucket = section.get('inbox_bucket')
         self._session = None
 

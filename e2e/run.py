@@ -158,10 +158,10 @@ class Context(object):
 
     def logs(self):
         """The deployed function's log lines since the scenario started."""
-        if not self.env.function:
+        if not self.env.log_group:
             return []
         logs = self.env.client('logs')
-        group = '/aws/lambda/{}'.format(self.env.function)
+        group = self.env.log_group
         lines = []
         try:
             paginator = logs.get_paginator('filter_log_events')
