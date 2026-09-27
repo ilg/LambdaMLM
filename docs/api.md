@@ -98,6 +98,8 @@ Return the configuration data for a list.  Example:
 }
 ```
 
+Options that aren't set in the list's configuration are `null`; the system-wide or default values apply to them.  If a list's configuration sets `bounce-weights`, it's returned keyed by response type name (`hard`, `soft`, `complaint`, `unknown`).
+
 ### Member Actions
 
 #### `CreateMember`

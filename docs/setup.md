@@ -1,76 +1,66 @@
 # Setup
 
-The included `fabfile` can faciliate setting up LambdaMLM.
+LambdaMLM is deployed as an [AWS SAM](https://aws.amazon.com/serverless/sam/) stack, defined in [`template.yaml`](../template.yaml), by [`scripts/deploy`](../scripts/deploy).  The stack contains:
 
-1. Need [pip](https://pip.pypa.io/), [Virtualenv](https://virtualenv.pypa.io/), and [Fabric](http://fabfile.org/) installed.
-2. Clone this repo.
-3. Copy [`config.example.py`](../lambda/config.example.py) to `config.py` and edit/fill in the appropriate values.  In particular, your S3 bucket name must be globally unique, not just unique within your account.  
-  _Note:_ If you're planning to use multiple configurations, you can keep each configuration in a file named `config.somename.py` and pass `somename` as a parameter to the `fab` commands `create_lambda:somename` and `update_lambda:somename`.  The specific `somename` configuration will be copied over `config.py` before the rest of the `fab` command runs.
-4. In the directory, run `fab setup_virtualenv` to set up the virtual environment for LambdaMLM and install required dependencies.
-5. Run `fab create_lambda` to create the S3 bucket, an IAM role under which LambdaMLM will run (with an appropriate policy), and the lambda function itself.
-6. In SES, in the region defined as `lambda_region` in `config.py`:
-	1. Verify all domains to be used for lists.
-	2. Configure DKIM and SPF for domains.
-	3. Create an Email Receiving rule that applies to all domains to be used for lists with two actions:
-		1. S3: Store to the S3 bucket defined in your `config.py` with the incoming email prefix defined in `config.py` (example is `incoming/`).
-		2. Lambda: Invoke the lambda function as an Event.
+- the Lambda function (Python 3.13),
+- the S3 bucket for list configurations, incoming mail and held (moderated) messages, with lifecycle rules that expire held messages and failed incoming mail,
+- the bucket policy that lets SES store incoming mail,
+- the permission for SES to invoke the function,
+- a queue that keeps events the function failed on for 14 days,
+- an alarm on the function's errors (optionally emailed to you), and
+- optionally, an SES receipt rule that stores incoming mail and invokes the function.
 
-If you make any further changes to `config.py` or to the code, run `fab update_lambda` to update the Lambda function's code with your local code.
+## Requirements
 
+- The [AWS CLI](https://aws.amazon.com/cli/), with credentials for the account to deploy to.
+- The [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html).
+- [Docker](https://www.docker.com/).  The function is built in SAM's Lambda build image, so its dependencies are built for Lambda whatever machine you deploy from.
 
-### Technical Details
+## New deployment
 
-The `fab create_lambda` command:
+1. Clone this repository.
+2. Copy [`lambda/config.example.py`](../lambda/config.example.py) to `lambda/config.py` and fill in your values.  In particular:
+    - `signing_key` must be your own unique text.
+    - `s3_bucket` must be globally unique (not just within your account).  The stack creates the bucket.
+    - `lambda_region` must be a region where [SES can receive email](https://docs.aws.amazon.com/ses/latest/dg/regions.html#region-receive-email).
+    - The deployment settings at the end (`stack_name`, `receipt_rule_set` and so on) control the stack.
 
-- does a quick check of your `config.py` file
-- creates the S3 bucket in the specified region.
-- creates an IAM role with the name defined in `config.py` and with policy (where `[s3_bucket]` is the bucket name defined in `config.py`):
-    
-    ```json
-	{
-	    "Version": "2012-10-17",
-	    "Statement": [
-	        {
-	            "Effect": "Allow",
-	            "Action": [
-	                "logs:CreateLogGroup",
-	                "logs:CreateLogStream",
-	                "logs:PutLogEvents"
-	            ],
-	            "Resource": "arn:aws:logs:*:*:*"
-	        },
-	        {
-	            "Effect": "Allow",
-	            "Action": [
-	                "s3:GetLifecycleConfiguration"
-	            ],
-	            "Resource": [
-	                "arn:aws:s3:::[s3_bucket]"
-	            ]
-	        },
-	        {
-	            "Effect": "Allow",
-	            "Action": [
-	                "s3:PutObject",
-	                "s3:GetObject",
-	                "s3:DeleteObject"
-	            ],
-	            "Resource": [
-	                "arn:aws:s3:::[s3_bucket]/*"
-	            ]
-	        },
-	        {
-	            "Effect": "Allow",
-	            "Action": [
-	                "SES:SendEmail",
-	                "SES:SendRawEmail"
-	            ],
-	            "Resource": [
-	                "arn:aws:ses:*:*:identity/*"
-	            ]
-	        }
-	    ]
-	}
-	```
-	
-- creates a Lambda function with name defined in `config.py` using the Python 2.7 runtime, with the handler and role set appropriately
+    `config.py` is packaged with the function and isn't committed to git.
+3. In SES, in `lambda_region`:
+    1. Verify each domain to be used for lists.
+    2. Set up DKIM and SPF for those domains.
+    3. Point each domain's MX record at SES's inbound endpoint for the region.
+    4. To send to addresses other than verified ones, request production access (move out of the SES sandbox).
+4. Run `scripts/deploy`.  It builds the function, shows the changes it's about to make, and asks before applying them.
+
+If `receipt_rule_set` is set, the deployment adds a receipt rule named `<stack_name>-receive` to that rule set, creating the rule set if it doesn't exist and making it active if no rule set is active yet.  Only one rule set per region can be active, so if a different one is active, the script says so and leaves it alone; add the rule to the active set instead by naming it in `receipt_rule_set`.
+
+To manage SES receipt rules yourself, set `receipt_rule_set = None`.  Your rule needs two actions, in order: store to the S3 bucket under the incoming prefix (`incoming/` by default), then invoke the function (its name is in the stack's outputs) as an Event.
+
+## Updating
+
+Run `scripts/deploy` again after changing the code or `config.py`.  Options are passed on to `sam deploy`; for example, `scripts/deploy --no-confirm-changeset` applies the changes without asking.
+
+## Moving an existing deployment
+
+A deployment made with the old fabfile has its bucket, function and IAM role created outside CloudFormation.  To move it to a stack without losing the lists in its bucket:
+
+1. Update its `lambda/config.py`:
+    - Add the deployment settings from the end of `config.example.py`.
+    - Set `receipt_rule_set` to the name of the active rule set that holds the existing receipt rules, and set `receipt_rule_enabled = False`.  The new rule is then created disabled, so mail isn't handled by both the old and new functions.
+    - If `signing_key` contains a backslash, write it as a raw string (`r'...'`) or double the backslash.  Either keeps the same value without Python 3's warning about invalid escape sequences.  Keep the value exactly the same, or outstanding invitations stop working.
+2. Run `scripts/import-bucket`.  It creates the stack containing only the existing bucket, without changing the bucket or its contents.
+3. Run `scripts/deploy`.  It adds the rest of the stack and applies the template's bucket settings: versioning, the lifecycle rules, the bucket policy, and blocking public access.  The lifecycle rules apply to existing objects too, so held messages and failed incoming mail older than the expiry periods are deleted soon afterwards.
+4. Switch mail over from the old function to the new one; see the [modernization plan](modernization-plan.md), step 7.
+
+## Details
+
+The function's IAM role allows:
+
+- `s3:GetObject`, `s3:PutObject` and `s3:DeleteObject` on objects in the bucket,
+- `s3:ListBucket` and `s3:GetLifecycleConfiguration` on the bucket, and
+- `ses:SendEmail` and `ses:SendRawEmail`.
+
+The function isn't retried when it fails: a retry after a failure partway through sending a post would send it again to the members who already got it.  Failed events go to the queue named in the stack's `FailedEventsQueueUrl` output instead, and the incoming mail they refer to stays in the bucket until the incoming-mail lifecycle rule expires it.
+
+The bucket is kept if the stack is deleted.

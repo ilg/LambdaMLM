@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""Build and deploy LambdaMLM with AWS SAM, using the settings in lambda/config.py.
+
+    scripts/deploy [sam deploy options...]
+
+Needs the AWS CLI, the SAM CLI and Docker (the function is built in SAM's
+Lambda build image, so its dependencies are built for Lambda wherever this
+runs).  Options are passed on to `sam deploy`; by default it shows the change
+set and asks before applying it (pass --no-confirm-changeset to skip that).
+
+To move an existing deployment's bucket into the stack, run
+scripts/import-bucket once first.
+"""
+
+import os
+import runpy
+import shutil
+import subprocess
+import sys
+import warnings
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LAMBDA_DIR = os.path.join(ROOT, 'lambda')
+CONFIG = os.path.join(LAMBDA_DIR, 'config.py')
+CONFIG_EXAMPLE = os.path.join(LAMBDA_DIR, 'config.example.py')
+BUILD_SRC = os.path.join(ROOT, 'build', 'src')
+BUILD_DIR = os.path.join(ROOT, '.aws-sam', 'build')
+TEMPLATE = os.path.join(ROOT, 'template.yaml')
+
+DEFAULT_STACK_NAME = 'LambdaMLM'
+
+
+class ConfigError(Exception):
+    pass
+
+
+def load_config(path):
+    """Run a config file and return its settings, reporting any warnings."""
+    if not os.path.exists(path):
+        raise ConfigError('{} not found.  Create it by copying config.example.py.'.format(path))
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        settings = runpy.run_path(path)
+    for w in caught:
+        print('Warning from {} line {}: {}'.format(os.path.basename(path), w.lineno, w.message),
+              file=sys.stderr)
+    return settings
+
+
+def check_config(config, example):
+    for setting in ('signing_key', 's3_bucket', 'lambda_region'):
+        if not config.get(setting):
+            raise ConfigError('config.py must set {}.'.format(setting))
+    if config['signing_key'] == example.get('signing_key'):
+        raise ConfigError('Change signing_key in config.py to your own unique text.')
+    if config['s3_bucket'] == example.get('s3_bucket'):
+        raise ConfigError('Change s3_bucket in config.py to a bucket name of your own.')
+
+
+def stack_name(config):
+    return config.get('stack_name') or DEFAULT_STACK_NAME
+
+
+def parameter_overrides(config):
+    """Template parameter values from the config, omitting unset ones."""
+    recipients = config.get('receipt_rule_recipients') or []
+    params = {
+        'BucketName': config['s3_bucket'],
+        'IncomingPrefix': config.get('s3_incoming_email_prefix'),
+        'ModerationPrefix': config.get('s3_moderation_prefix'),
+        'ModerationExpirationDays': config.get('moderation_expiration_days'),
+        'IncomingExpirationDays': config.get('incoming_expiration_days'),
+        'ReceiptRuleSetName': config.get('receipt_rule_set'),
+        'ReceiptRuleEnabled': 'false' if config.get('receipt_rule_enabled') is False else 'true',
+        'ReceiptRuleRecipients': ','.join(recipients),
+        'AlarmEmail': config.get('alarm_email'),
+    }
+    return ['{}={}'.format(k, v) for k, v in sorted(params.items()) if v not in (None, '')]
+
+
+def stage(source=LAMBDA_DIR, destination=BUILD_SRC):
+    """Copy the function's code, config.py and requirements.txt for building.
+
+    Leaves out other config files (config.example.py, config.*.py), dotfiles,
+    caches and editor files.
+    """
+    def ignore(directory, names):
+        ignored = []
+        for name in names:
+            if name.startswith('.') or name == '__pycache__' or name.endswith(('.pyc', '.swp', '~')):
+                ignored.append(name)
+            elif (os.path.abspath(directory) == os.path.abspath(source)
+                  and name.startswith('config.') and name != 'config.py'):
+                ignored.append(name)
+        return ignored
+
+    if os.path.exists(destination):
+        shutil.rmtree(destination)
+    shutil.copytree(source, destination, ignore=ignore)
+
+
+def run(*args):
+    print('+ ' + ' '.join(args), file=sys.stderr)
+    subprocess.run(args, check=True)
+
+
+def aws_output(region, *args):
+    result = subprocess.run(('aws', '--region', region, '--output', 'text') + args,
+                            capture_output=True, text=True)
+    return result.returncode, result.stdout.strip(), result.stderr.strip()
+
+
+def ensure_rule_set(name, region):
+    """Create the SES receipt rule set if it doesn't exist yet."""
+    code, _, err = aws_output(region, 'ses', 'describe-receipt-rule-set', '--rule-set-name', name)
+    if code == 0:
+        return
+    if 'RuleSetDoesNotExist' not in err:
+        raise RuntimeError(err)
+    run('aws', '--region', region, 'ses', 'create-receipt-rule-set', '--rule-set-name', name)
+
+
+def activate_rule_set_if_none(name, region):
+    """Make the rule set active, unless another one already is.
+
+    Only one rule set per region can be active, so activating ours would
+    switch off another deployment's receipt rules.
+    """
+    code, active, err = aws_output(region, 'ses', 'describe-active-receipt-rule-set',
+                                   '--query', 'Metadata.Name')
+    if code != 0:
+        raise RuntimeError(err)
+    if active in ('', 'None'):
+        run('aws', '--region', region, 'ses', 'set-active-receipt-rule-set', '--rule-set-name', name)
+    elif active != name:
+        print('Note: the active SES receipt rule set is {!r}, not {!r}, so the receipt rule '
+              "won't receive mail until {!r} is active.".format(active, name, name), file=sys.stderr)
+
+
+def main(sam_deploy_args):
+    try:
+        config = load_config(CONFIG)
+        check_config(config, load_config(CONFIG_EXAMPLE))
+    except ConfigError as e:
+        sys.exit(str(e))
+    region = config['lambda_region']
+    rule_set = config.get('receipt_rule_set')
+
+    stage()
+    run('sam', 'build', '--use-container', '--template-file', TEMPLATE, '--build-dir', BUILD_DIR)
+
+    if rule_set:
+        ensure_rule_set(rule_set, region)
+    if not any(a in sam_deploy_args for a in ('--confirm-changeset', '--no-confirm-changeset')):
+        sam_deploy_args = ['--confirm-changeset'] + sam_deploy_args
+    run('sam', 'deploy',
+        '--template-file', os.path.join(BUILD_DIR, 'template.yaml'),
+        '--stack-name', stack_name(config),
+        '--region', region,
+        '--resolve-s3',
+        '--capabilities', 'CAPABILITY_IAM',
+        '--no-fail-on-empty-changeset',
+        '--parameter-overrides', *parameter_overrides(config),
+        *sam_deploy_args)
+    if rule_set:
+        activate_rule_set_if_none(rule_set, region)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

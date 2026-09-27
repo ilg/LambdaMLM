@@ -1,4 +1,4 @@
 # Only the dependency lists are needed to build the test image.
 *
-!requirements.txt
+!lambda/requirements.txt
 !tests/requirements.txt
