@@ -1,0 +1,107 @@
+[
+  {
+    "data": 0,
+    "destinations": [
+      "sem@lovow.example.com"
+    ],
+    "source": "alpha-list+sem=lovow.example.com+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "g@be.example.com"
+    ],
+    "source": "alpha-list+g=be.example.com+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "vozozowun@rota.example.org"
+    ],
+    "source": "alpha-list+vozozowun=rota.example.org+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "cupenebufi@diwecatod382.example.org"
+    ],
+    "source": "alpha-list+cupenebufi=diwecatod382.example.org+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "ifoga@facu.b45.va.example.com"
+    ],
+    "source": "alpha-list+ifoga=facu.b45.va.example.com+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "fakotunodis@e-89.example.org"
+    ],
+    "source": "alpha-list+fakotunodis=e-89.example.org+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "kudovu@afilasibip016.example.org"
+    ],
+    "source": "alpha-list+kudovu=afilasibip016.example.org+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "ocinome@p194.example.org"
+    ],
+    "source": "alpha-list+ocinome=p194.example.org+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "akos.iropuhava@tutim.example.com"
+    ],
+    "source": "alpha-list+akos.iropuhava=tutim.example.com+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "edenadazu@tutim.example.com"
+    ],
+    "source": "alpha-list+edenadazu=tutim.example.com+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "ogaw@e916.example.org"
+    ],
+    "source": "alpha-list+ogaw=e916.example.org+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "penefafaj@p194.example.org"
+    ],
+    "source": "alpha-list+penefafaj=p194.example.org+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "epikoteri@ezup.example.org"
+    ],
+    "source": "alpha-list+epikoteri=ezup.example.org+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "bunivo-rihe@iku.example.com"
+    ],
+    "source": "alpha-list+bunivo-rihe=iku.example.com+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "aposuju.ewafu@i988.example.org"
+    ],
+    "source": "alpha-list+aposuju.ewafu=i988.example.org+bounce@example.org"
+  }
+]

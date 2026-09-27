@@ -1,0 +1,16 @@
+[
+  {
+    "data": 0,
+    "destinations": [
+      "bob@example.com"
+    ],
+    "source": "test-list+bob=example.com+bounce@example.org"
+  },
+  {
+    "data": 0,
+    "destinations": [
+      "carol@example.com"
+    ],
+    "source": "test-list+carol=example.com+bounce@example.org"
+  }
+]

@@ -68,8 +68,15 @@ LAMBDA_DIR = os.path.join(os.path.dirname(TESTS_DIR), 'lambda')
 sys.path.insert(0, LAMBDA_DIR)
 
 import pytest
+import yaml
+from freezegun.api import FakeDate, FakeDatetime
 
 from fakes import FakeS3, FakeSES
+
+# freezegun substitutes its own datetime classes, which PyYAML's safe dumper
+# doesn't recognize.  Represent them exactly like the real ones.
+yaml.SafeDumper.add_representer(FakeDatetime, yaml.representer.SafeRepresenter.represent_datetime)
+yaml.SafeDumper.add_representer(FakeDate, yaml.representer.SafeRepresenter.represent_date)
 
 # Import every module that creates a client now, so they're all created
 # under the setup above.
