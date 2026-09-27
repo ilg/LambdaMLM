@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Run the test suite on Python 2.7 in Docker.  Arguments are passed to pytest.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+docker build --quiet --file tests/py2.Dockerfile --tag lambdamlm-test-py2 . >/dev/null
+docker run --rm \
+    --volume "$PWD":/src:ro \
+    --workdir /src \
+    lambdamlm-test-py2 \
+    python -m pytest -p no:cacheprovider "$@"
