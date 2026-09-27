@@ -146,7 +146,7 @@ def test_unknown_command():
 
 
 def test_hyphenated_command_name():
-    # Click 6 keeps underscores in command names; Click 7 would use hyphens.
+    # Commands are named explicitly, so Click 7's hyphenated names don't apply.
     assert run('a@example.com', 'list test-list@example.org accept-subscription-invitation x') == \
         'Internal error.'
 
