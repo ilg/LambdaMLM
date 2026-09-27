@@ -13,3 +13,14 @@ jobs:
       - uses: actions/checkout@v4
       # Runs in the same Docker image as local runs, so CI and local results match.
       - run: scripts/test -v
+
+  template:
+    name: Template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install cfn-lint==1.*
+      - run: cfn-lint template.yaml

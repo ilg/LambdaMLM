@@ -10,8 +10,10 @@ __pycache__/
 .coverage
 .venv/
 
-# Deployment package built by the fabfile
-lambda.zip
+# Build output from scripts/deploy and SAM
+build/
+.aws-sam/
+samconfig.toml
 
 # Claude Code: session worktrees and personal settings (shared project
 # settings in .claude/ can still be committed)

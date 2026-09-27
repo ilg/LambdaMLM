@@ -1,0 +1,251 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  LambdaMLM: a mailing list manager running on AWS Lambda with SES and S3.
+  Deploy with scripts/deploy, which takes the parameter values from
+  lambda/config.py.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: >-
+      The S3 bucket for list configuration, incoming mail and held (moderated)
+      messages.  Must match s3_bucket in config.py.
+  IncomingPrefix:
+    Type: String
+    Default: incoming/
+    Description: Key prefix SES stores incoming mail under (s3_incoming_email_prefix).
+  ModerationPrefix:
+    Type: String
+    Default: moderation/
+    Description: Key prefix for held messages (s3_moderation_prefix).
+  ModerationExpirationDays:
+    Type: Number
+    Default: 3
+    MinValue: 1
+    Description: Days after which held messages expire (are rejected) if nobody acts on them.
+  IncomingExpirationDays:
+    Type: Number
+    Default: 14
+    MinValue: 1
+    Description: >-
+      Days after which incoming mail expires.  Mail is deleted once it's been
+      handled, so this only affects mail whose handling failed.
+  NoncurrentVersionExpirationDays:
+    Type: Number
+    Default: 30
+    MinValue: 1
+    Description: >-
+      Days to keep previous versions of objects (for example, list
+      configurations before a change), for recovery.
+  LogRetentionDays:
+    Type: Number
+    Default: 365
+    Description: Days to keep the function's logs.
+  ReceiptRuleSetName:
+    Type: String
+    Default: ''
+    Description: >-
+      The SES receipt rule set to add this deployment's receipt rule to.  Leave
+      empty to manage SES receipt rules yourself.
+  ReceiptRuleEnabled:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: >-
+      Whether the receipt rule is enabled.  When moving an existing deployment
+      to this stack, deploy with 'false' first so mail isn't handled twice.
+  ReceiptRuleRecipients:
+    Type: CommaDelimitedList
+    Default: ''
+    Description: >-
+      Domains or addresses the receipt rule applies to.  Leave empty for all of
+      the account's verified domains.
+  AlarmEmail:
+    Type: String
+    Default: ''
+    Description: An email address to notify when the function reports errors.  Leave empty for none.
+
+Conditions:
+  HasReceiptRuleSet: !Not [!Equals [!Ref ReceiptRuleSetName, '']]
+  HasReceiptRuleRecipients: !Not [!Equals [!Join ['', !Ref ReceiptRuleRecipients], '']]
+  HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, '']]
+
+Resources:
+  # Kept if the stack is deleted, since it holds the lists.  An existing
+  # deployment's bucket can be adopted into the stack with scripts/import-bucket.
+  MailBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref BucketName
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      LifecycleConfiguration:
+        Rules:
+          # The function reads this rule to tell moderators how long they have.
+          - Id: expire-held-messages
+            Status: Enabled
+            Prefix: !Ref ModerationPrefix
+            ExpirationInDays: !Ref ModerationExpirationDays
+          - Id: expire-incoming-mail
+            Status: Enabled
+            Prefix: !Ref IncomingPrefix
+            ExpirationInDays: !Ref IncomingExpirationDays
+          - Id: expire-previous-versions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: !Ref NoncurrentVersionExpirationDays
+            ExpiredObjectDeleteMarker: true
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+
+  # Lets SES store incoming mail.  This allows any receipt rule in the account
+  # (rather than only this stack's rule), so an existing deployment's receipt
+  # rule keeps working while it's moved to this stack.
+  MailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSESToStoreIncomingMail
+            Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${MailBucket}/${IncomingPrefix}*'
+            Condition:
+              StringEquals:
+                'AWS:SourceAccount': !Ref AWS::AccountId
+
+  # Named after the stack (rather than /aws/lambda/<function name>) so it
+  # can't collide with an existing deployment's log group.
+  FunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-function'
+      RetentionInDays: !Ref LogRetentionDays
+
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: LambdaMLM mailing list manager
+      # scripts/deploy stages the function's code and config.py here.
+      CodeUri: build/src/
+      Handler: lambda.lambda_handler
+      Runtime: python3.13
+      Architectures: [x86_64]
+      MemorySize: 512
+      Timeout: 300
+      LoggingConfig:
+        LogGroup: !Ref FunctionLogGroup
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+              Resource: !Sub 'arn:${AWS::Partition}:s3:::${MailBucket}/*'
+            # ListBucket makes a missing object a 404 rather than a 403.
+            - Effect: Allow
+              Action: [s3:ListBucket, s3:GetLifecycleConfiguration]
+              Resource: !Sub 'arn:${AWS::Partition}:s3:::${MailBucket}'
+            - Effect: Allow
+              Action: [ses:SendEmail, ses:SendRawEmail]
+              Resource: '*'
+      # A retry after a failure partway through sending a post would send it
+      # again to the members who already got it, so don't retry.  Failed
+      # events go to a queue instead, where they can be inspected or replayed.
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt FailedEvents.Arn
+
+  FailedEvents:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600  # 14 days, the maximum
+      SqsManagedSseEnabled: true
+
+  SESInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunction
+      Principal: ses.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+
+  ReceiptRule:
+    Type: AWS::SES::ReceiptRule
+    Condition: HasReceiptRuleSet
+    DependsOn: [MailBucketPolicy, SESInvokePermission]
+    Properties:
+      RuleSetName: !Ref ReceiptRuleSetName
+      Rule:
+        Name: !Sub '${AWS::StackName}-receive'
+        Enabled: !Ref ReceiptRuleEnabled
+        ScanEnabled: true
+        TlsPolicy: Optional
+        Recipients: !If [HasReceiptRuleRecipients, !Ref ReceiptRuleRecipients, !Ref AWS::NoValue]
+        Actions:
+          - S3Action:
+              BucketName: !Ref MailBucket
+              ObjectKeyPrefix: !Ref IncomingPrefix
+          - LambdaAction:
+              FunctionArn: !GetAtt Function.Arn
+              InvocationType: Event
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasAlarmEmail
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlarmEmail
+
+  ErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: The LambdaMLM function reported errors.  Failed events are in the FailedEvents queue.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref Function
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If [HasAlarmEmail, [!Ref AlarmTopic], !Ref AWS::NoValue]
+
+Outputs:
+  FunctionName:
+    Value: !Ref Function
+  FunctionArn:
+    Value: !GetAtt Function.Arn
+  BucketName:
+    Value: !Ref MailBucket
+  FailedEventsQueueUrl:
+    Description: Where events the function failed on are kept for 14 days.
+    Value: !Ref FailedEvents
+  ReceiptRuleName:
+    Condition: HasReceiptRuleSet
+    Value: !Sub '${AWS::StackName}-receive'
