@@ -2,23 +2,36 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >-
   LambdaMLM: a mailing list manager running on AWS Lambda with SES and S3.
-  Deploy with scripts/deploy, which takes the parameter values from
-  lambda/config.py.
+  Deploy with scripts/deploy.  The command-signing key is the SSM parameter
+  /lambdamlm/<stack name>/signing-key; see scripts/signing-key.
 
 Parameters:
   BucketName:
     Type: String
     Description: >-
       The S3 bucket for list configuration, incoming mail and held (moderated)
-      messages.  Must match s3_bucket in config.py.
+      messages.  Bucket names are global, so this must be one no one else has.
+  CommandUser:
+    Type: String
+    Default: lambda
+    Description: The user part of the address email commands go to (<CommandUser>@<list host>).
+  SignedValidityHours:
+    Type: Number
+    Default: 1
+    MinValue: 0.1
+    Description: How long a signed command stays valid, in hours.
+  ConfigurationPrefix:
+    Type: String
+    Default: config/
+    Description: Key prefix for list configurations.
   IncomingPrefix:
     Type: String
     Default: incoming/
-    Description: Key prefix SES stores incoming mail under (s3_incoming_email_prefix).
+    Description: Key prefix SES stores incoming mail under.
   ModerationPrefix:
     Type: String
     Default: moderation/
-    Description: Key prefix for held messages (s3_moderation_prefix).
+    Description: Key prefix for held messages.
   ModerationExpirationDays:
     Type: Number
     Default: 3
@@ -145,7 +158,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Description: LambdaMLM mailing list manager
-      # scripts/deploy stages the function's code and config.py here.
+      # scripts/deploy stages the function's code here.
       CodeUri: build/src/
       Handler: lambda.lambda_handler
       Runtime: python3.13
@@ -154,6 +167,15 @@ Resources:
       Timeout: 300
       LoggingConfig:
         LogGroup: !Ref FunctionLogGroup
+      Environment:
+        Variables:
+          LAMBDAMLM_BUCKET: !Ref MailBucket
+          LAMBDAMLM_COMMAND_USER: !Ref CommandUser
+          LAMBDAMLM_SIGNED_VALIDITY_HOURS: !Ref SignedValidityHours
+          LAMBDAMLM_CONFIGURATION_PREFIX: !Ref ConfigurationPrefix
+          LAMBDAMLM_INCOMING_PREFIX: !Ref IncomingPrefix
+          LAMBDAMLM_MODERATION_PREFIX: !Ref ModerationPrefix
+          LAMBDAMLM_SIGNING_KEY_PARAMETER: !Sub '/lambdamlm/${AWS::StackName}/signing-key'
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -167,6 +189,16 @@ Resources:
             - Effect: Allow
               Action: [ses:SendEmail, ses:SendRawEmail]
               Resource: '*'
+            # The command-signing key, a SecureString created by scripts/signing-key.
+            - Effect: Allow
+              Action: ssm:GetParameter
+              Resource: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/lambdamlm/${AWS::StackName}/signing-key'
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: '*'
+              Condition:
+                StringEquals:
+                  'kms:ViaService': !Sub 'ssm.${AWS::Region}.amazonaws.com'
       # A retry after a failure partway through sending a post would send it
       # again to the members who already got it, so don't retry.  Failed
       # events go to a queue instead, where they can be inspected or replayed.
@@ -246,6 +278,9 @@ Outputs:
   FailedEventsQueueUrl:
     Description: Where events the function failed on are kept for 14 days.
     Value: !Ref FailedEvents
+  SigningKeyParameter:
+    Description: The SSM parameter holding the command-signing key.
+    Value: !Sub '/lambdamlm/${AWS::StackName}/signing-key'
   ReceiptRuleName:
     Condition: HasReceiptRuleSet
     Value: !Sub '${AWS::StackName}-receive'

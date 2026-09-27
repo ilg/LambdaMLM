@@ -8,7 +8,7 @@ imported:
 1. Point AWS configuration at fake credentials, so no real credentials or
    profiles can ever be picked up.
 2. Block every real AWS request at the botocore level.
-3. Install a fake `config` module.
+3. Install a fake `settings` module.
 4. Put `lambda/` on the import path.
 """
 
@@ -46,21 +46,19 @@ def _block_request(request, **kwargs):
 boto3.setup_default_session()
 boto3.DEFAULT_SESSION.events.register('before-send', _block_request)
 
-# 3. Fake config module, mirroring config.example.py.  The signing key is a
-# native (non-unicode) string: on Python 2 a unicode key crashes signing
-# (issue #34), which is pinned separately.
-config = types.ModuleType('config')
-config.command_user = 'lambda'
-config.lambda_region = 'us-west-2'
-config.lambda_name = 'LambdaMLM'
-config.iam_role_name = 'LambdaMLM'
-config.s3_bucket = 'lambdamlm-test'
-config.s3_incoming_email_prefix = 'incoming/'
-config.s3_configuration_prefix = 'config/'
-config.s3_moderation_prefix = 'moderation/'
-config.signing_key = 'test signing key'
-config.signed_validity_interval = timedelta(hours=1)
-sys.modules['config'] = config
+# 3. Fake settings module, with the same settings as lambda/settings.py and a
+# fixed signing key instead of one from SSM.  (tests/test_settings.py tests
+# the real module.)
+settings = types.ModuleType('settings')
+settings.command_user = 'lambda'
+settings.s3_bucket = 'lambdamlm-test'
+settings.s3_incoming_email_prefix = 'incoming/'
+settings.s3_configuration_prefix = 'config/'
+settings.s3_moderation_prefix = 'moderation/'
+settings.signed_validity_interval = timedelta(hours=1)
+settings.signing_key_parameter = '/lambdamlm/test/signing-key'
+settings.signing_key = lambda: 'test signing key'
+sys.modules['settings'] = settings
 
 # 4. Import path.
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))

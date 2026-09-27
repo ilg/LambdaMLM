@@ -6,7 +6,7 @@ import yaml
 from botocore.exceptions import ClientError
 from freezegun import freeze_time
 
-import config
+import settings
 import control
 import sestools
 from helpers import (FIXTURES, member, parse_message, read_bytes, ses_event,
@@ -27,7 +27,7 @@ def make_list(aws, list_name='test-list', **options):
 
 
 def keys(aws):
-    return aws.s3.keys(config.s3_bucket)
+    return aws.s3.keys(settings.s3_bucket)
 
 
 # ---------------------------------------------------------------- sestools

@@ -8,7 +8,7 @@ import pytest
 import yaml
 from freezegun import freeze_time
 
-import config
+import settings
 import control
 import golden
 import listobj
@@ -106,7 +106,7 @@ def test_reject_from_non_members(aws):
     make_list(aws, **{'reject-from-non-members': True}).send(
             parse_message(raw_message(from_='stranger@example.net')))
     assert aws.ses.sent_raw_emails == []
-    assert aws.s3.keys(config.s3_bucket) == ['config/example.org/test-list.yaml']
+    assert aws.s3.keys(settings.s3_bucket) == ['config/example.org/test-list.yaml']
 
 
 def test_no_post_member(aws):
@@ -128,7 +128,7 @@ def test_reject_wins_over_allow(aws):
 
 
 def moderation_keys(aws):
-    return [k for k in aws.s3.keys(config.s3_bucket) if k.startswith(config.s3_moderation_prefix)]
+    return [k for k in aws.s3.keys(settings.s3_bucket) if k.startswith(settings.s3_moderation_prefix)]
 
 
 @pytest.mark.parametrize('options, from_, members', [
@@ -380,12 +380,12 @@ def moderated_list(aws, **options):
 
 @freeze_time(NOW)
 def test_moderation_notice(aws):
-    aws.s3.lifecycle[config.s3_bucket] = FLAT_RULE
+    aws.s3.lifecycle[settings.s3_bucket] = FLAT_RULE
     raw = raw_message(message_id='<id:with:colons@example.com>')
     moderated_list(aws).send(parse_message(raw))
     key = 'moderation/example.org/test-list/<id_with_colons@example.com>'
     assert moderation_keys(aws) == [key]
-    assert aws.s3.body(config.s3_bucket, key) == parse_message(raw).as_bytes(policy=listobj.SEND_POLICY)
+    assert aws.s3.body(settings.s3_bucket, key) == parse_message(raw).as_bytes(policy=listobj.SEND_POLICY)
     notices = aws.ses.sent_raw_emails
     assert [(n['Source'], n['Destinations']) for n in notices] == [
         ('lambda@example.org', ['mod1@example.com']),
@@ -421,7 +421,7 @@ def test_moderation_notice(aws):
 
 @freeze_time(NOW)
 def test_moderation_without_matching_rule_defaults_to_three_days(aws):
-    aws.s3.lifecycle[config.s3_bucket] = {'Rules': [
+    aws.s3.lifecycle[settings.s3_bucket] = {'Rules': [
         {'ID': 'x', 'Prefix': 'other/', 'Status': 'Enabled', 'Expiration': {'Days': 9}}]}
     moderated_list(aws).send(parse_message(raw_message()))
     assert b'automatically rejected' in aws.ses.sent_raw_emails[0]['Data']
@@ -442,15 +442,15 @@ def test_moderation_without_matching_rule_defaults_to_three_days(aws):
     ])
 def test_moderation_expiration_days(aws, lifecycle, days):
     if lifecycle is not None:
-        aws.s3.lifecycle[config.s3_bucket] = lifecycle
+        aws.s3.lifecycle[settings.s3_bucket] = lifecycle
     moderated_list(aws).send(parse_message(raw_message()))
     assert len(aws.ses.sent_raw_emails) == 2
     assert 'in {} days'.format(days).encode('ascii') in aws.ses.sent_raw_emails[0]['Data']
 
 
 def test_moderation_notice_uses_command_user(aws, monkeypatch):
-    monkeypatch.setattr(config, 'command_user', 'lists')
-    aws.s3.lifecycle[config.s3_bucket] = FLAT_RULE
+    monkeypatch.setattr(settings, 'command_user', 'lists')
+    aws.s3.lifecycle[settings.s3_bucket] = FLAT_RULE
     moderated_list(aws).send(parse_message(raw_message()))
     assert aws.ses.sent_raw_emails[0]['Source'] == 'lists@example.org'
 
@@ -471,7 +471,7 @@ def test_moderation_key_for_folded_message_id(aws):
 
 def store_held(aws, key_suffix='<m1@example.com>', raw=None):
     key = 'moderation/example.org/test-list/' + key_suffix
-    aws.s3.put(config.s3_bucket, key, raw or raw_message(from_='stranger@example.net'))
+    aws.s3.put(settings.s3_bucket, key, raw or raw_message(from_='stranger@example.net'))
     return key
 
 
@@ -479,7 +479,7 @@ def test_mod_approve(aws):
     key = store_held(aws)
     moderated_list(aws).user_mod_approve('mod1@example.com', '<m1@example.com>')
     assert sent_to(aws) == ['mod1@example.com', 'mod2@example.com', 'alice@example.com']
-    assert key not in aws.s3.keys(config.s3_bucket)
+    assert key not in aws.s3.keys(settings.s3_bucket)
 
 
 def test_mod_approve_production_held_message(aws):
@@ -488,12 +488,12 @@ def test_mod_approve_production_held_message(aws):
     msg_id = parse_message(data)['Message-ID']
     # This message's key has a leading space (see the fixtures README).
     key = 'moderation/example.org/charlie-sub-list/ ' + msg_id
-    aws.s3.put(config.s3_bucket, key, data)
+    aws.s3.put(settings.s3_bucket, key, data)
     l = listobj.List('charlie-sub-list@example.org')
     moderator = l.moderator_addresses[0]
     l.user_mod_approve(moderator, ' ' + msg_id)
     assert aws.ses.sent_raw_emails
-    assert key not in aws.s3.keys(config.s3_bucket)
+    assert key not in aws.s3.keys(settings.s3_bucket)
 
 
 def test_mod_approve_not_moderator(aws):
@@ -511,7 +511,7 @@ def test_mod_reject(aws):
     key = store_held(aws)
     moderated_list(aws).user_mod_reject('mod1@example.com', '<m1@example.com>')
     assert aws.ses.sent_raw_emails == []
-    assert key not in aws.s3.keys(config.s3_bucket)
+    assert key not in aws.s3.keys(settings.s3_bucket)
 
 
 def test_mod_reject_missing(aws):
@@ -586,7 +586,7 @@ def test_handle_bounce_bad_addresses(aws, address, error):
     ('alice@example.com', [member('alice@example.com', 'modPost'), member('mod1@example.com', 'moderator')]),
     ])
 def test_moderation_paths_with_lifecycle_rule(aws, from_, members):
-    aws.s3.lifecycle[config.s3_bucket] = FLAT_RULE
+    aws.s3.lifecycle[settings.s3_bucket] = FLAT_RULE
     options = {}
     if members is not None:
         options['members'] = members

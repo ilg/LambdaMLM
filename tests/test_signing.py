@@ -8,6 +8,7 @@ from freezegun import freeze_time
 
 import control
 import golden
+import settings
 
 ADDRESS = 'alice@example.com'
 COMMAND = 'list alpha-list@example.org subscribe'
@@ -19,9 +20,13 @@ LONG_UNICODE_KEY = (u'This is a long ASCII signing key used only by the tests, '
 NOW = '2026-09-14 12:00:00'
 
 
+def use_key(monkeypatch, key):
+    monkeypatch.setattr(settings, 'signing_key', lambda: key)
+
+
 @pytest.fixture
 def long_unicode_key(monkeypatch):
-    monkeypatch.setattr(control, 'signing_key', LONG_UNICODE_KEY)
+    use_key(monkeypatch, LONG_UNICODE_KEY)
 
 
 def split_signed(signed):
@@ -40,7 +45,7 @@ def test_signature_values(monkeypatch):
     ]
     for i, text in enumerate(inputs):
         values['test-key/{}'.format(i)] = control.signature(text)
-    monkeypatch.setattr(control, 'signing_key', LONG_UNICODE_KEY)
+    use_key(monkeypatch, LONG_UNICODE_KEY)
     for i, text in enumerate(inputs):
         values['long-unicode-key/{}'.format(i)] = control.signature(text)
     golden.check_json('signatures.json', values)
@@ -62,7 +67,7 @@ def test_sign_format():
     signed = control.sign(COMMAND, ADDRESS)
     cmd, sig, timestamp = split_signed(signed)
     assert cmd == COMMAND
-    # Default validity is config.signed_validity_interval (1 hour in tests).
+    # Default validity is settings.signed_validity_interval (1 hour in tests).
     assert timestamp == '20260914130000'
     assert sig == control.signature(' '.join([ADDRESS, timestamp, COMMAND]))
     assert signed == '{} {}{}'.format(COMMAND, sig, timestamp)
@@ -149,14 +154,14 @@ def test_signed_for_named_address_rejects_bare_address():
 
 def test_short_unicode_key(monkeypatch):
     # Issue #34: a short unicode key crashed hmac on Python 2.
-    monkeypatch.setattr(control, 'signing_key', u'short unicode key')
+    use_key(monkeypatch, u'short unicode key')
     assert control.signature('anything') == control.signature(u'anything')
 
 
 def test_bytes_key(monkeypatch):
-    monkeypatch.setattr(control, 'signing_key', LONG_UNICODE_KEY.encode('utf-8'))
+    use_key(monkeypatch, LONG_UNICODE_KEY.encode('utf-8'))
     bytes_signature = control.signature('anything')
-    monkeypatch.setattr(control, 'signing_key', LONG_UNICODE_KEY)
+    use_key(monkeypatch, LONG_UNICODE_KEY)
     assert control.signature('anything') == bytes_signature
 
 

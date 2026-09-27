@@ -8,7 +8,7 @@ import boto3
 import pytest
 from botocore.client import BaseClient
 
-import config
+import settings
 import control
 import listobj
 import sestools
@@ -17,8 +17,8 @@ from conftest import (
 from fakes import FakeS3, FakeSES
 
 
-def test_config_is_the_fake():
-    assert config.s3_bucket == 'lambdamlm-test'
+def test_settings_are_the_fake():
+    assert settings.s3_bucket == 'lambdamlm-test'
 
 
 def test_module_clients_are_fakes(aws):
