@@ -312,6 +312,15 @@ class List (ListMemberContainer):
     def munged_from(self, address):
         return self.list_address_with_tags(address, 'from')
 
+    def address_header(self):
+        """The list's address for an address header, with its name if it has one.
+
+        formataddr encodes a non-ASCII name without encoding the address.
+        """
+        if self.name:
+            return formataddr((self.name, self.address))
+        return self.address
+
     @staticmethod
     def msg_replace_header(msg, header, new_value=None):
         # The value exactly as received.  (msg.get() would turn undeclared
@@ -327,6 +336,10 @@ class List (ListMemberContainer):
         # cc_chain holds the addresses of the lists that cc'd this one, so
         # cc-lists that refer back to each other don't loop forever.
         from_user = msg_get_header(msg, 'From')
+        # The From header exactly as received, for copying into Reply-to and
+        # Cc without decoding and re-encoding it.
+        raw_from = next((v for k, v in msg.raw_items() if k.lower() == 'from'), from_user)
+        raw_from = re.sub(r'\r?\n[ \t]', ' ', raw_from)
         from_name, from_address = parseaddr(from_user)
         from_address = from_address.lower()
         if not from_name:
@@ -370,7 +383,7 @@ class List (ListMemberContainer):
         self.msg_replace_header(msg, 'Return-path')
 
         # Make the list be the sender of the email.
-        self.msg_replace_header(msg, 'Sender', Header(self.display_address))
+        self.msg_replace_header(msg, 'Sender', self.address_header())
 
         # Munge the From: header.
         # While munging the From: header probably technically violates an RFC,
@@ -390,17 +403,13 @@ class List (ListMemberContainer):
 
         # See if replies should default to the list.
         if self.reply_to_list:
-            self.msg_replace_header(msg, 'Reply-to', Header(self.display_address))
+            self.msg_replace_header(msg, 'Reply-to', self.address_header())
             # Cc the sender so replies reach them too, in a single Cc: header
             # that keeps anyone who was already Cc'd.
-            existing_cc = [re.sub(r'\r?\n[ \t]', ' ', v) for v in msg.get_all('CC', [])]
-            if existing_cc:
-                cc = ', '.join(existing_cc + [Header(from_user).encode()])
-            else:
-                cc = Header(from_user)
-            self.msg_replace_header(msg, 'CC', cc)
+            existing_cc = [re.sub(r'\r?\n[ \t]', ' ', v) for k, v in msg.raw_items() if k.lower() == 'cc']
+            self.msg_replace_header(msg, 'CC', ', '.join(existing_cc + [raw_from]))
         else:
-            self.msg_replace_header(msg, 'Reply-to', Header(from_user))
+            self.msg_replace_header(msg, 'Reply-to', raw_from)
 
         # See if the list has a subject tag.
         if self.subject_tag:

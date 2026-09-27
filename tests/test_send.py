@@ -595,3 +595,25 @@ def test_moderation_paths_with_lifecycle_rule(aws, from_, members):
     make_list(aws, **options).send(parse_message(raw_message(from_=from_)))
     assert [s['Destinations'] for s in aws.ses.sent_raw_emails] == [['mod1@example.com']]
     assert moderation_keys(aws) == ['moderation/example.org/test-list/<m1@example.com>']
+
+
+def test_non_ascii_list_name_in_address_headers(aws):
+    # Issue #9: the whole "name <address>" value used to be one encoded word,
+    # which mail clients can't read the address out of.
+    from sestools import msg_get_header
+    make_list(aws, name=u'Café List', **{'reply-to-list': True}).send(parse_message(raw_message()))
+    data = aws.ses.sent_raw_emails[0]['Data']
+    assert b'Sender: =?utf-8?q?Caf=C3=A9_List?= <test-list@example.org>\r\n' in data
+    assert b'Reply-to: =?utf-8?q?Caf=C3=A9_List?= <test-list@example.org>\r\n' in data
+    assert msg_get_header(sent_message(aws), 'Reply-to') == u'Café List <test-list@example.org>'
+
+
+def test_list_name_with_specials_is_quoted(aws):
+    make_list(aws, name='Test, List').send(parse_message(raw_message()))
+    assert sent_message(aws)['Sender'] == '"Test, List" <test-list@example.org>'
+
+
+def test_reply_to_is_sender_as_received(aws):
+    raw = EIGHT_BIT_BODY.replace(b'Alice Sender', b'Al\xc3\xafce Sender')
+    make_list(aws).send(parse_message(raw))
+    assert b'Reply-to: Al\xc3\xafce Sender <alice@example.com>\r\n' in aws.ses.sent_raw_emails[0]['Data']
