@@ -23,17 +23,17 @@ def email_message_for_event(event):
         print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, s3_bucket))
         raise e
     
+    yield email.message_from_file(response['Body'])
+
+    # Clean up: delete the email from S3.  This only happens once the email has
+    # been handled; if handling raised, the email stays in S3 so it isn't lost.
     try:
-        yield email.message_from_file(response['Body'])
-    finally:
-        # Clean up: delete the email from S3
-        try:
-            response = s3.delete_object(Bucket=s3_bucket, Key=key)
-            print("Removed email from S3.")
-        except Exception as e:
-            print(e)
-            print('Error removing object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, s3_bucket))
-            raise e
+        response = s3.delete_object(Bucket=s3_bucket, Key=key)
+        print("Removed email from S3.")
+    except Exception as e:
+        print(e)
+        print('Error removing object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, s3_bucket))
+        raise e
 
 def msg_get_header(msg, header_name):
     raw = msg[header_name]

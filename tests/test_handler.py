@@ -96,15 +96,6 @@ def test_email_message_for_event(aws):
     assert incoming_key('id1') not in keys(aws)
 
 
-def test_email_message_for_event_deletes_on_error(aws):
-    store_incoming(aws, 'id1', POST)
-    with pytest.raises(RuntimeError):
-        with sestools.email_message_for_event(ses_event('id1', ['test-list@example.org'])):
-            raise RuntimeError('handling failed')
-    assert incoming_key('id1') not in keys(aws)
-
-
-@pytest.mark.xfail(strict=True, reason='Step 3: keep incoming mail when handling fails.')
 def test_email_message_for_event_keeps_message_on_error(aws):
     store_incoming(aws, 'id1', POST)
     with pytest.raises(RuntimeError):
@@ -208,8 +199,8 @@ def test_mail_to_non_list_address_crashes(aws, lambda_handler):
     store_incoming(aws, 'id1', POST.replace(b'test-list@', b'someone@'))
     with pytest.raises(UnknownList):
         lambda_handler(ses_event('id1', ['someone@example.org']), None)
-    # The message was deleted anyway.
-    assert incoming_key('id1') not in keys(aws)
+    # The message is kept because handling failed.
+    assert incoming_key('id1') in keys(aws)
 
 
 @pytest.mark.xfail(strict=True, raises=UnknownList,
@@ -239,7 +230,7 @@ def test_eight_bit_from_crashes_before_routing(aws, lambda_handler):
     store_incoming(aws, 'id1', POST.replace(b'Alice Sender', b'Al\xc3\xafce Sender'))
     with pytest.raises(UnicodeDecodeError):
         lambda_handler(ses_event('id1', ['test-list@example.org']), None)
-    assert incoming_key('id1') not in keys(aws)
+    assert incoming_key('id1') in keys(aws)
 
 
 def test_non_ses_event_without_action(aws, lambda_handler):
