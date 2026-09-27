@@ -67,7 +67,7 @@ def test_analysis_matches_golden():
     ('ses-permanent.eml', 'hard'),
     ('ses-transient.eml', 'soft'),
     ('arf-complaint.eml', 'unknown'),
-    ('microsoft-5-1-10.eml', 'KeyError'),
+    ('microsoft-5-1-10.eml', 'hard'),
     ])
 def test_synthetic_samples(name, expected):
     msg = parse_message(read_bytes(FIXTURES, 'bounces', 'synthetic', name))
@@ -80,11 +80,12 @@ def test_complaints_are_not_detected():
     assert email_utils.detect_bounce(msg) == email_utils.ResponseType.unknown
 
 
-@pytest.mark.xfail(strict=True, raises=KeyError,
-                   reason='Lamson has no entry for status codes such as 5.1.10.')
 def test_unlisted_status_code_is_classified():
+    import lamson_bounce
     msg = parse_message(read_bytes(FIXTURES, 'bounces', 'synthetic', 'microsoft-5-1-10.eml'))
     assert email_utils.detect_bounce(msg) == email_utils.ResponseType.hard
+    analysis = lamson_bounce.detect(msg)
+    assert analysis.combined_status == (110, u'Other address status')
 
 
 def test_first_status_is_the_first_found():

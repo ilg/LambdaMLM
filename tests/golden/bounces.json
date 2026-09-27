@@ -2479,9 +2479,24 @@
   },
   "synthetic/microsoft-5-1-10.eml": {
     "analysis": {
-      "error": "KeyError"
+      "action": "failed",
+      "combined_status": [
+        110,
+        "Other address status"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.8125,
+      "secondary_status": [
+        1,
+        "Addressing Status"
+      ]
     },
-    "response_type": "KeyError"
+    "response_type": "hard"
   },
   "synthetic/ses-permanent.eml": {
     "analysis": {

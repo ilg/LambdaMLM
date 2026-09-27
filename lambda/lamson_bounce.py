@@ -16,6 +16,9 @@ Lamson LambdaMLM used.  Changes from the original:
 - The bounce_to decorator, unused by LambdaMLM, is removed.
 - is_hard() and is_soft() treat a missing status as Python 2 did, where
   None compared less than any number: not hard, and soft if probable.
+- Status codes that aren't in the tables below (Microsoft 365's 5.1.10, say)
+  no longer raise KeyError.  An unlisted detail code is described by its
+  subject's "other" entry, and an unlisted class or subject generically.
 - Header values are collected in the order they're found, without
   duplicates, instead of in a set.  Which value came first (the first Status,
   say) then doesn't depend on string hashing, which Python 3 randomizes.
@@ -272,10 +275,14 @@ class BounceAnalyzer(object):
 
         if 'Status' in self.headers:
             status = self.headers['Status'][0]
-            self.primary_status = int(status[0]), PRIMARY_STATUS_CODES[status[0]]
-            self.secondary_status = int(status[1]), SECONDARY_STATUS_CODES[status[1]]
+            self.primary_status = int(status[0]), PRIMARY_STATUS_CODES.get(
+                    status[0], u'Unknown Status Code {}'.format(status[0]))
+            self.secondary_status = int(status[1]), SECONDARY_STATUS_CODES.get(
+                    status[1], u'Unknown Subject Code {}'.format(status[1]))
             combined = "".join(status[1:])
-            self.combined_status = int(combined), COMBINED_STATUS_CODES[combined]
+            self.combined_status = int(combined), COMBINED_STATUS_CODES.get(
+                    combined, COMBINED_STATUS_CODES.get(
+                        status[1] + u'0', u'Unknown Status Code {}'.format(combined)))
         else:
             self.primary_status = (None, None)
             self.secondary_status = (None, None)
