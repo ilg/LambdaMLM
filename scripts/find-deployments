@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# See deploytools/find_deployments.py (or run with --help).
+cd "$(dirname "$0")/.." && exec python3 -m deploytools.find_deployments "$@"

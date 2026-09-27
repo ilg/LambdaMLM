@@ -1,37 +1,20 @@
 # -*- coding: utf-8 -*-
-"""The deployment scripts' packaging, config handling and parameters."""
+"""The deployment tools: packaging, environments, parameters and signing keys."""
 
-import importlib.util
+import datetime
+import io
 import json
 import os
-from importlib.machinery import SourceFileLoader
+import zipfile
 
 import pytest
-import yaml
+from freezegun import freeze_time
 
+import control
+from deploytools import common, deploy, import_bucket, pull_config, signing_key
 from helpers import TESTS_DIR
 
 ROOT = os.path.dirname(TESTS_DIR)
-
-
-def load_script(name):
-    loader = SourceFileLoader(name.replace('-', '_'), os.path.join(ROOT, 'scripts', name))
-    module = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
-    loader.exec_module(module)
-    return module
-
-
-deploy = load_script('deploy')
-import_bucket = load_script('import-bucket')
-
-
-def template_parameters():
-    class Loader(yaml.SafeLoader):
-        pass
-    # Accept CloudFormation's short-form tags (!Ref, !Sub, ...).
-    Loader.add_multi_constructor('!', lambda loader, suffix, node: None)
-    with open(os.path.join(ROOT, 'template.yaml')) as f:
-        return yaml.load(f, Loader=Loader)['Parameters']
 
 
 def write(path, text=''):
@@ -41,90 +24,167 @@ def write(path, text=''):
         f.write(text)
 
 
-def test_stage_packages_code_and_config_only(tmp_path):
+# ---------------------------------------------------------------- packaging
+
+def test_stage_packages_code_only(tmp_path):
     source = tmp_path / 'lambda'
-    for name in ['lambda.py', 'config.py', 'config.example.py', 'config.prod.py', 'requirements.txt',
-                 '.lambda.py.swp', 'x.pyc', '__pycache__/y.pyc', 'api/actions.py', 'api/.actions.py.swp',
-                 'api/config.py.bak~', 'templates/notify_moderators.jinja2', 'control/config.py']:
+    for name in ['lambda.py', 'settings.py', 'config.py', 'config.example.py', 'config.prod.py',
+                 'requirements.txt', '.lambda.py.swp', 'x.pyc', '__pycache__/y.pyc', 'api/actions.py',
+                 'api/.actions.py.swp', 'api/notes~', 'templates/notify_moderators.jinja2',
+                 'control/config.py']:
         write(str(source / name))
     destination = tmp_path / 'build'
     deploy.stage(str(source), str(destination))
     staged = sorted(os.path.relpath(os.path.join(d, f), str(destination))
                     for d, _, files in os.walk(str(destination)) for f in files)
-    assert staged == ['api/actions.py', 'config.py', 'control/config.py', 'lambda.py',
-                      'requirements.txt', 'templates/notify_moderators.jinja2']
+    assert staged == ['api/actions.py', 'control/config.py', 'lambda.py', 'requirements.txt',
+                      'settings.py', 'templates/notify_moderators.jinja2']
 
 
 def test_stage_real_function(tmp_path):
     destination = tmp_path / 'build'
     deploy.stage(destination=str(destination))
-    for name in ('lambda.py', 'listobj.py', 'lamson_bounce.py', 'requirements.txt',
+    for name in ('lambda.py', 'settings.py', 'listobj.py', 'lamson_bounce.py', 'requirements.txt',
                  'templates/notify_moderators.jinja2', 'control/list_commands.py', 'api/actions.py'):
         assert (destination / name).exists(), name
-    assert not (destination / 'config.example.py').exists()
 
 
-def example_config():
-    return deploy.load_config(deploy.CONFIG_EXAMPLE)
+# ---------------------------------------------------------------- environments
+
+def test_environments_round_trip(tmp_path):
+    environments = {
+        'prod': common.Environment('prod', 'default', 'us-west-2', 'LambdaMLM',
+                                   {'BucketName': 'b', 'AlarmEmail': '', 'ReceiptRuleRecipients': 'a.org,b.org'}),
+        'test': common.Environment('test', '2718', 'us-west-2', 'LambdaMLM-test', {'BucketName': 'c'}),
+    }
+    path = str(tmp_path / 'samconfig.toml')
+    common.save_environments(environments, path)
+    loaded = common.load_environments(path)
+    assert sorted(loaded) == ['prod', 'test']
+    for name, env in environments.items():
+        got = loaded[name]
+        assert (got.profile, got.region, got.stack_name, got.parameters) == (
+            env.profile, env.region, env.stack_name, env.parameters)
+    assert loaded['prod'].signing_key_parameter == '/lambdamlm/LambdaMLM/signing-key'
 
 
-def test_check_config_rejects_example_values():
-    example = example_config()
-    with pytest.raises(deploy.ConfigError, match='signing_key'):
-        deploy.check_config(dict(example), example)
-    with pytest.raises(deploy.ConfigError, match='s3_bucket'):
-        deploy.check_config(dict(example, signing_key='mine'), example)
-    with pytest.raises(deploy.ConfigError, match='lambda_region'):
-        deploy.check_config(dict(example, signing_key='mine', s3_bucket='b', lambda_region=None), example)
-    deploy.check_config(dict(example, signing_key='mine', s3_bucket='my-bucket'), example)
+def test_environment_with_string_overrides(tmp_path):
+    # SAM also writes parameter_overrides as one string.
+    path = tmp_path / 'samconfig.toml'
+    path.write_text('version = 0.1\n[x.deploy.parameters]\nstack_name = "S"\nregion = "r"\n'
+                    'parameter_overrides = "BucketName=\\"b\\" AlarmEmail=a@example.org"\n')
+    assert common.load_environments(str(path))['x'].parameters == {
+        'BucketName': 'b', 'AlarmEmail': 'a@example.org'}
 
 
-def test_load_config_missing(tmp_path):
-    with pytest.raises(deploy.ConfigError, match='config.example.py'):
-        deploy.load_config(str(tmp_path / 'config.py'))
+def test_missing_environment(tmp_path):
+    with pytest.raises(common.Error, match='pull-config'):
+        common.load_environment('nope', str(tmp_path / 'samconfig.toml'))
 
 
-def test_load_config_reports_warnings(tmp_path, capsys):
-    path = tmp_path / 'config.py'
-    # An invalid escape sequence, like the one in the production signing key.
-    path.write_text(u"signing_key = u'a\\qb'\n")
-    assert deploy.load_config(str(path))['signing_key'] == u'a\\qb'
-    assert 'invalid escape sequence' in capsys.readouterr().err
+def test_example_environment_uses_template_parameters():
+    example = common.load_environments(os.path.join(ROOT, 'samconfig.example.toml'))['example']
+    assert set(example.parameters) <= set(common.template_parameters())
 
 
-def test_parameter_overrides_from_example():
-    config = dict(example_config(), s3_bucket='my-bucket')
-    assert deploy.parameter_overrides(config) == [
-        'BucketName=my-bucket',
-        'IncomingPrefix=incoming/',
-        'ModerationExpirationDays=3',
-        'ModerationPrefix=moderation/',
-        'ReceiptRuleEnabled=true',
-        'ReceiptRuleSetName=default-rule-set',
-    ]
+def test_template_parameters():
+    names = common.template_parameters()
+    assert names[0] == 'BucketName'
+    assert {'CommandUser', 'ReceiptRuleSetName', 'ReceiptRuleEnabled', 'AlarmEmail'} <= set(names)
 
 
-def test_parameter_overrides_for_existing_deployment():
-    # A config.py from before these settings existed.
-    config = dict(s3_bucket='old-bucket', receipt_rule_set='default-rule-set',
-                  receipt_rule_enabled=False, receipt_rule_recipients=['example.org', 'example.net'],
-                  alarm_email='ops@example.org')
-    assert deploy.parameter_overrides(config) == [
-        'AlarmEmail=ops@example.org',
-        'BucketName=old-bucket',
-        'ReceiptRuleEnabled=false',
-        'ReceiptRuleRecipients=example.org,example.net',
-        'ReceiptRuleSetName=default-rule-set',
-    ]
-    assert deploy.stack_name(config) == 'LambdaMLM'
+# ---------------------------------------------------------------- local vs deployed
+
+DEPLOYED = {'BucketName': 'b', 'ReceiptRuleEnabled': 'false', 'AlarmEmail': ''}
 
 
-def test_parameter_overrides_match_template():
-    config = dict(example_config(), s3_bucket='b', receipt_rule_recipients=['x'], alarm_email='a@x',
-                  incoming_expiration_days=7)
-    names = [p.split('=', 1)[0] for p in deploy.parameter_overrides(config)]
-    assert set(names) <= set(template_parameters())
+def test_new_stack_uses_local_values():
+    assert deploy.plan_parameters({'BucketName': 'b'}, None) == {'BucketName': 'b'}
 
+
+def test_existing_stack_keeps_deployed_values():
+    # Values samconfig.toml doesn't mention stay as deployed.
+    assert deploy.plan_parameters({'BucketName': 'b'}, DEPLOYED) == DEPLOYED
+    assert deploy.plan_parameters({}, DEPLOYED) == DEPLOYED
+
+
+def test_local_changes_need_explicit_option():
+    local = {'BucketName': 'b', 'ReceiptRuleEnabled': 'true'}
+    with pytest.raises(common.Error, match='nothing was deployed'):
+        deploy.plan_parameters(local, DEPLOYED)
+    assert deploy.plan_parameters(local, DEPLOYED, apply_local_changes=True) == dict(
+        DEPLOYED, ReceiptRuleEnabled='true')
+
+
+def test_parameters_the_template_dropped_are_dropped():
+    assert deploy.plan_parameters({}, dict(DEPLOYED, Gone='x'), known=set(DEPLOYED)) == DEPLOYED
+
+
+def test_pull_keeps_nothing_local_without_explicit_option():
+    assert pull_config.merge({}, DEPLOYED) == DEPLOYED
+    assert pull_config.merge({'BucketName': 'b'}, DEPLOYED) == DEPLOYED
+    with pytest.raises(common.Error, match='nothing was'):
+        pull_config.merge({'ReceiptRuleEnabled': 'true'}, DEPLOYED)
+    assert pull_config.merge({'ReceiptRuleEnabled': 'true'}, DEPLOYED, overwrite_local=True) == DEPLOYED
+
+
+def test_override_arguments_quote_values():
+    assert deploy.override_arguments({'A': '', 'B': 'x y', 'C': 'a,b', 'D': 'say "hi"'}) == [
+        'A=""', 'B="x y"', 'C="a,b"', 'D="say \\"hi\\""']
+
+
+# ---------------------------------------------------------------- signing keys
+
+@freeze_time('2026-09-14 12:00:00')
+def test_script_signs_like_the_function():
+    expires = datetime.datetime(2026, 9, 14, 13, 0, 0)
+    assert signing_key.sign('test signing key', 'about', 'a@example.com', expires) == \
+        control.sign('about', 'a@example.com')
+    with freeze_time('2026-09-14 12:30:00'):
+        assert control.get_signed_command(
+                signing_key.sign('test signing key', 'about', 'a@example.com', expires), 'a@example.com') == 'about'
+
+
+def test_fingerprint():
+    assert signing_key.fingerprint('k') == signing_key.fingerprint(b'k')
+    assert signing_key.fingerprint('k') != signing_key.fingerprint('K')
+    assert len(signing_key.fingerprint('k')) == 16
+
+
+class FakeAWS(object):
+    def __init__(self, zip_bytes):
+        self.zip_bytes = zip_bytes
+
+    def json(self, *args, **kwargs):
+        assert args[:2] == ('lambda', 'get-function')
+        return {'Code': {'Location': 'https://example.invalid/code.zip'}}
+
+
+def package(config_source):
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, 'w') as z:
+        z.writestr('lambda.py', '')
+        if config_source is not None:
+            z.writestr('config.py', config_source)
+    return buffer.getvalue()
+
+
+def test_key_from_function(monkeypatch):
+    # An old config.py, with a u'' key containing an invalid escape sequence.
+    source = (u"# -*- coding: utf-8 -*-\ncommand_user = 'lists'\n"
+              u"signing_key = u\"\"\"Old key with \\q and café\"\"\"\n"
+              u"from datetime import timedelta\nsigned_validity_interval = timedelta(hours=1)\n").encode('utf-8')
+    monkeypatch.setattr(signing_key.urllib.request, 'urlopen', lambda url: io.BytesIO(package(source)))
+    assert signing_key.key_from_function(FakeAWS(None), 'LambdaMLM') == u'Old key with \\q and café'
+
+
+def test_key_from_function_without_config(monkeypatch):
+    monkeypatch.setattr(signing_key.urllib.request, 'urlopen', lambda url: io.BytesIO(package(None)))
+    with pytest.raises(common.Error, match='no config.py'):
+        signing_key.key_from_function(FakeAWS(None), 'LambdaMLM')
+
+
+# ---------------------------------------------------------------- import
 
 def test_import_template():
     template = json.loads(import_bucket.import_template('old-bucket'))
