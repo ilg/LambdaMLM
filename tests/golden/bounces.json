@@ -1,0 +1,2513 @@
+{
+  "flufl/aol_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/bounce_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/bounce_02.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/bounce_03.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/caiwireless_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/dsn_01.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        0,
+        "Not Applicable"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.625,
+      "secondary_status": [
+        0,
+        "Other or Undefined Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/dsn_02.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        47,
+        "Delivery time expired"
+      ],
+      "is_hard": false,
+      "is_soft": true,
+      "primary_status": [
+        4,
+        "Persistent Transient Failure"
+      ],
+      "score": 0.75,
+      "secondary_status": [
+        4,
+        "Network and Routing Status"
+      ]
+    },
+    "response_type": "soft"
+  },
+  "flufl/dsn_03.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": true,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.5,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "soft"
+  },
+  "flufl/dsn_04.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        0,
+        "Not Applicable"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.625,
+      "secondary_status": [
+        0,
+        "Other or Undefined Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/dsn_05.txt": {
+    "analysis": {
+      "action": "delayed",
+      "combined_status": [
+        41,
+        "No answer from host"
+      ],
+      "is_hard": false,
+      "is_soft": true,
+      "primary_status": [
+        4,
+        "Persistent Transient Failure"
+      ],
+      "score": 0.625,
+      "secondary_status": [
+        4,
+        "Network and Routing Status"
+      ]
+    },
+    "response_type": "soft"
+  },
+  "flufl/dsn_06.txt": {
+    "analysis": {
+      "action": "Delayed",
+      "combined_status": [
+        40,
+        "Other or undefined network or routing status"
+      ],
+      "is_hard": false,
+      "is_soft": true,
+      "primary_status": [
+        4,
+        "Persistent Transient Failure"
+      ],
+      "score": 0.5,
+      "secondary_status": [
+        4,
+        "Network and Routing Status"
+      ]
+    },
+    "response_type": "soft"
+  },
+  "flufl/dsn_07.txt": {
+    "analysis": {
+      "action": "delayed",
+      "combined_status": [
+        41,
+        "No answer from host"
+      ],
+      "is_hard": false,
+      "is_soft": true,
+      "primary_status": [
+        4,
+        "Persistent Transient Failure"
+      ],
+      "score": 0.625,
+      "secondary_status": [
+        4,
+        "Network and Routing Status"
+      ]
+    },
+    "response_type": "soft"
+  },
+  "flufl/dsn_08.txt": {
+    "analysis": {
+      "action": "delayed",
+      "combined_status": [
+        0,
+        "Not Applicable"
+      ],
+      "is_hard": false,
+      "is_soft": true,
+      "primary_status": [
+        4,
+        "Persistent Transient Failure"
+      ],
+      "score": 0.6875,
+      "secondary_status": [
+        0,
+        "Other or Undefined Status"
+      ]
+    },
+    "response_type": "soft"
+  },
+  "flufl/dsn_09.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        0,
+        "Not Applicable"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.75,
+      "secondary_status": [
+        0,
+        "Other or Undefined Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/dsn_10.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        0,
+        "Not Applicable"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.6875,
+      "secondary_status": [
+        0,
+        "Other or Undefined Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/dsn_11.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        11,
+        "Bad destination mailbox address"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.5,
+      "secondary_status": [
+        1,
+        "Addressing Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/dsn_12.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        11,
+        "Bad destination mailbox address"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.4375,
+      "secondary_status": [
+        1,
+        "Addressing Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/dsn_13.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        11,
+        "Bad destination mailbox address"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.625,
+      "secondary_status": [
+        1,
+        "Addressing Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/dsn_14.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": true,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.6875,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "soft"
+  },
+  "flufl/dsn_15.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        11,
+        "Bad destination mailbox address"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.625,
+      "secondary_status": [
+        1,
+        "Addressing Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/dsn_16.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        0,
+        "Not Applicable"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.625,
+      "secondary_status": [
+        0,
+        "Other or Undefined Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/dsn_17.txt": {
+    "analysis": {
+      "action": "delayed",
+      "combined_status": [
+        30,
+        "Other or undefined mail system status"
+      ],
+      "is_hard": false,
+      "is_soft": true,
+      "primary_status": [
+        4,
+        "Persistent Transient Failure"
+      ],
+      "score": 0.625,
+      "secondary_status": [
+        3,
+        "Mail System Status"
+      ]
+    },
+    "response_type": "soft"
+  },
+  "flufl/dsn_18.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        0,
+        "Not Applicable"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.5,
+      "secondary_status": [
+        0,
+        "Other or Undefined Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/dumbass_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/exim_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/groupwise_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/groupwise_02.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/groupwise_03.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/hotpop_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/llnl_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/microsoft_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/microsoft_02.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/microsoft_03.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/microsoft_04.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/netscape_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/newmailru_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/postfix_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/postfix_02.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.25,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/postfix_03.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/postfix_04.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/postfix_05.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/qmail_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/qmail_02.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/qmail_03.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/qmail_04.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/qmail_05.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/qmail_06.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/qmail_07.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/qmail_08.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/sendmail_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0625,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_02.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_03.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_04.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_05.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_06.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_07.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_08.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_09.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_10.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_11.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_12.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_13.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0625,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_14.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_15.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_16.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_17.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_18.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_19.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_20.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_21.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_22.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_23.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_24.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_25.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_26.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_27.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0625,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_28.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_29.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_30.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_31.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_32.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_33.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_34.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_35.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_36.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_37.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_38.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_39.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_40.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_41.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_42.txt": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        0,
+        "Not Applicable"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.75,
+      "secondary_status": [
+        0,
+        "Other or Undefined Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "flufl/simple_43.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_44.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/simple_45.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/sina_01.txt": {
+    "analysis": {
+      "error": "EncodingError"
+    },
+    "response_type": "EncodingError"
+  },
+  "flufl/smtp32_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/smtp32_02.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/smtp32_03.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/smtp32_04.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/smtp32_05.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/smtp32_06.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/smtp32_07.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_02.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_03.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_04.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_05.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_06.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_07.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_08.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_09.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_10.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_11.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_12.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yahoo_13.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.125,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "flufl/yale_01.txt": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "synthetic/arf-complaint.eml": {
+    "analysis": {
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
+    },
+    "response_type": "unknown"
+  },
+  "synthetic/microsoft-5-1-10.eml": {
+    "analysis": {
+      "error": "KeyError"
+    },
+    "response_type": "KeyError"
+  },
+  "synthetic/ses-permanent.eml": {
+    "analysis": {
+      "action": "failed",
+      "combined_status": [
+        11,
+        "Bad destination mailbox address"
+      ],
+      "is_hard": true,
+      "is_soft": false,
+      "primary_status": [
+        5,
+        "Permanent Failure"
+      ],
+      "score": 0.8125,
+      "secondary_status": [
+        1,
+        "Addressing Status"
+      ]
+    },
+    "response_type": "hard"
+  },
+  "synthetic/ses-transient.eml": {
+    "analysis": {
+      "action": "delayed",
+      "combined_status": [
+        47,
+        "Delivery time expired"
+      ],
+      "is_hard": false,
+      "is_soft": true,
+      "primary_status": [
+        4,
+        "Persistent Transient Failure"
+      ],
+      "score": 0.8125,
+      "secondary_status": [
+        4,
+        "Network and Routing Status"
+      ]
+    },
+    "response_type": "soft"
+  }
+}

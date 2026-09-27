@@ -1,0 +1,40 @@
+Return-Path: <>
+From: complaints@email-abuse.amazonses.com
+To: alpha-list+member=example.com+bounce@example.org
+Subject: complaint about message from alpha-list@example.org
+Message-ID: <0100000000000004-complaint-example-000000@email.amazonses.com>
+Date: Mon, 14 Sep 2026 12:10:00 +0000
+MIME-Version: 1.0
+Content-Type: multipart/report; report-type=feedback-report;
+	boundary="=_example_boundary_4"
+
+--=_example_boundary_4
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+This is an email abuse report for an email message received from IP 192.0.2.50
+on Mon, 14 Sep 2026 12:00:00 +0000.
+
+--=_example_boundary_4
+Content-Type: message/feedback-report
+
+Feedback-Type: abuse
+User-Agent: Amazon SES Feedback Loop
+Version: 1
+Original-Mail-From: alpha-list+member=example.com+bounce@example.org
+Original-Rcpt-To: member@example.com
+Arrival-Date: Mon, 14 Sep 2026 12:00:00 +0000
+Source-IP: 192.0.2.50
+
+--=_example_boundary_4
+Content-Type: message/rfc822
+
+From: "Sender (via Alpha)" <alpha-list+sender=example.net+from@example.org>
+To: alpha-list@example.org
+Subject: [Alpha] Hello
+Message-ID: <original-0004@example.net>
+Date: Mon, 14 Sep 2026 11:59:58 +0000
+
+Hello, list.
+
+--=_example_boundary_4--

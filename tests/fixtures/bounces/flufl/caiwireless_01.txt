@@ -1,0 +1,22 @@
+From: MAILER-DAEMON@caiwireless.net
+To: sender@example.com
+Subject: Mail not delivered
+Date: Mon, 1 Jan 2001 12:00:00 -0500
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="BOUNDARY"
+
+--BOUNDARY
+Content-Type: text/plain
+
+Mail delivery failed.
+
+The following recipients did not receive this message:
+
+<userx@example.com>
+
+--BOUNDARY
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; caiwireless.net
+
+--BOUNDARY--

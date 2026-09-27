@@ -1,0 +1,47 @@
+Return-Path: <>
+Received: from a8-50.smtp-out.amazonses.com (a8-50.smtp-out.amazonses.com [192.0.2.50])
+ by inbound-smtp.us-west-2.amazonaws.com with SMTP id example0002
+ for alpha-list+member=example.com+bounce@example.org;
+ Mon, 14 Sep 2026 12:00:05 +0000 (UTC)
+From: MAILER-DAEMON@amazonses.com
+To: alpha-list+member=example.com+bounce@example.org
+Subject: Delivery Status Notification (Delay)
+Message-ID: <0100000000000001-delay-example-000000@email.amazonses.com>
+Date: Mon, 14 Sep 2026 12:00:04 +0000
+MIME-Version: 1.0
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="=_example_boundary_1"
+
+--=_example_boundary_1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+Content-Description: Notification
+
+An error occurred while trying to deliver the mail (still trying) to the following recipients:
+member@example.com
+
+--=_example_boundary_1
+Content-Type: message/delivery-status
+Content-Description: Delivery Status Notification
+
+Reporting-MTA: dns; amazonses.com
+
+Final-Recipient: rfc822; member@example.com
+Action: delayed
+Status: 4.4.7
+Remote-MTA: dns; amazonses.com
+Diagnostic-Code: smtp; 421 4.4.7 message delayed
+
+--=_example_boundary_1
+Content-Type: message/rfc822
+Content-Description: Undelivered Message
+
+From: "Sender (via Alpha)" <alpha-list+sender=example.net+from@example.org>
+To: alpha-list@example.org
+Subject: [Alpha] Hello
+Message-ID: <original-0001@example.net>
+Date: Mon, 14 Sep 2026 11:59:58 +0000
+
+Hello, list.
+
+--=_example_boundary_1--
