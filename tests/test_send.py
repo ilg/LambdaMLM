@@ -595,3 +595,19 @@ def test_handle_bounce_bad_addresses(aws, address, error):
     bounce_list(aws)
     with pytest.raises(error):
         listobj.List.handle_bounce_to(address, parse_message(BOUNCE))
+
+
+@pytest.mark.parametrize('from_, members', [
+    ('stranger@example.net', None),
+    ('alice@example.com', [member('alice@example.com', 'modPost'), member('mod1@example.com', 'moderator')]),
+    ])
+def test_moderation_paths_with_lifecycle_rule(aws, from_, members):
+    aws.s3.lifecycle[config.s3_bucket] = FLAT_RULE
+    options = {}
+    if members is not None:
+        options['members'] = members
+    else:
+        options['members'] = [member('mod1@example.com', 'moderator'), member('alice@example.com')]
+    make_list(aws, **options).send(parse_message(raw_message(from_=from_)))
+    assert [s['Destinations'] for s in aws.ses.sent_raw_emails] == [['mod1@example.com']]
+    assert moderation_keys(aws) == ['moderation/example.org/test-list/<m1@example.com>']

@@ -447,3 +447,16 @@ def test_mod_insufficient(aws):
     store_held(aws)
     assert run('plain@example.com', 'list test-list@example.org mod approve "<m1@example.com>"') == \
         'You do not have sufficient permissions to moderate messages on test-list@example.org..\n'
+
+
+def test_command_without_response_address_is_ignored(aws):
+    msg = parse_message(b'To: lambda@example.org\nSubject: about\n\n')
+    control.handle_command(COMMAND_ADDRESS, msg)
+    assert aws.ses.sent_emails == []
+
+
+def test_mod_reject_insufficient(aws):
+    make_list(aws)
+    store_held(aws)
+    assert run('plain@example.com', 'list test-list@example.org mod reject "<m1@example.com>"') == \
+        'You do not have sufficient permissions to moderate messages on test-list@example.org..\n'

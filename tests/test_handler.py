@@ -113,6 +113,17 @@ def test_email_message_for_event_keeps_message_on_error(aws):
     assert incoming_key('id1') in keys(aws)
 
 
+def test_email_message_for_event_delete_failure(aws, monkeypatch):
+    store_incoming(aws, 'id1', POST)
+
+    def fail(**kwargs):
+        raise ClientError({'Error': {'Code': 'AccessDenied', 'Message': 'no'}}, 'DeleteObject')
+    monkeypatch.setattr(aws.s3, 'delete_object', fail)
+    with pytest.raises(ClientError):
+        with sestools.email_message_for_event(ses_event('id1', ['test-list@example.org'])):
+            pass
+
+
 def test_email_message_for_event_missing(aws):
     with pytest.raises(ClientError):
         with sestools.email_message_for_event(ses_event('nosuch', ['test-list@example.org'])):
