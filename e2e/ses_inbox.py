@@ -87,7 +87,8 @@ def setup(env, apply):
     steps.append(('Set bucket policy allowing SES to store under inbox/', lambda: s3.put_bucket_policy(
             Bucket=env.inbox_bucket, Policy=bucket_policy(env))))
     current = existing_rules(env)
-    for rule in reversed(planned_rules(env)):
+    planned = planned_rules(env)
+    for rule in reversed(planned):
         if rule['Name'] in current:
             steps.append(('Update rule {} for {}'.format(rule['Name'], rule['Recipients'][0]),
                           lambda rule=rule: ses.update_receipt_rule(RuleSetName=env.rule_set, Rule=rule)))
@@ -97,6 +98,14 @@ def setup(env, apply):
                               rule['Name'], env.rule_set, rule['Recipients'][0], env.inbox_bucket,
                               rule['Actions'][0]['S3Action']['ObjectKeyPrefix']),
                           lambda rule=rule: ses.create_receipt_rule(RuleSetName=env.rule_set, Rule=rule)))
+    # The test rules must come first: a deployment's own rule (which stops
+    # rule evaluation) may have been added ahead of them since.
+    names = [r['Name'] for r in planned]
+    if [n for n in current if n in names] == names and current[:len(names)] != names:
+        for name in reversed(names):
+            steps.append(('Move rule {} to the start of {}'.format(name, env.rule_set),
+                          lambda name=name: ses.set_receipt_rule_position(
+                              RuleSetName=env.rule_set, RuleName=name)))
     run_steps(steps, apply)
 
 
