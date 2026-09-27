@@ -358,27 +358,15 @@ def test_set_lists_options_insufficient(aws):
 @pytest.mark.parametrize('args, output, stored', [
     ('moderated --true', 'Set moderated to True', b'moderated: true'),
     ('moderated --false', 'Set moderated to False', b'moderated: false'),
-    # --true and --false share a destination whose default under Click 6 is
-    # False, not None, so every other form stores False.
-    ('subject-tag New', 'Set subject-tag to False', b'subject-tag: false'),
-    ('bounce-score-threshold --int 5', 'Set bounce-score-threshold to False', b'bounce-score-threshold: false'),
-    ('moderated true', 'Set moderated to False', b'moderated: false'),
+    ('subject-tag New', 'Set subject-tag to New', b'subject-tag: New'),
+    ('bounce-score-threshold --int 5', 'Set bounce-score-threshold to 5', b'bounce-score-threshold: 5'),
+    # Without --true or --false, the value is stored as a string.
+    ('moderated true', 'Set moderated to true', b"moderated: 'true'"),
     ])
 def test_set_option(aws, args, output, stored):
     make_list(aws)
     assert run('admin@example.com', 'list test-list@example.org set ' + args) == \
         output + ' on test-list@example.org.\n'
-    assert stored in stored_list_config(aws, 'test-list')
-
-
-@pytest.mark.xfail(strict=True, reason='Step 3: set should store the value it was given.')
-@pytest.mark.parametrize('args, stored', [
-    ('subject-tag New', b'subject-tag: New'),
-    ('bounce-score-threshold --int 5', b'bounce-score-threshold: 5'),
-    ])
-def test_set_option_value(aws, args, stored):
-    make_list(aws)
-    run('admin@example.com', 'list test-list@example.org set ' + args)
     assert stored in stored_list_config(aws, 'test-list')
 
 

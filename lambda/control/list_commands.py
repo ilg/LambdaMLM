@@ -149,8 +149,9 @@ def unsetflag(ctx, flag=None, address=None):
 @list_command.command(name='set')
 @click.argument('option', required=False)
 @click.argument('value', required=False)
-@click.option('--true', 'boolean', flag_value=True)
-@click.option('--false', 'boolean', flag_value=False)
+# Without default=None, a flag defaults to False, so every value would be stored as False.
+@click.option('--true', 'boolean', flag_value=True, default=None)
+@click.option('--false', 'boolean', flag_value=False, default=None)
 @click.option('--int', 'integer', default=None, type=int)
 @require_list
 def set_config(ctx, option=None, value=None, boolean=None, integer=None):
