@@ -193,23 +193,29 @@ AWS SAM rather than plain CloudFormation, because step 9's SNS and SQS event sou
 - The log group is named `/aws/lambda/<stack>-function`, so it can't collide with the existing function's log group.
 - Update [Setup](setup.md), [API](api.md), and [Technical](technical.md). Credit Ecartis as the source of many concepts and behaviors.
 
-### 7. Cutover
+### 7. Staging, then the production switchover
 
-- **Staging:** a separate domain or subdomain whose receipt rule lives in the *same* active rule set as production. Only one rule set per region can be active, so activating a separate staging rule set would switch production off.
-- **Smoke tests on staging, then on production:**
-  - A command and its signed reply.
-  - A list post.
-  - A BCC'd post from a non-member.
-  - Moderation approval.
-  - A bounce and a complaint (via `complaint@simulator.amazonses.com`).
-  - An 8-bit message.
-  - A non-ASCII display name.
-  - Each step 3 fix.
-- **Production:**
-  1. Create a new function from the stack; don't upgrade the existing function in place, because AWS doesn't allow reverting a runtime upgrade.
-  2. Before switching, confirm that an invitation token signed by the old function validates on the new one, and that the web app works against the new function's API responses.
-  3. Repoint the SES receipt rule's Lambda action to the new function.
-  4. Keep the old Python 2.7 function untouched for at least 3 days (the invitation lifetime) and the moderation lifecycle window, as the rollback target. Then delete it.
+**Staging (done, 2026-09-27).** An older, idle fabfile-era deployment in a separate AWS account was moved to a SAM stack exactly as production will be, and is now the staging deployment. The end-to-end scenarios (`e2e/`) ran against its old Python 2 function first and then against the new function; the new function matched or improved on every scenario, with no regressions. The rehearsal led to these changes, now merged:
+
+- `scripts/import-bucket` also imports the bucket's existing policy, since CloudFormation won't create a bucket policy on a bucket that already has one (fabfile-era buckets generally have one).
+- The first deploy after an import needs `--apply-local-changes`, since the imported stack has no parameter values yet.
+- The stack's receipt rule ends with a stop action and is created at the start of the rule set, so enabling it takes the mail over from the old rules in one step, and disabling it hands the mail back. (SES can't enable one rule and disable another atomically.)
+- Changing the rule's enabled state makes CloudFormation recreate it at the start of the rule set. That's where it belongs, but it lands above anything that must stay ahead of it, such as the end-to-end test rules: rerun `scripts/e2e inbox setup` afterwards.
+
+**Production waits** until steps 8 and 9 are done and tested on staging.
+
+**The switchover**, as rehearsed, for a fabfile-era deployment:
+
+1. Run `scripts/find-deployments` to find the old function, the rules that store and handle its mail, their recipients (often none, meaning all verified domains), and its bucket.
+2. Add an environment for it to `samconfig.toml`: its profile, region and stack name; `BucketName`; `CommandUser` and the prefixes if the old `config.py` changed them; `ReceiptRuleSetName` (the active rule set); `ReceiptRuleEnabled=false`; `ReceiptRuleRecipients` (the deployment's domains); and `AlarmEmail`.
+3. `scripts/signing-key import-from-function --env ENV --function OLD_FUNCTION`, and check that the two fingerprints it prints match.
+4. `scripts/import-bucket --env ENV`.
+5. `scripts/deploy --env ENV --apply-local-changes --no-execute-changeset` to review the change set, then again without `--no-execute-changeset`.
+6. `scripts/signing-key check --env ENV`.
+7. Check that anything using the API (such as a web app) works against the new function's responses, invoking the new function directly.
+8. Switch: set `ReceiptRuleEnabled=true` and run `scripts/deploy --env ENV --apply-local-changes`. Watch the logs, the failed-events queue and the alarm.
+9. Roll back, if needed, by setting `ReceiptRuleEnabled=false` and deploying: the old rules take the mail again.
+10. Keep the old Python 2.7 function and its rules untouched for at least 3 days (the invitation lifetime) as the rollback. Then delete the old function, its rules and its IAM role.
 
 ### 8. Dependencies: current versions
 
