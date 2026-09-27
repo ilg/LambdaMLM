@@ -222,6 +222,11 @@ AWS SAM rather than plain CloudFormation, because step 9's SNS and SQS event sou
 - Click 8, testing `CliRunner` / `Result.output` behavior for `err=True` output and the "Internal error." path.
 - Jinja2 3 with current MarkupSafe.
 
+Done with Click 8.5.0, Jinja2 3.1.6 and MarkupSafe 3.0.3. `Result.output` still includes `err=True` output, in order, and every usage error and exception still replies "Internal error.". Two differences came up, and the tests now pin both:
+
+- A group given no arguments (`list`, or `list ADDRESS mod`) exits with status 2 under Click 8.2+, where Click 7 exited with 0. `run()` recognizes that case, so the reply is still the group's help and not "Internal error.".
+- Help text names the program `command`, as under Click 7 (Click 8 would say `root`, because the root group's name is empty). Subcommand usage lines now include the parent's arguments (`command USER about`), which is Click 8's own behavior.
+
 ### 9. Redesigns
 
 Each of these gets its own design and review before implementation.
