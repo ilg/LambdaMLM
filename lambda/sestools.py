@@ -23,7 +23,7 @@ def email_message_for_event(event):
         print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, s3_bucket))
         raise e
     
-    yield email.message_from_file(response['Body'])
+    yield email.message_from_bytes(response['Body'].read())
 
     # Clean up: delete the email from S3.  This only happens once the email has
     # been handled; if handling raised, the email stays in S3 so it isn't lost.
@@ -39,7 +39,18 @@ def msg_get_header(msg, header_name):
     raw = msg[header_name]
     if raw is None:
         return None
-    return unicode(email.header.make_header(email.header.decode_header(raw)))
+    chunks = []
+    for data, charset in email.header.decode_header(raw):
+        if charset == 'unknown-8bit':
+            # Raw 8-bit bytes with no declared charset.  Assume UTF-8, and
+            # fall back to Latin-1, which can decode any bytes.
+            try:
+                data.decode('utf-8')
+                charset = 'utf-8'
+            except UnicodeDecodeError:
+                charset = 'latin-1'
+        chunks.append((data, charset))
+    return str(email.header.make_header(chunks))
 
 def msg_get_response_address(msg):
     reply_to = msg_get_header(msg, 'reply-to')

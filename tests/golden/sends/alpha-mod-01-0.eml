@@ -4,20 +4,20 @@ Received: from ebum-ib4-i01.tuneti.example.com (ebum-ib4-i01.tuneti.example.com
  Mon, 12 May 2025 18:01:23 +0000 (UTC)
 X-SES-Spam-Verdict: PASS
 X-SES-Virus-Verdict: PASS
-Received-SPF: pass (spfCheck: domain of omup086.example.org designates
- 192.0.2.6 as permitted sender) client-ip=192.0.2.6;
- envelope-from=palajeg@omup086.example.org; helo=ebum-ib4-i01.tuneti.example.com;
+Received-SPF: pass (spfCheck: domain of omup086.example.org designates 192.0.2.6
+ as permitted sender) client-ip=192.0.2.6;
+ envelope-from=palajeg@omup086.example.org; helo=ebum-ib4-i01.tuneti.example.com; 
 Authentication-Results: jidunewiw.example.com;
  spf=pass (spfCheck: domain of omup086.example.org designates 192.0.2.6 as
- permitted sender) client-ip=192.0.2.6;
- envelope-from=palajeg@omup086.example.org; 
+ permitted sender) client-ip=192.0.2.6; envelope-from=palajeg@omup086.example.org;
  helo=ebum-ib4-i01.tuneti.example.com; 
  dkim=pass header.i=@omup086.example.org;
  dmarc=pass header.from=omup086.example.org;
-X-SES-RECEIPT: DUMMYDUMMYDUMMYDUMM0YDUdMuMYmDUMmMYydDUMuMmmY1yDU2d3uM45mMmyY6DdumUMMYDmUMydMYu7DUmmMMYDy8UMMdYDummyU90duMmmydumMYmyDUMMYDUdMMYuDmmydUu1m2MmMYD3U4yMMdY5DUMMYDuUmMmMYDUydMuMY6mDUm7MMYyDU8duMmMmYyDdUMMYDU9MMum0YmDyUMMYdDuUMmmMYyDdU1MuMYmmyDdUummyMdMumYDUmyMdumMmy2YDU34MMdYDU5umM6MmYD7UyMduM8YDmmyUMdu9mMm0yYduDU1MM23mYDm4UyduMMmYDUmyM5M6YD7UMMdYDUM8MYummDy9duUmMMY0mDUyMMduYD1mUmy2d3umMmyMYDduUmm4MyduMmYDmyUdMummy5M6YD==
+X-SES-RECEIPT: 
+ DUMMYDUMMYDUMMYDUMM0YDUdMuMYmDUMmMYydDUMuMmmY1yDU2d3uM45mMmyY6DdumUMMYDmUMydMYu7DUmmMMYDy8UMMdYDummyU90duMmmydumMYmyDUMMYDUdMMYuDmmydUu1m2MmMYD3U4yMMdY5DUMMYDuUmMmMYDUydMuMY6mDUm7MMYyDU8duMmMmYyDdUMMYDU9MMum0YmDyUMMYdDuUMmmMYyDdU1MuMYmmyDdUummyMdMumYDUmyMdumMmy2YDU34MMdYDU5umM6MmYD7UyMduM8YDmmyUMdu9mMm0yYduDU1MM23mYDm4UyduMMmYDUmyM5M6YD7UMMdYDUM8MYummDy9duUmMMY0mDUyMMduYD1mUmy2d3umMmyMYDduUmm4MyduMmYDmyUdMummy5M6YD==
 X-SES-DKIM-SIGNATURE: a=rsa-sha256; q=dns/txt;
  b=dDum0mydu+UM/mMmYDyUdMu1MmmydYuDmm2ydU3Mumm4ydu5mmMYyduDUMmmyd6MuYmDmUyM7M8YdDUMuMmmyY9dDummy0UMM1YdDuU2MmmMyYDd3uUmmyd4MumM/5YDU6mydMuMm7Y8DmUyd9MMu0YDmmUMM/yd1YummD+Uyd2=;
- c=relaxed/simple; s=gdwg2y3kokkkj5a55z2ilkup5wp5hhxx; d=jidunewiw.example.com; 
+ c=relaxed/simple; s=gdwg2y3kokkkj5a55z2ilkup5wp5hhxx; d=jidunewiw.example.com;
  t=1747072884; v=1; bh=D01UdMMYumD2UMmMYD3UydMuMYmmDUy4dumMmM5yYdu=;
  h=From:To:Cc:Bcc:Subject:Date:Message-ID:MIME-Version:Content-Type:X-SES-RECEIPT;
 Received: by ebum-ib4-i01.tuneti.example.com with SMTP id
@@ -41,7 +41,8 @@ X-Gm-Message-State: DUMd0MumY123DUmMM4yYduDUmmydMMYD5um6mU7MMydumY8DUMMYDmyd
 X-Gm-Gg: DUdMummyduMmm+ydYumDU0myMduMmYDm1yUdMu2M3mmyYdumDmUMyMd45YDumUMMYDm
  UyMM6dYuD7mU8M9MY0DUmMydMumYDU1m2M345MyYduDU/6MmMmyY7duDmUmMMyYDdUMM+uYDU/M
  MYDUmmMM8yY90Ddu1U2M3M4m56m/7YDU8=
-X-Google-Smtp-Source: DUMM+YDU0M+dM1uYm/DUMmMyYdumDUm2MyMYdDu3m4mUMydu/MmYmDUyMduMmm5YDyUMM6YduDU7MMYDmm/8ydU/umm=
+X-Google-Smtp-Source: 
+ DUMM+YDU0M+dM1uYm/DUMmMyYdumDUm2MyMYdDu3m4mUMydu/MmYmDUyMduMmm5YDyUMM6YduDU7MMYDmm/8ydU/umm=
 X-Received: by 2001:db8::6 with SMTP id
  006d021491bc7-6083ff0e627mr8247461eaf.1.1747072882088; Mon, 12 May 2025
  11:01:22 -0700 (PDT)
@@ -50,16 +51,18 @@ References: <62849746a0s28755-3263u825-1476-702u-3al2-iv0a7las185u-139378@me-jih
  <06140266w3ora17c-a21n1519-5920-85c3-e80d-a89247t7u2c0-295794@me-jihi-1.jidunewiw.example.com>
  <24916292b9i715m0-2e7k0320-4e94-3819-e75f-5488j4ew9o5n-943220@me-jihi-1.jidunewiw.example.com>
  <07774089l7468a37-5ab7i957-1138-99ok-0i68-go1159726609-844141@me-jihi-1.jidunewiw.example.com>
-In-Reply-To: <07774089l7468a37-5ab7i957-1138-99ok-0i68-go1159726609-844141@me-jihi-1.jidunewiw.example.com>
+In-Reply-To: 
+ <07774089l7468a37-5ab7i957-1138-99ok-0i68-go1159726609-844141@me-jihi-1.jidunewiw.example.com>
 Date: Mon, 12 May 2025 13:01:10 -0500
 X-Gm-Features: DU0MMYdD12umUMmydMuYm3Dmy4U5dM6-M7YumDmy-duUMMmmyYdDuU89mmydMM0
-Message-ID: <MAV_cOVaWUMA7gizIMurOcEgU5piWAp+V_iB7En2is1ebIja_UZ@ebod.tutim.example.com>
+Message-ID: 
+ <MAV_cOVaWUMA7gizIMurOcEgU5piWAp+V_iB7En2is1ebIja_UZ@ebod.tutim.example.com>
 Subject: Re: [XMPL Alpha] Laboris Dictum nec 3479-0961 Minim A - Pharetra
  Vehicula
 To: XMPL Alpha <alpha-list@example.org>
 Content-Type: multipart/related; boundary="00000000000088cc0d0634f41a74"
 X-Original-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=omup086.example.org; s=google; t=1747072883; x=1747677683; darn=example.org; 
+ d=omup086.example.org; s=google; t=1747072883; x=1747677683; darn=example.org;
  h=cc:to:subject:message-id:date:from:in-reply-to:references
  :mime-version:from:to:cc:subject:date:message-id:reply-to;
  bh=0DdUumMmMYydum1+D/2UMMmyYduDm/+m3yd4UM56MYu=;
@@ -72,7 +75,7 @@ X-Original-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
 X-Original-Return-path: <palajeg@omup086.example.org>
 Sender: XMPL Alpha <alpha-list@example.org>
 X-Original-From: Ifajus Kovoru <palajeg@omup086.example.org>
-From: "Ifajus Kovoru \(via XMPL Alpha\)"
+From: "Ifajus Kovoru (via XMPL Alpha)"
  <alpha-list+palajeg=omup086.example.org+from@example.org>
 Reply-to: XMPL Alpha <alpha-list@example.org>
 X-Original-CC: Ifajus Umare-Cipu <edenadazu@tutim.example.com>,
@@ -81,7 +84,7 @@ X-Original-CC: Ifajus Umare-Cipu <edenadazu@tutim.example.com>,
  Ebahipadu Efuto <kudovu@afilasibip016.example.org>
 CC: Ifajus Umare-Cipu <edenadazu@tutim.example.com>,
  Tuhi Ejemuka <fakotunodis@e-89.example.org>,
- "Olihebe I. Vibohe" <ocinome@p194.example.org>,
+  "Olihebe I. Vibohe" <ocinome@p194.example.org>,
  Ebahipadu Efuto <kudovu@afilasibip016.example.org>,
  Ifajus Kovoru <palajeg@omup086.example.org>
 

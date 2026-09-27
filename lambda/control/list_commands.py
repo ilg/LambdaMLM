@@ -2,7 +2,7 @@ from functools import wraps
 import click
 from botocore.exceptions import ClientError
 
-from commands import command
+from .commands import command
 import listobj
 
 def handle_not_subscribed(user, address, list_address):

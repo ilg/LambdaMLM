@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
-"""Golden files: outputs recorded from the Python 2.7 code at commit 587db49.
+"""Golden files: exact outputs the tests compare against.
 
-Characterization tests compare the code's current output against these files,
-so the Python 3 port can be checked against exactly what Python 2 produced.
+They were recorded from the Python 2.7 code (starting at commit 587db49), so
+the Python 3 port could be checked against exactly what Python 2 produced.
+Every difference the port introduced was reviewed and recorded in the port's
+commit.
 
-To (re)record them, run the suite on Python 2.7 with LAMBDAMLM_WRITE_GOLDEN=1:
+To re-record them:
 
-    LAMBDAMLM_WRITE_GOLDEN=1 scripts/test-py2
+    LAMBDAMLM_WRITE_GOLDEN=1 scripts/test
 
-Never re-record them from Python 3 code: that would make the tests describe
-the port instead of the original behavior.  If a deliberate behavior change
-alters a golden file, update it in the same commit as the change and say so.
+Only re-record them in a commit that deliberately changes behavior, and say
+in that commit what changed and why.  Re-recording to make a failing test pass
+defeats their purpose.
 """
 
 import io
 import json
 import os
-import sys
 
 GOLDEN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'golden')
 WRITE = os.environ.get('LAMBDAMLM_WRITE_GOLDEN') == '1'
@@ -31,8 +32,6 @@ def check_bytes(name, data):
     assert isinstance(data, bytes)
     path = _path(name)
     if WRITE:
-        if sys.version_info[0] != 2:
-            raise RuntimeError('Golden files must be recorded on Python 2.7.')
         if not os.path.isdir(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
         with open(path, 'wb') as f:

@@ -17,10 +17,10 @@ Setup requires familiarity with AWS—in particular, having credentials already 
 
 ## Tests
 
-The test suite runs on Python 2.7 in Docker (see the [modernization plan](docs/modernization-plan.md)):
+The test suite runs on Python 3.13, the Lambda runtime's version, in Docker (see the [modernization plan](docs/modernization-plan.md)):
 
 ```sh
-scripts/test-py2
+scripts/test
 ```
 
 Arguments are passed through to `pytest`.  Tests never contact AWS: S3 and SES are replaced with in-memory fakes, and any real AWS request fails the test.

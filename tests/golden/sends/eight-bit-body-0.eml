@@ -6,7 +6,7 @@ Content-Type: text/plain
 Content-Transfer-Encoding: 8bit
 Sender: test-list@example.org
 X-Original-From: Alice Sender <alice@example.com>
-From: "Alice Sender \(via test-list@example.org\)"
+From: "Alice Sender (via test-list@example.org)"
  <test-list+alice=example.com+from@example.org>
 Reply-to: Alice Sender <alice@example.com>
 

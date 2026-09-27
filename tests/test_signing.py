@@ -147,17 +147,23 @@ def test_signed_for_named_address_rejects_bare_address():
             control.get_signed_command(signed, ADDRESS)
 
 
-@pytest.mark.xfail(strict=True, raises=TypeError,
-                   reason='Issue #34: a short unicode signing key crashes hmac on Python 2.')
 def test_short_unicode_key(monkeypatch):
+    # Issue #34: a short unicode key crashed hmac on Python 2.
     monkeypatch.setattr(control, 'signing_key', u'short unicode key')
-    assert control.signature('anything')
+    assert control.signature('anything') == control.signature(u'anything')
 
 
-@pytest.mark.xfail(strict=True, raises=UnicodeEncodeError,
-                   reason='Python 2 hmac can\'t hash a non-ASCII command.')
+def test_bytes_key(monkeypatch):
+    monkeypatch.setattr(control, 'signing_key', LONG_UNICODE_KEY.encode('utf-8'))
+    bytes_signature = control.signature('anything')
+    monkeypatch.setattr(control, 'signing_key', LONG_UNICODE_KEY)
+    assert control.signature('anything') == bytes_signature
+
+
 def test_non_ascii_command():
-    assert control.signature(u'list alpha-list@example.org subscribe "José <j@example.com>"')
+    cmd = u'list alpha-list@example.org subscribe "José <j@example.com>"'
+    with freeze_time(NOW):
+        assert control.get_signed_command(control.sign(cmd, ADDRESS), ADDRESS) == cmd
 
 
 def test_impossible_timestamp_is_invalid():

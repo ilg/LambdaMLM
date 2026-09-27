@@ -42,4 +42,4 @@ def run(user, cmd):
 # Import files with subcommands here--we don't use them directly, but we need
 # to make sure they're loaded, since that's when they add their commands to
 # our command object.
-import list_commands
+from . import list_commands

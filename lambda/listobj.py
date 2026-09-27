@@ -18,6 +18,7 @@ ses = boto3.client('ses')
 from botocore.exceptions import ClientError
 
 import email
+import email.policy
 from email.header import Header
 from email.utils import parseaddr, formataddr
 from email.mime.multipart import MIMEMultipart
@@ -55,6 +56,26 @@ list_properties_protected = [
         'members',
         'cc-lists',
         ]
+
+class _SendPolicy(email.policy.Compat32):
+    """How messages are written when they're sent or stored.
+
+    Like the default compat32 policy, except that a header that's already
+    folded, or short enough not to need folding, is written exactly as it is.
+    The default re-wraps every long header, which would rewrite the trace
+    headers of every post.  Lines end in CRLF, the canonical form for email
+    and the form SES stores incoming mail in.
+    """
+    def _fold(self, name, value, sanitize):
+        if isinstance(value, str) and not any(u'\udc80' <= c <= u'\udcff' for c in value):
+            lines = re.split(r'\r?\n', value)
+            if len(lines) > 1 or len(name) + 2 + len(value) <= self.max_line_length:
+                return '{}: {}{}'.format(name, self.linesep.join(lines), self.linesep)
+        return super(_SendPolicy, self)._fold(name, value, sanitize)
+
+
+SEND_POLICY = _SendPolicy(linesep='\r\n')
+
 
 def address_from_user(user):
     _, address = parseaddr(user)
@@ -110,18 +131,18 @@ class List (ListMemberContainer):
         super(List, self).__setattr__(name, value)
 
     def dict(self):
-        return {
-                p: (getattr(self, p)
-                    if p != 'members'
-                    else map(lambda m: m.dict(), self.members)
-                    )
-                for p in list_properties
-                }
+        d = {p: getattr(self, p) for p in list_properties}
+        d['members'] = [m.dict() for m in self.members]
+        # Bounce weights set in a config file are keyed by ResponseType; use
+        # the names, since enum keys serialize differently across versions.
+        if d['bounce-weights']:
+            d['bounce-weights'] = {getattr(k, 'name', k): v for k, v in d['bounce-weights'].items()}
+        return d
 
     def update_from_dict(self, d):
         if 'members' in d:
             raise KeyError
-        for k, v in d.iteritems():
+        for k, v in d.items():
             if k not in list_properties:
                 continue
             setattr(self, k, v)
@@ -293,7 +314,9 @@ class List (ListMemberContainer):
 
     @staticmethod
     def msg_replace_header(msg, header, new_value=None):
-        old_value = msg.get(header)
+        # The value exactly as received.  (msg.get() would turn undeclared
+        # 8-bit bytes into an encoded word with the charset unknown-8bit.)
+        old_value = next((v for k, v in msg.raw_items() if k.lower() == header.lower()), None)
         if old_value:
             msg['X-Original-' + header] = old_value
         del msg[header]
@@ -396,7 +419,7 @@ class List (ListMemberContainer):
             ses.send_raw_email(
                     Source=return_path,
                     Destinations=[ recipient, ],
-                    RawMessage={ 'Data': msg.as_string(), },
+                    RawMessage={ 'Data': msg.as_bytes(policy=SEND_POLICY), },
                     )
             
     @staticmethod
@@ -435,7 +458,7 @@ class List (ListMemberContainer):
         response = s3.put_object(
                 Bucket=config.s3_bucket,
                 Key=self._s3_moderation_prefix + message_id,
-                Body=msg.as_string(),
+                Body=msg.as_bytes(policy=SEND_POLICY),
                 )
         # Get the moderation auto-deletion/auto-rejection interval from the S3 bucket lifecycle configuration.
         from datetime import timedelta
@@ -464,7 +487,7 @@ class List (ListMemberContainer):
             ses.send_raw_email(
                     Source=control_address,
                     Destinations=[ moderator, ],
-                    RawMessage={ 'Data': message.as_string(), },
+                    RawMessage={ 'Data': message.as_bytes(policy=SEND_POLICY), },
                     )
 
     def _user_mod_act_on(self, from_user, message_id, action):
@@ -482,7 +505,7 @@ class List (ListMemberContainer):
 
     def user_mod_approve(self, from_user, message_id):
         response = self._user_mod_act_on(from_user, message_id, s3.get_object)
-        self.send(email.message_from_file(response['Body']), mod_approved=True)
+        self.send(email.message_from_bytes(response['Body'].read()), mod_approved=True)
         self._user_mod_act_on(from_user, message_id, s3.delete_object)
 
     def user_mod_reject(self, from_user, message_id):

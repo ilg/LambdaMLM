@@ -14,6 +14,8 @@ Lamson LambdaMLM used.  Changes from the original:
   some messages; bodies aren't needed here, so they aren't decoded.
 - Integer division is written as // so scores are the same on Python 3.
 - The bounce_to decorator, unused by LambdaMLM, is removed.
+- is_hard() and is_soft() treat a missing status as Python 2 did, where
+  None compared less than any number: not hard, and soft if probable.
 - Header values are collected in the order they're found, without
   duplicates, instead of in a set.  Which value came first (the first Status,
   say) then doesn't depend on string hashing, which Python 3 randomizes.
@@ -324,11 +326,13 @@ class BounceAnalyzer(object):
         Tells you if this was a hard bounce, which is determined by the message
         being a probably bounce with a primary_status greater than 4.
         """
-        return self.probable() and self.primary_status[0] > 4
+        status = self.primary_status[0]
+        return self.probable() and status is not None and status > 4
 
     def is_soft(self):
         """Basically the inverse of is_hard()"""
-        return self.probable() and self.primary_status[0] <= 4
+        status = self.primary_status[0]
+        return self.probable() and (status is None or status <= 4)
 
     def probable(self, threshold=0.3):
         """

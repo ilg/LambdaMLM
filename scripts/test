@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Run the test suite on Python 2.7 in Docker.  Arguments are passed to pytest.
+# Run the test suite in Docker.  Arguments are passed to pytest.
 # Set LAMBDAMLM_WRITE_GOLDEN=1 to record golden files (see tests/golden.py).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-docker build --quiet --file tests/py2.Dockerfile --tag lambdamlm-test-py2 . >/dev/null
+docker build --quiet --file tests/Dockerfile --tag lambdamlm-test . >/dev/null
 mount="$PWD:/src:ro"
 if [ "${LAMBDAMLM_WRITE_GOLDEN:-}" = 1 ]; then
     mount="$PWD:/src"
@@ -13,5 +13,5 @@ docker run --rm \
     --env LAMBDAMLM_WRITE_GOLDEN="${LAMBDAMLM_WRITE_GOLDEN:-}" \
     --volume "$mount" \
     --workdir /src \
-    lambdamlm-test-py2 \
+    lambdamlm-test \
     python -m pytest -p no:cacheprovider "$@"
