@@ -300,7 +300,9 @@ class List (ListMemberContainer):
         if new_value:
             msg[header] = new_value
 
-    def send(self, msg, mod_approved=False):
+    def send(self, msg, mod_approved=False, cc_chain=()):
+        # cc_chain holds the addresses of the lists that cc'd this one, so
+        # cc-lists that refer back to each other don't loop forever.
         from_user = msg_get_header(msg, 'From')
         from_name, from_address = parseaddr(from_user)
         from_address = from_address.lower()
@@ -331,9 +333,12 @@ class List (ListMemberContainer):
                 return
 
         # Send to CC lists.
+        cc_chain = cc_chain + (self.address,)
         for cc_list in List.lists_for_addresses(self.cc_lists):
+            if cc_list.address in cc_chain:
+                continue
             # send() rewrites the message's headers, so each list gets its own copy.
-            cc_list.send(copy.deepcopy(msg), mod_approved=True)
+            cc_list.send(copy.deepcopy(msg), mod_approved=True, cc_chain=cc_chain)
 
         # Strip out any exising DKIM signature.
         self.msg_replace_header(msg, 'DKIM-Signature')

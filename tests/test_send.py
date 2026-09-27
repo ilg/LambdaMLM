@@ -328,11 +328,15 @@ def test_cc_list_that_does_not_exist(aws):
     assert sent_to(aws) == ['bob@example.com', 'carol@example.com']
 
 
-def test_mutual_cc_lists_recurse_forever(aws):
-    make_list(aws, 'other', **{'cc-lists': ['test-list@example.org']})
-    l = make_list(aws, **{'cc-lists': ['other@example.org']})
-    with pytest.raises(RuntimeError):
-        l.send(parse_message(raw_message()))
+def test_mutual_cc_lists(aws):
+    make_list(aws, 'other', members=[member('dave@example.com')], **{'cc-lists': ['test-list@example.org']})
+    make_list(aws, 'third', members=[member('erin@example.com')], **{'cc-lists': ['other@example.org']})
+    make_list(aws, **{'cc-lists': ['other@example.org', 'third@example.org']})
+    listobj.List('test-list@example.org').send(parse_message(raw_message()))
+    # test-list -> other (which would cc test-list again), and test-list ->
+    # third -> other.  Only lists already in the chain are skipped.
+    assert sent_to(aws) == ['dave@example.com', 'dave@example.com', 'erin@example.com',
+                            'bob@example.com', 'carol@example.com']
 
 
 # ---------------------------------------------------------------- lists_for_addresses
