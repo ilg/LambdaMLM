@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Bounce classification, recorded from Lamson's analyzer on Python 2.
+"""Bounce classification.
 
-The port replaces Lamson with a vendored copy of its bounce analyzer; these
-golden results are what the vendored copy must reproduce exactly.
+The golden results were recorded from Lamson's analyzer on Python 2; the
+vendored copy (lamson_bounce) reproduces them.
 """
 
 import glob
@@ -24,12 +24,10 @@ def sample_id(path):
 
 
 def analyze(msg):
-    """The fields of Lamson's analysis that LambdaMLM's behavior depends on."""
-    import lamson.bounce
-    import lamson.encoding
-    from obj import Obj
+    """The fields of the bounce analysis that LambdaMLM's behavior depends on."""
+    import lamson_bounce
     try:
-        analysis = lamson.bounce.detect(Obj(base=lamson.encoding.from_message(msg)))
+        analysis = lamson_bounce.detect(msg)
     except Exception as e:
         return {'error': type(e).__name__}
     return {

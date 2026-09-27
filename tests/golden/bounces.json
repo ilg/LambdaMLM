@@ -1996,9 +1996,24 @@
   },
   "flufl/sina_01.txt": {
     "analysis": {
-      "error": "EncodingError"
+      "action": null,
+      "combined_status": [
+        null,
+        null
+      ],
+      "is_hard": false,
+      "is_soft": false,
+      "primary_status": [
+        null,
+        null
+      ],
+      "score": 0.0,
+      "secondary_status": [
+        null,
+        null
+      ]
     },
-    "response_type": "EncodingError"
+    "response_type": "unknown"
   },
   "flufl/smtp32_01.txt": {
     "analysis": {

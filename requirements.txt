@@ -5,4 +5,3 @@ Jinja2==2.11.3
 MarkupSafe==1.1.1
 PyYAML==5.4.1
 wheel==0.26.0
-git+https://github.com/ilg/lamson-bsd.git#egg=lamson

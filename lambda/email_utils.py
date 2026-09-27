@@ -1,7 +1,6 @@
 from __future__ import print_function
 
-import lamson.encoding
-import lamson.bounce
+import lamson_bounce
 from obj import Obj
 
 from yaml_enum import YAMLEnum
@@ -25,7 +24,7 @@ bounce_defaults = Obj(
         )
 
 def detect_bounce(msg):
-    analysis = lamson.bounce.detect(Obj(base=lamson.encoding.from_message(msg)))
+    analysis = lamson_bounce.detect(msg)
     print('Lamson bounce analysis: {}'.format(analysis.__dict__))
     if analysis.is_hard():
         print('Hard bounce.')
