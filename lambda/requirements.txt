@@ -3,3 +3,6 @@ Jinja2==2.11.3
 # Jinja2 2.11 needs MarkupSafe below 2.1 (2.1 removed soft_unicode).
 MarkupSafe==2.0.1
 PyYAML==6.0.3
+# Bundled rather than using the runtime's copy, so production runs the
+# version the tests use.
+boto3==1.43.103
