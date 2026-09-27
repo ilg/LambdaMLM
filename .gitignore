@@ -3,3 +3,21 @@
 lambda/config.py
 lambda/config.*.py
 !lambda/config.example.py
+
+# Python
+__pycache__/
+.pytest_cache/
+.coverage
+.venv/
+
+# Deployment package built by the fabfile
+lambda.zip
+
+# Claude Code: session worktrees and personal settings (shared project
+# settings in .claude/ can still be committed)
+.claude/worktrees/
+.claude/settings.local.json
+
+# Editors and OS
+*.swp
+.DS_Store
