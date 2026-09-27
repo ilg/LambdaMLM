@@ -254,7 +254,7 @@ class List (ListMemberContainer):
     def accept_invitation(self, from_user, token, action):
         from_address = address_from_user(from_user)
         token_address = control.get_signed_command(token, self.address)
-        if token_address != from_address:
+        if token_address.lower() != from_address:
             raise control.InvalidSignatureException
         action(from_address)
 
@@ -498,7 +498,7 @@ class List (ListMemberContainer):
         if not l:
             raise ValueError('Bounced-to address does not resolve to a known list.')
         print('Bounce received for list {}.'.format(l.display_address))
-        member = l.member_passing_test(lambda m: l.verp_address(m.address) == bounce_address)
+        member = l.member_passing_test(lambda m: l.verp_address(m.address).lower() == bounce_address.lower())
         if not member:
             print('No member found matching the bounce address.')
             return

@@ -78,7 +78,7 @@ class ListMember(yaml.YAMLObject):
                 and MemberFlag.bouncing not in self.flags
                 and (
                     MemberFlag.echoPost in self.flags
-                    or from_address != self.address
+                    or from_address.lower() != self.address.lower()
                     )
                 )
     def add_response(self, response_type):

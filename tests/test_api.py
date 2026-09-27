@@ -128,12 +128,11 @@ def test_get_member(aws):
         {'StatusCode': 200, 'Data': {'address': 'admin@example.com', 'name': None, 'flags': ['admin']}}
 
 
-def test_get_member_lookup_is_case_sensitive(aws):
+def test_get_member_lookup_ignores_case(aws):
     make_list(aws)
-    assert call(Action='GetMember', ListAddress='test-list@example.org', MemberAddress='plain@example.com') == \
-        {'StatusCode': 404, 'Message': 'Member plain@example.com not found.'}
-    assert call(Action='GetMember', ListAddress='test-list@example.org',
-                MemberAddress='Plain@Example.com')['StatusCode'] == 200
+    for address in ('plain@example.com', 'Plain@Example.com', 'PLAIN@EXAMPLE.COM'):
+        assert call(Action='GetMember', ListAddress='test-list@example.org', MemberAddress=address) == \
+            {'StatusCode': 200, 'Data': {'address': 'Plain@Example.com', 'name': None, 'flags': []}}
 
 
 def test_get_member_unknown_list(aws):

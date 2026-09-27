@@ -17,7 +17,11 @@ class ListMemberContainer (object):
         return next(( m for m in self.members if test(m) ), None)
 
     def member_with_address(self, address):
-        return self.member_passing_test(lambda m: m.address == address)
+        # Addresses are stored as they were given, so compare them ignoring case.
+        if address is None:
+            return None
+        address = address.lower()
+        return self.member_passing_test(lambda m: m.address.lower() == address)
 
     def address_will_modify_address(self, from_address, target_address):
         if from_address != target_address:

@@ -93,13 +93,12 @@ def test_sender_address_is_lowercased_for_lookup(aws):
     assert sent_to(aws) == ['bob@example.com', 'carol@example.com']
 
 
-def test_mixed_case_member_is_treated_as_non_member(aws):
-    # Stored addresses keep their case but the sender is lowercased, so the
-    # member isn't found and the post is moderated as from a non-member.
-    l = make_list(aws, members=[member('Alice@Example.com'), member('bob@example.com')])
-    l.send(parse_message(raw_message(from_='Alice@Example.com')))
-    assert aws.ses.sent_raw_emails == []
-    assert moderation_keys(aws) == ['moderation/example.org/test-list/<m1@example.com>']
+def test_mixed_case_member_is_a_member(aws):
+    l = make_list(aws, members=[member('Alice@Example.com'), member('Bob@Example.com')])
+    l.send(parse_message(raw_message(from_='alice@example.com')))
+    # Alice doesn't get her own post back; Bob gets it at his stored address.
+    assert sent_to(aws) == ['Bob@Example.com']
+    assert moderation_keys(aws) == []
 
 
 # ---------------------------------------------------------------- policy
@@ -556,14 +555,6 @@ def test_handle_bounce_no_matching_member(aws):
     assert stored_list_config(aws, 'alpha-list') == before
 
 
-def test_handle_bounce_verp_match_is_case_sensitive(aws):
-    bounce_list(aws, members=[member('Member@Example.com')])
-    before = stored_list_config(aws, 'alpha-list')
-    listobj.List.handle_bounce_to('alpha-list+member=example.com+bounce@example.org', parse_message(BOUNCE))
-    assert stored_list_config(aws, 'alpha-list') == before
-
-
-@pytest.mark.xfail(strict=True, reason='Step 3: the bounce-address match should ignore case.')
 def test_handle_bounce_verp_match_ignores_case(aws):
     bounce_list(aws, members=[member('Member@Example.com')])
     before = stored_list_config(aws, 'alpha-list')
