@@ -57,10 +57,6 @@ Message-ID: <MAV_cOVaWUMA7gizIMurOcEgU5piWAp+V_iB7En2is1ebIja_UZ@ebod.tutim.exam
 Subject: Re: [XMPL Alpha] Laboris Dictum nec 3479-0961 Minim A - Pharetra
  Vehicula
 To: XMPL Alpha <alpha-list@example.org>
-Cc: Ifajus Umare-Cipu <edenadazu@tutim.example.com>,
- Tuhi Ejemuka <fakotunodis@e-89.example.org>, 
- "Olihebe I. Vibohe" <ocinome@p194.example.org>,
- Ebahipadu Efuto <kudovu@afilasibip016.example.org>
 Content-Type: multipart/related; boundary="00000000000088cc0d0634f41a74"
 X-Original-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=omup086.example.org; s=google; t=1747072883; x=1747677683; darn=example.org; 
@@ -79,7 +75,15 @@ X-Original-From: Ifajus Kovoru <palajeg@omup086.example.org>
 From: "Ifajus Kovoru \(via XMPL Alpha\)"
  <alpha-list+palajeg=omup086.example.org+from@example.org>
 Reply-to: XMPL Alpha <alpha-list@example.org>
-CC: Ifajus Kovoru <palajeg@omup086.example.org>
+X-Original-CC: Ifajus Umare-Cipu <edenadazu@tutim.example.com>,
+ Tuhi Ejemuka <fakotunodis@e-89.example.org>, 
+ "Olihebe I. Vibohe" <ocinome@p194.example.org>,
+ Ebahipadu Efuto <kudovu@afilasibip016.example.org>
+CC: Ifajus Umare-Cipu <edenadazu@tutim.example.com>,
+ Tuhi Ejemuka <fakotunodis@e-89.example.org>,
+ "Olihebe I. Vibohe" <ocinome@p194.example.org>,
+ Ebahipadu Efuto <kudovu@afilasibip016.example.org>,
+ Ifajus Kovoru <palajeg@omup086.example.org>
 
 --00000000000088cc0d0634f41a74
 Content-Type: multipart/alternative; boundary="00000000000088cc0c0634f41a73"

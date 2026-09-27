@@ -203,17 +203,28 @@ def test_reply_to_list(aws):
     assert msg.get_all('CC') == ['Alice Sender <alice@example.com>']
 
 
-def test_reply_to_list_adds_second_cc(aws):
+def test_reply_to_list_merges_cc(aws):
     make_list(aws, **{'reply-to-list': True}).send(
-            parse_message(raw_message(headers=['Cc: dave@example.com'])))
-    assert sent_message(aws).get_all('CC') == ['dave@example.com', 'Alice Sender <alice@example.com>']
+            parse_message(raw_message(headers=['Cc: dave@example.com,', ' erin@example.com'])))
+    msg = sent_message(aws)
+    assert [unfold(v) for v in msg.get_all('CC')] == \
+        ['dave@example.com, erin@example.com, Alice Sender <alice@example.com>']
+    assert unfold(msg['X-Original-CC']) == 'dave@example.com, erin@example.com'
 
 
-@pytest.mark.xfail(strict=True, reason='Step 3: reply-to-list should replace any existing Cc header.')
-def test_reply_to_list_replaces_cc(aws):
-    make_list(aws, **{'reply-to-list': True}).send(
-            parse_message(raw_message(headers=['Cc: dave@example.com'])))
-    assert len(sent_message(aws).get_all('CC')) == 1
+def test_non_ascii_sender_name_crashes(aws):
+    with pytest.raises(UnicodeEncodeError):
+        make_list(aws, **{'allow-from-non-members': True}).send(parse_message(raw_message(
+                from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>')))
+
+
+@pytest.mark.xfail(strict=True, raises=UnicodeEncodeError,
+                   reason='Python 2 can\'t format a non-ASCII sender name into the From header.')
+def test_reply_to_list_non_ascii_sender(aws):
+    make_list(aws, **{'reply-to-list': True, 'allow-from-non-members': True}).send(parse_message(raw_message(
+            from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>', headers=['Cc: dave@example.com'])))
+    from sestools import msg_get_header
+    assert msg_get_header(sent_message(aws), 'CC') == u'dave@example.com, Jos\u00e9 <jose@example.net>'
 
 
 def test_subject_tag(aws):

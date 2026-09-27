@@ -359,7 +359,14 @@ class List (ListMemberContainer):
         # See if replies should default to the list.
         if self.reply_to_list:
             self.msg_replace_header(msg, 'Reply-to', Header(self.display_address))
-            msg['CC'] = Header(from_user)
+            # Cc the sender so replies reach them too, in a single Cc: header
+            # that keeps anyone who was already Cc'd.
+            existing_cc = [re.sub(r'\r?\n[ \t]', ' ', v) for v in msg.get_all('CC', [])]
+            if existing_cc:
+                cc = ', '.join(existing_cc + [Header(from_user).encode()])
+            else:
+                cc = Header(from_user)
+            self.msg_replace_header(msg, 'CC', cc)
         else:
             self.msg_replace_header(msg, 'Reply-to', Header(from_user))
 
