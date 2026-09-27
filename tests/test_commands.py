@@ -138,6 +138,17 @@ def test_echo():
         'This is the echo command.  You are a@example.com.\n[no parameters]\n'
 
 
+def test_command_names():
+    # Invitation emails embed these names, so they must never change.  Each
+    # command names itself explicitly so a Click upgrade can't rename it.
+    from control import list_commands
+    assert sorted(commands.command.commands) == ['about', 'echo', 'list']
+    assert sorted(list_commands.list_command.commands) == [
+        'accept_subscription_invitation', 'accept_unsubscription_invitation',
+        'members', 'mod', 'set', 'setflag', 'subscribe', 'unsetflag', 'unsubscribe']
+    assert sorted(list_commands.moderate.commands) == ['approve', 'reject']
+
+
 def test_unknown_command():
     assert run('a@example.com', 'nope') == 'Internal error.'
 

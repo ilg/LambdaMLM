@@ -43,7 +43,7 @@ def require_list(f):
 def list_command(ctx, list_address):
     ctx.obj.list_address = list_address
 
-@list_command.command()
+@list_command.command(name='subscribe')
 @click.argument('address', required=False)
 @require_list
 def subscribe(ctx, address=None):
@@ -59,7 +59,7 @@ def subscribe(ctx, address=None):
     except listobj.ClosedSubscription:
         handle_invalid_list_address(ctx.obj.list_address)
 
-@list_command.command()
+@list_command.command(name='unsubscribe')
 @click.argument('address', required=False)
 @require_list
 def unsubscribe(ctx, address=None):
@@ -89,7 +89,7 @@ def accept_invitation(ctx, token, action, success_msg):
     except listobj.NotSubscribed:
         click.echo('You are not subscribed to {}.'.format(ctx.obj.list_address), err=True)
 
-@list_command.command()
+@list_command.command(name='accept_subscription_invitation')
 @click.argument('token')
 @require_list
 def accept_subscription_invitation(ctx, token):
@@ -100,7 +100,7 @@ def accept_subscription_invitation(ctx, token):
             'You are now subscribed to {}.'.format(ctx.obj.list_address),
             )
 
-@list_command.command()
+@list_command.command(name='accept_unsubscription_invitation')
 @click.argument('token')
 @require_list
 def accept_unsubscription_invitation(ctx, token):
@@ -132,14 +132,14 @@ def ctx_set_member_flag_value(ctx, address, flag, value):
     except listobj.UnknownFlag:
         click.echo('{} is not a valid flag.'.format(flag), err=True)
 
-@list_command.command()
+@list_command.command(name='setflag')
 @click.argument('flag', required=False)
 @click.argument('address', required=False)
 @require_list
 def setflag(ctx, flag=None, address=None):
     ctx_set_member_flag_value(ctx, address, flag, True)
 
-@list_command.command()
+@list_command.command(name='unsetflag')
 @click.argument('flag', required=False)
 @click.argument('address', required=False)
 @require_list
@@ -174,7 +174,7 @@ def set_config(ctx, option=None, value=None, boolean=None, integer=None):
     except listobj.UnknownOption:
         click.echo('{} is not a valid configuration option.'.format(option), err=True)
 
-@list_command.command()
+@list_command.command(name='members')
 @require_list
 def members(ctx):
     try:
@@ -189,7 +189,7 @@ def members(ctx):
 def moderate(ctx):
     pass
 
-@moderate.command()
+@moderate.command(name='approve')
 @click.argument('message_id')
 @require_list
 def approve(ctx, message_id):
@@ -201,7 +201,7 @@ def approve(ctx, message_id):
     except listobj.ModeratedMessageNotFound:
         click.echo('Message not found.  It may already have been acted on.', err=True)
 
-@moderate.command()
+@moderate.command(name='reject')
 @click.argument('message_id')
 @require_list
 def reject(ctx, message_id):
