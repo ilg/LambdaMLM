@@ -21,7 +21,7 @@ import sys
 from e2e.run import RESULTS_DIR
 
 HEADERS = ('From', 'Sender', 'Reply-To', 'To', 'CC', 'Subject', 'X-Original-From', 'X-Original-Sender')
-SUMMARY_KEYS = ('notices', 'confirmations', 'outputs', 'bounce_entries', 'api')
+SUMMARY_KEYS = ('notices', 'confirmations', 'outputs', 'bounce_entries', 'api', 'steps')
 ERROR = re.compile(r'Traceback|Error|Task timed out|Process exited')
 
 
@@ -83,14 +83,17 @@ def compare(old_run, new_run):
                 if key == 'api':
                     va = va and (va['payload'].get('StatusCode') or va['payload'].get('errorType'))
                     vb = vb and (vb['payload'].get('StatusCode') or vb['payload'].get('errorType'))
-                print('   {}: {} -> {}'.format(key, va, vb))
+                print('   {}: {} -> {}'.format(key, mask(va), mask(vb)))
         errors_a = sum(1 for line in a.get('logs', []) if ERROR.search(line))
         errors_b = sum(1 for line in b.get('logs', []) if ERROR.search(line))
         print('   error lines in logs: {} -> {}'.format(errors_a, errors_b))
 
 
 def mask(value):
-    return value and re.sub(r'[\w.+-]+@(gmx|gmail)\.com', r'<\1>', value)
+    """Hide the real mailboxes' addresses, as label() does."""
+    if value is None:
+        return None
+    return re.sub(r'[\w.+-]+@[\w-]+(\.[\w-]+)+', lambda m: label(m.group(0)), str(value))
 
 
 def main(args):

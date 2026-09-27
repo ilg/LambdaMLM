@@ -348,6 +348,107 @@ def command_members(ctx):
     ctx.summary['outputs'] = len(outputs)
 
 
+def _sender_address(sender):
+    """Senders are test inboxes (addresses, sending through SES) or real mailboxes."""
+    return sender if isinstance(sender, str) else sender.address
+
+
+def _send_from(ctx, sender, message, destination):
+    if isinstance(sender, str):
+        ctx.send_ses(message, [destination], source=sender)
+    else:
+        ctx.send_smtp(sender, message, [destination])
+
+
+def _api(ctx, action, **params):
+    response = ctx.env.client('lambda').invoke(
+            FunctionName=ctx.env.function, Payload=json.dumps(dict(params, Action=action)))
+    return json.loads(response['Payload'].read())
+
+
+def _is_member(ctx, list_name, address):
+    return address.lower() in [m.lower() for m in list_members(ctx, list_name)]
+
+
+def _ensure_not_member(ctx, list_name, address):
+    """Remove an address that an interrupted earlier run left on the list."""
+    if _is_member(ctx, list_name, address):
+        ctx.note('removing {}, left on {} by an earlier run'.format(display(ctx, address), list_name))
+        _api(ctx, 'DeleteMember', ListAddress=ctx.list_address(list_name), MemberAddress=address)
+
+
+def _reply_for_output(ctx, sender, request):
+    """Reply to a signed request (a confirmation or an invitation) and return the command's output."""
+    address = _sender_address(sender)
+    ctx.note('replying to: ' + str(request['Subject']))
+    reply = ctx.message(address, str(request['From']), subject='Re: ' + str(request['Subject']))
+    ctx.started = time.time()
+    _send_from(ctx, sender, reply, str(request['Reply-To'] or request['From']))
+    outputs = ctx.collect([address], [address], token='Output of')[address]
+    if not outputs:
+        ctx.note('no command output arrived')
+        return None
+    body = email.message_from_bytes(outputs[-1], policy=email.policy.default).get_body(
+            preferencelist=('plain',)).get_content()
+    # The body is 'Output of "<command>":' and then the output.  Only the output
+    # is kept: the command holds a signed token, which differs from run to run.
+    output = body.replace('\r\n', '\n').split('\n\n', 1)[-1].strip()
+    ctx.note('output: ' + output)
+    return output
+
+
+def _email_command(ctx, sender, command):
+    """Send a command by email, confirm it by reply, and return its output."""
+    address = _sender_address(sender)
+    ctx.started = time.time()
+    _send_from(ctx, sender, ctx.message(address, ctx.command_address(), subject=command),
+               ctx.command_address())
+    replies = ctx.collect([address], [address], token=command.split()[1])[address]
+    confirmations = [r for r in replies if b'please reply' in r.lower()]
+    if not confirmations:
+        ctx.note('no confirmation request arrived')
+        return None
+    return _reply_for_output(ctx, sender, email.message_from_bytes(confirmations[-1], policy=email.policy.default))
+
+
+LIST_SUBSCRIBE = 'e2e-subscribe'
+
+
+@scenario
+def invitation_subscribe(ctx):
+    """The API invites a real mailbox to join a list, then to leave it; it accepts each by reply."""
+    mailbox = ctx.mailbox(0)
+    _ensure_not_member(ctx, LIST_SUBSCRIBE, mailbox.address)
+    steps = []
+    for action, verb in (('InviteMember', 'join'), ('UnsubscribeMember', 'leave')):
+        ctx.started = time.time()
+        payload = _api(ctx, action, ListAddress=ctx.list_address(LIST_SUBSCRIBE),
+                       MemberAddress=mailbox.address)
+        ctx.note('{} returned {}'.format(action, payload.get('StatusCode')))
+        invitations = ctx.collect([mailbox.address], [mailbox.address],
+                                  token='Invitation to ' + verb)[mailbox.address]
+        output = None
+        if invitations:
+            output = _reply_for_output(
+                    ctx, mailbox, email.message_from_bytes(invitations[-1], policy=email.policy.default))
+        else:
+            ctx.note('no invitation to {} arrived'.format(verb))
+        steps.append({'action': action, 'status': payload.get('StatusCode'), 'invitations': len(invitations),
+                      'output': output, 'member': _is_member(ctx, LIST_SUBSCRIBE, mailbox.address)})
+    ctx.summary['steps'] = steps
+
+
+@scenario
+def command_subscribe(ctx):
+    """A non-member subscribes to an open list by email, then unsubscribes."""
+    _ensure_not_member(ctx, LIST_SUBSCRIBE, ctx.inbox2)
+    steps = []
+    for verb in ('subscribe', 'unsubscribe'):
+        output = _email_command(ctx, ctx.inbox2, 'list {} {}'.format(ctx.list_address(LIST_SUBSCRIBE), verb))
+        steps.append({'command': verb, 'output': output, 'member': _is_member(ctx, LIST_SUBSCRIBE, ctx.inbox2)})
+    ctx.summary['steps'] = steps
+
+
 @scenario
 def bounce_and_complaint(ctx):
     """A post to SES's bounce and complaint simulators; the bounce is recorded."""
