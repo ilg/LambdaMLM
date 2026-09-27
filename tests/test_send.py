@@ -97,9 +97,9 @@ def test_mixed_case_member_is_treated_as_non_member(aws):
     # Stored addresses keep their case but the sender is lowercased, so the
     # member isn't found and the post is moderated as from a non-member.
     l = make_list(aws, members=[member('Alice@Example.com'), member('bob@example.com')])
-    with pytest.raises(ClientError):
-        l.send(parse_message(raw_message(from_='Alice@Example.com')))
+    l.send(parse_message(raw_message(from_='Alice@Example.com')))
     assert aws.ses.sent_raw_emails == []
+    assert moderation_keys(aws) == ['moderation/example.org/test-list/<m1@example.com>']
 
 
 # ---------------------------------------------------------------- policy
@@ -140,17 +140,12 @@ def moderation_keys(aws):
     ({'moderated': True}, 'stranger@example.net', None),
     ({'moderated': True, 'allow-from-non-members': True}, 'stranger@example.net', None),
     ])
-def test_moderated_without_lifecycle_configuration(aws, options, from_, members):
-    # The bucket has no lifecycle configuration, so moderation stores the
-    # message and then fails before notifying anyone (as in production).
-    if members is not None:
-        options['members'] = members
-    l = make_list(aws, **options)
-    with pytest.raises(ClientError) as e:
-        l.send(parse_message(raw_message(from_=from_)))
-    assert e.value.response['Error']['Code'] == 'NoSuchLifecycleConfiguration'
+def test_moderated(aws, options, from_, members):
+    options['members'] = (members or []) + [member('mod@example.com', 'moderator')]
+    make_list(aws, **options).send(parse_message(raw_message(from_=from_)))
     assert moderation_keys(aws) == ['moderation/example.org/test-list/<m1@example.com>']
-    assert aws.ses.sent_raw_emails == []
+    # Only the moderator hears about it.
+    assert sent_to(aws) == ['mod@example.com']
 
 
 def test_moderated_list_preapproved_member(aws):
@@ -429,35 +424,26 @@ def test_moderation_without_matching_rule_defaults_to_three_days(aws):
     assert b'in 3 days' in aws.ses.sent_raw_emails[0]['Data']
 
 
-def test_moderation_with_filter_style_rule_crashes(aws):
-    aws.s3.lifecycle[config.s3_bucket] = FILTER_RULE
-    with pytest.raises(KeyError):
-        moderated_list(aws).send(parse_message(raw_message()))
-
-
-@pytest.mark.xfail(strict=True, raises=KeyError,
-                   reason='Step 3: moderate() should accept Filter-style lifecycle rules.')
-def test_moderation_with_filter_style_rule(aws):
-    aws.s3.lifecycle[config.s3_bucket] = FILTER_RULE
+@pytest.mark.parametrize('lifecycle, days', [
+    (FLAT_RULE, 5),
+    (FILTER_RULE, 5),
+    ({'Rules': [{'ID': 'm', 'Filter': {'And': {'Prefix': 'moderation/', 'Tags': []}},
+                 'Status': 'Enabled', 'Expiration': {'Days': 7}}]}, 7),
+    # Disabled rules, rules without an expiry in days, and other prefixes are ignored.
+    ({'Rules': [{'ID': 'm', 'Prefix': 'moderation/', 'Status': 'Disabled', 'Expiration': {'Days': 7}}]}, 3),
+    ({'Rules': [{'ID': 'm', 'Filter': {'Prefix': 'moderation/'}, 'Status': 'Enabled',
+                 'NoncurrentVersionExpiration': {'NoncurrentDays': 7}}]}, 3),
+    ({'Rules': [{'ID': 'm', 'Filter': {}, 'Status': 'Enabled', 'Expiration': {'Days': 7}}]}, 3),
+    (None, 3),
+    ])
+def test_moderation_expiration_days(aws, lifecycle, days):
+    if lifecycle is not None:
+        aws.s3.lifecycle[config.s3_bucket] = lifecycle
     moderated_list(aws).send(parse_message(raw_message()))
     assert len(aws.ses.sent_raw_emails) == 2
+    assert 'in {} days'.format(days).encode('ascii') in aws.ses.sent_raw_emails[0]['Data']
 
 
-@pytest.mark.xfail(strict=True, raises=ClientError,
-                   reason='Step 3: moderate() should tolerate a missing lifecycle configuration.')
-def test_moderation_without_lifecycle_configuration(aws):
-    moderated_list(aws).send(parse_message(raw_message()))
-    assert len(aws.ses.sent_raw_emails) == 2
-
-
-def test_moderation_notice_uses_hard_coded_command_address(aws, monkeypatch):
-    monkeypatch.setattr(config, 'command_user', 'lists')
-    aws.s3.lifecycle[config.s3_bucket] = FLAT_RULE
-    moderated_list(aws).send(parse_message(raw_message()))
-    assert aws.ses.sent_raw_emails[0]['Source'] == 'lambda@example.org'
-
-
-@pytest.mark.xfail(strict=True, reason='Step 3: moderate() should use config.command_user.')
 def test_moderation_notice_uses_command_user(aws, monkeypatch):
     monkeypatch.setattr(config, 'command_user', 'lists')
     aws.s3.lifecycle[config.s3_bucket] = FLAT_RULE
@@ -472,8 +458,7 @@ def test_moderation_requires_message_id(aws):
 
 def test_moderation_key_keeps_folded_message_id_space(aws):
     raw = raw_message(message_id=None, headers=['Message-ID:', ' <folded@example.com>'])
-    with pytest.raises(ClientError):
-        moderated_list(aws).send(parse_message(raw))
+    moderated_list(aws).send(parse_message(raw))
     assert moderation_keys(aws) == ['moderation/example.org/test-list/ <folded@example.com>']
 
 

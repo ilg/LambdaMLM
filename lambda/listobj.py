@@ -383,6 +383,30 @@ class List (ListMemberContainer):
                     RawMessage={ 'Data': msg.as_string(), },
                     )
             
+    @staticmethod
+    def moderation_expiration_days(default=3):
+        """The number of days after which held messages expire.
+
+        Read from the bucket's lifecycle rule for the moderation prefix, in
+        either the older form with a top-level Prefix or the current form
+        with a Filter.  Falls back to `default` if there's no such rule.
+        """
+        try:
+            lifecycle = s3.get_bucket_lifecycle_configuration(Bucket=config.s3_bucket)
+        except ClientError as e:
+            # Most likely NoSuchLifecycleConfiguration.
+            print('Unable to read the bucket lifecycle configuration: {}'.format(e))
+            return default
+        for rule in lifecycle.get('Rules', []):
+            if rule.get('Status', 'Enabled') != 'Enabled':
+                continue
+            rule_filter = rule.get('Filter') or {}
+            prefix = rule.get('Prefix', rule_filter.get('Prefix', (rule_filter.get('And') or {}).get('Prefix')))
+            days = (rule.get('Expiration') or {}).get('Days')
+            if prefix == config.s3_moderation_prefix and days:
+                return days
+        return default
+
     def moderate(self, msg):
         # For some reason, this import doesn't work at the file level.
         from control import sign
@@ -398,16 +422,11 @@ class List (ListMemberContainer):
                 Body=msg.as_string(),
                 )
         # Get the moderation auto-deletion/auto-rejection interval from the S3 bucket lifecycle configuration.
-        lifecycle = s3.get_bucket_lifecycle_configuration(Bucket=config.s3_bucket)
         from datetime import timedelta
-        mod_interval = timedelta(days=next((
-            r['Expiration']['Days']
-            for r in lifecycle.get('Rules', [])
-            if r['Prefix'] == config.s3_moderation_prefix
-            ), 3))
+        mod_interval = timedelta(days=self.moderation_expiration_days())
         # Wrap the moderated message for inclusion in the notification to mods.
         forward_mime = MIMEMessage(msg)
-        control_address = 'lambda@{}'.format(self.host)
+        control_address = '{}@{}'.format(config.command_user, self.host)
         for moderator in self.moderator_addresses:
             # Build up the notification email per-moderator so that we can include
             # pre-signed moderation commands specific to that moderator.
