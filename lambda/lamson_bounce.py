@@ -14,6 +14,9 @@ Lamson LambdaMLM used.  Changes from the original:
   some messages; bodies aren't needed here, so they aren't decoded.
 - Integer division is written as // so scores are the same on Python 3.
 - The bounce_to decorator, unused by LambdaMLM, is removed.
+- Header values are collected in the order they're found, without
+  duplicates, instead of in a set.  Which value came first (the first Status,
+  say) then doesn't depend on string hashing, which Python 3 randomizes.
 
 The original license follows.
 
@@ -189,13 +192,14 @@ def match_bounce_headers(msg):
         for k in BOUNCE_MATCHERS:
             if k in part.headers:
                 if k not in matches:
-                    matches[k] = set()
+                    matches[k] = []
 
                 # kind of an odd place to put this, but it's the easiest way
                 if k == 'Content-Description':
                     matches['Content-Description-Parts'][part.headers[k].lower()] = part
 
-                matches[k].add(part.headers[k])
+                if part.headers[k] not in matches[k]:
+                    matches[k].append(part.headers[k])
 
     return matches
 

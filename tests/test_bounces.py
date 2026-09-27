@@ -85,3 +85,15 @@ def test_complaints_are_not_detected():
 def test_unlisted_status_code_is_classified():
     msg = parse_message(read_bytes(FIXTURES, 'bounces', 'synthetic', 'microsoft-5-1-10.eml'))
     assert email_utils.detect_bounce(msg) == email_utils.ResponseType.hard
+
+
+def test_first_status_is_the_first_found():
+    import lamson_bounce
+    msg = parse_message(read_bytes(FIXTURES, 'bounces', 'synthetic', 'ses-permanent.eml'))
+    # Add a second recipient block with a different status after the first.
+    status = [p for p in msg.walk() if p.get_content_type() == 'message/delivery-status'][0]
+    extra = parse_message(b'Final-Recipient: rfc822; other@example.com\nAction: delayed\nStatus: 4.4.7\n\n')
+    status.get_payload().append(extra)
+    analysis = lamson_bounce.detect(msg)
+    assert analysis.primary_status[0] == 5
+    assert analysis.action == 'failed'
