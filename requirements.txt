@@ -1,6 +1,8 @@
 click==7.1.2
 enum34==1.1.2
-Jinja2==2.8
+Jinja2==2.11.3
+# Jinja2 2.11 needs MarkupSafe below 2.1 (2.1 removed soft_unicode).
+MarkupSafe==1.1.1
 PyYAML==3.11
 wheel==0.26.0
 git+https://github.com/ilg/lamson-bsd.git#egg=lamson
