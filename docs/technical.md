@@ -1,5 +1,7 @@
 # Technical Details
 
+Many of LambdaMLM's concepts and behaviors, including its member flags, follow [Ecartis](https://www.ecartis.net), a mailing list manager.
+
 ## Command Security/Validation
 
 Email is very easy to forge.  To ensure that a command came from the email address we think it came from, LambdaMLM "signs" the command and sends the signed version to that address for the owner of that address to send back (via reply).  The signature is appended to the end of the command string.
@@ -14,7 +16,7 @@ Since the SHA1-HMAC is 160 bits = 20 bytes and Base64 encoding uses trios of byt
 
 ## Bounce Handling
 
-Bounce handling is loosely based on [`mailman`'s bounce processing](http://www.gnu.org/software/mailman/mailman-admin/node25.html) and uses [lamson](https://github.com/ilg/lamson-bsd) to help determine what kind of bounce a given email represents.
+Bounce handling is loosely based on [`mailman`'s bounce processing](http://www.gnu.org/software/mailman/mailman-admin/node25.html) and uses a copy of [Lamson](https://github.com/ilg/lamson-bsd)'s bounce analyzer ([`lamson_bounce.py`](../lambda/lamson_bounce.py)) to help determine what kind of bounce a given email represents.
 
 A list member's bounce score is determined by taking the highest-scoring event for each calendar day, decaying events in the past by a factor for each day past, and totalling the day scores.  For example:
 

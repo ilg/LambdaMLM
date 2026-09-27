@@ -172,7 +172,7 @@ AWS SAM rather than plain CloudFormation, because step 9's SNS and SQS event sou
 - Lambda function on the Python 3 runtime, with a `Timeout` well above 10 seconds and at least 512 MB of memory. Production runs out of memory at 128 MB.
 - IAM role, including `s3:ListBucket` (without it, S3 reports a missing key as 403 rather than 404, which makes #33-style problems hard to diagnose) and `kms:Decrypt` if the receipt rule encrypts.
 - `AWS::Lambda::Permission` allowing `ses.amazonaws.com` to invoke the function, with `SourceAccount` and `SourceArn`.
-- Bucket policy letting SES write, with `SourceAccount` and `SourceArn` conditions ([#29](https://github.com/ilg/LambdaMLM/issues/29)).
+- Bucket policy letting SES write, with a `SourceAccount` condition ([#29](https://github.com/ilg/LambdaMLM/issues/29)). Not `SourceArn`: the existing deployment's receipt rule has to keep writing to the bucket until the switchover.
 - Lifecycle rules:
   - For the moderation prefix, with a `Prefix` exactly equal to `config.s3_moderation_prefix`.
   - An expiry for `incoming/`, because failed messages are now kept.
@@ -184,14 +184,13 @@ AWS SAM rather than plain CloudFormation, because step 9's SNS and SQS event sou
   - A CloudWatch alarm on `Errors`.
   - Step 9 reintroduces retries once sends are idempotent.
 - A script step for `SetActiveReceiptRuleSet`, which CloudFormation can't express.
-- **Existing bucket:** CloudFormation can't create a bucket that already exists. Decide here between these options, preferring the first or second:
-  - Import it into the stack.
-  - Pass it as a parameter, with the bucket policy in the stack and versioning and lifecycle set by the script.
-  - Create a new bucket and copy `config/` and `moderation/` before the cutover.
-- **Config delivery:** either keep bundling `config.py` in a build step, or move to environment variables or SSM. `signed_validity_interval` (a `timedelta`) and `bounce_weights` (enum-keyed) would need a small config loader. Keep an equivalent of the fabfile's `check_config` guard. The signing key must reach the new function as exactly the same bytes. The production key's literal contains an invalid backslash escape, so if it stays in a Python file, write it as a raw string or with the backslash doubled; either gives the same value without the Python 3.12+ warning.
+- **Existing bucket (decided: import).** The template declares the bucket, with `DeletionPolicy: Retain`, so a new deployment creates it. For an existing deployment, `scripts/import-bucket` first creates the stack by importing only the existing bucket, and `scripts/deploy` then adds everything else.
+- **Config delivery (decided: bundle `config.py`).** `scripts/deploy` stages `lambda/` with `config.py` and without any other `config.*.py`, dotfiles or editor files, and checks the config the way the fabfile's `check_config` did. It also reports Python warnings from `config.py`, such as the invalid backslash escape in the production signing key; write that key as a raw string or with the backslash doubled, keeping the value identical.
 - Don't build in the assumption that SES is the only event source. SNS and SQS events in step 9 also carry `Records`.
-- Pin or bundle boto3, so the tests and production use the same version.
-- Keep `*.dist-info` in the bundle (the old fabfile excluded it).
+- Bundle boto3, pinned to the version the tests use.
+- Keep `*.dist-info` in the bundle (the old fabfile excluded it). SAM does.
+- The receipt rule is optional (`receipt_rule_set`), named `<stack>-receive`, and can be created disabled (`receipt_rule_enabled = False`) so an existing deployment can be moved without mail being handled twice.
+- The log group is named `/aws/lambda/<stack>-function`, so it can't collide with the existing function's log group.
 - Update [Setup](setup.md), [API](api.md), and [Technical](technical.md). Credit Ecartis as the source of many concepts and behaviors.
 
 ### 7. Cutover
