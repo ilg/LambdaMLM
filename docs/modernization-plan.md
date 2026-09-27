@@ -47,7 +47,7 @@ These must survive the port unchanged, unless a step below changes one deliberat
 - Email command syntax and reply text, including the command names embedded in invitation emails (`accept_subscription_invitation`, `accept_unsubscription_invitation`).
 - Member flag names and list option names. The flags follow [Ecartis](https://www.ecartis.net)'s.
 - API action names and the `{StatusCode, Data | Message}` response shape, which the web app depends on.
-- Moderation keys, which are built from the raw `Message-ID` value. When the header is folded, that value starts with a space, and existing keys keep it.
+- Moderation keys, which are built from the `Message-ID` value. (Python 2 kept a leading space from a folded `Message-ID` header in the key; Python 3 doesn't. That only mattered for approve/reject commands issued by the old code, and those notices never went out because moderation was broken, so the port accepts the difference.)
 - List config files whose names fail `name_regex` (for example, a name containing `_`) stay unloadable rather than being loaded under a relaxed rule.
 
 ## Decisions
@@ -158,6 +158,12 @@ Target `python3.13` or `python3.14`. `python3.10` is deprecated on Lambda from O
 - Keep moderation keys exactly as today, including a leading space from a folded `Message-ID`. Python 3's email parser must be checked for this specifically.
 - The signing-key tests include a key longer than 64 bytes, matching production.
 - Expect the strict xfails for Python 2 non-ASCII crashes (commands, raw 8-bit headers, non-ASCII sender names, short unicode keys) to start passing, and flip them.
+- Differences from Python 2 that the port accepts, reviewed against the golden files:
+  - Sent and stored messages are written with CRLF line endings throughout. Python 2 wrote LF headers followed by the original CRLF body.
+  - Headers the list doesn't change are written exactly as received. Python 2 re-wrapped long headers, and in doing so inserted spaces after `;` in some Exchange headers.
+  - The rewritten `From` header's quoted name no longer backslash-escapes parentheses. Both forms are equivalent.
+  - Message bodies are byte-for-byte unchanged.
+- After the port, as a separate commit: build `Sender`, `Reply-to` and `Cc` addresses with `formataddr`, so a non-ASCII name is encoded without also encoding the address ([#9](https://github.com/ilg/LambdaMLM/issues/9)). Python 2 and the straight port both encode the whole value as one encoded word.
 
 ### 6. Deploy tooling: AWS SAM
 

@@ -1,5 +1,4 @@
-# Only the dependency lists are needed to build the test images.
+# Only the dependency lists are needed to build the test image.
 *
 !requirements.txt
-!tests/requirements-*.txt
-!tests/constraints-*.txt
+!tests/requirements.txt

@@ -1,8 +1,8 @@
 from list_member import ListMember
 from list_exceptions import AlreadySubscribed, NotSubscribed
 
-from decorators import require_list, require_member
-from results import InternalServerError, NotImplemented, NotFound, BadRequest, Success
+from .decorators import require_list, require_member
+from .results import InternalServerError, NotImplemented, NotFound, BadRequest, Success
 
 def create_list(ListAddress, **kwargs):
     if kwargs.get('List'):

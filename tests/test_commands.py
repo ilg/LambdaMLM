@@ -161,13 +161,6 @@ def test_unknown_list(aws):
         'nosuch@example.org is not a valid list address.\n'
 
 
-def test_non_ascii_arguments_crash():
-    with pytest.raises(UnicodeEncodeError):
-        run(u'a@example.com', u'echo José')
-
-
-@pytest.mark.xfail(strict=True, raises=UnicodeEncodeError,
-                   reason='Python 2 shlex can\'t split non-ASCII text.')
 def test_non_ascii_arguments():
     assert u'José' in run(u'a@example.com', u'echo José')
 

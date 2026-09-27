@@ -39,16 +39,12 @@ def test_msg_get_header():
     assert sestools.msg_get_header(msg, 'reply-to') is None
 
 
-def test_msg_get_header_raw_eight_bit_crashes():
-    msg = parse_message(b'From: Jos\xc3\xa9 <j@example.com>\n\n')
-    with pytest.raises(UnicodeDecodeError):
-        sestools.msg_get_header(msg, 'from')
-
-
-@pytest.mark.xfail(strict=True, raises=UnicodeDecodeError,
-                   reason='Python 2 decodes raw 8-bit headers as ASCII.')
 def test_msg_get_header_raw_eight_bit():
+    # Undeclared 8-bit header bytes are read as UTF-8...
     msg = parse_message(b'From: Jos\xc3\xa9 <j@example.com>\n\n')
+    assert sestools.msg_get_header(msg, 'from') == u'José <j@example.com>'
+    # ...or as Latin-1 if they aren't valid UTF-8.
+    msg = parse_message(b'From: Jos\xe9 <j@example.com>\n\n')
     assert sestools.msg_get_header(msg, 'from') == u'José <j@example.com>'
 
 
@@ -215,12 +211,12 @@ def test_bcc_to_command_address_is_not_a_command(aws, lambda_handler):
     assert aws.ses.sent_emails == []
 
 
-def test_eight_bit_from_crashes_before_routing(aws, lambda_handler):
+def test_eight_bit_from(aws, lambda_handler):
     make_list(aws)
     store_incoming(aws, 'id1', POST.replace(b'Alice Sender', b'Al\xc3\xafce Sender'))
-    with pytest.raises(UnicodeDecodeError):
-        lambda_handler(ses_event('id1', ['test-list@example.org']), None)
-    assert incoming_key('id1') in keys(aws)
+    lambda_handler(ses_event('id1', ['test-list@example.org']), None)
+    assert [s['Destinations'] for s in aws.ses.sent_raw_emails] == [['bob@example.com']]
+    assert incoming_key('id1') not in keys(aws)
 
 
 def test_non_ses_event_without_action(aws, lambda_handler):

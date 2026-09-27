@@ -1,6 +1,6 @@
 from functools import wraps
 
-from results import NotFound
+from .results import NotFound
 
 def require_list(f):
     @wraps(f)

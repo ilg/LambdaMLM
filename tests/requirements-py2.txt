@@ -1,7 +1,0 @@
-# Test dependencies for running the suite on Python 2.7.
-# Install with: pip install -r tests/requirements-py2.txt -c tests/constraints-py2.txt
--r ../requirements.txt
-boto3==1.17.112
-freezegun==0.3.15
-mock==3.0.5
-pytest==4.6.11

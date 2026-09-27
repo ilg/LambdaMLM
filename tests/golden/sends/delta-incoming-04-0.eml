@@ -1,71 +1,70 @@
-Received: from ibev-ih7-o807.tuneti.example.com
- (ibev-ih7-o807.tuneti.example.com [192.0.2.15])
- by uhaheno-ceji.me-jihi-1.hifucinav.example.com with SMTP id
- lp3lmsulqj8bhaf0t0r3qsk8e683gla3t7mnsg01 for delta@example.org;
+Received: from ibev-ih7-o807.tuneti.example.com (ibev-ih7-o807.tuneti.example.com [192.0.2.15])
+ by uhaheno-ceji.me-jihi-1.hifucinav.example.com with SMTP id lp3lmsulqj8bhaf0t0r3qsk8e683gla3t7mnsg01
+ for delta@example.org;
  Sat, 08 Feb 2025 00:02:49 +0000 (UTC)
 X-SES-Spam-Verdict: PASS
 X-SES-Virus-Verdict: PASS
 Received-SPF: pass (spfCheck: domain of b787.example.org designates 192.0.2.15
  as permitted sender) client-ip=192.0.2.15;
  envelope-from=iveb.vowojut@b787.example.org;
- helo=ibev-ih7-o807.tuneti.example.com; 
+ helo=ibev-ih7-o807.tuneti.example.com;
 Authentication-Results: jidunewiw.example.com;
- spf=pass (spfCheck: domain of b787.example.org designates 192.0.2.15 as
- permitted sender) client-ip=192.0.2.15;
- envelope-from=iveb.vowojut@b787.example.org;
- helo=ibev-ih7-o807.tuneti.example.com; 
+ spf=pass (spfCheck: domain of b787.example.org designates 192.0.2.15 as permitted sender) client-ip=192.0.2.15; envelope-from=iveb.vowojut@b787.example.org; helo=ibev-ih7-o807.tuneti.example.com;
  dkim=pass header.i=@b787.example.org;
  dmarc=pass header.from=b787.example.org;
-X-SES-RECEIPT: DUMMYDUMMYDUMMYDdUMuMmmYDU0MMYDUM1MYyduDUMMmmyYDdU2umMmydummMyYDUMMduY3mmydDUMMYDUMuMYmDmyUdMMuYD4m5m6UydMM7YuD8UMMmmY9ydDUMM0YDU1MumMYDUmMMYDUyMMYDUMMYDUduMMYmDUMMY2myDUM3M4duYDmUMMYDmUydMumMYDmUMyMYDUMMYdD5umUmMyMYDUd6ummyMdu7mMmYDU8MMydYDUMumMm9YyDdUuMmMmYyDdUMMumYDUM0MmYDUy1MdMuYm2DmyUMMYdDUMMYDUMu3mm4MYDUyM5MYDUdMuMm6m7Y8yDU9du01MMYDUmMMYDmyUMdumMmYyDUduMm2M345mY6DyU7dMuMmY8DmUMMYDUMMYDydu9UMMYD0mU12mMyMYdD3UM==
+X-SES-RECEIPT: 
+ DUMMYDUMMYDUMMYDdUMuMmmYDU0MMYDUM1MYyduDUMMmmyYDdU2umMmydummMyYDUMMduY3mmydDUMMYDUMuMYmDmyUdMMuYD4m5m6UydMM7YuD8UMMmmY9ydDUMM0YDU1MumMYDUmMMYDUyMMYDUMMYDUduMMYmDUMMY2myDUM3M4duYDmUMMYDmUydMumMYDmUMyMYDUMMYdD5umUmMyMYDUd6ummyMdu7mMmYDU8MMydYDUMumMm9YyDdUuMmMmYyDdUMMumYDUM0MmYDUy1MdMuYm2DmyUMMYdDUMMYDUMu3mm4MYDUyM5MYDUdMuMm6m7Y8yDU9du01MMYDUmMMYDmyUMdumMmYyDUduMm2M345mY6DyU7dMuMmY8DmUMMYDUMMYDydu9UMMYD0mU12mMyMYdD3UM==
 X-SES-DKIM-SIGNATURE: a=rsa-sha256; q=dns/txt;
  b=dDuUM0MYmmDyUMd1M+um+mYyDdummydUMuMm2/YmyDUd/3ummMMYDUyMMYDU456MduMYmDUMmydum7MmyduYm/mD89ydummy0UdumMmMYyDUMduMmmYy+DUMdMYDumU1M+m23/MYDUMMY4yDUMM5duYDU6MmMYmydDuU7mmMy8d=;
- c=relaxed/simple; s=7v7vs6w47njt4pimodk5mmttbegzsi6n; d=jidunewiw.example.com;
- t=1738972971; v=1; bh=dDummUy+MM0+dummyY12d3DUuMmmyMduY45DmmUyMdM=;
- h=From:To:Cc:Bcc:Subject:Date:Message-ID:MIME-Version:Content-Type:X-SES-RECEIPT;
-Received: by ibev-ih7-o807.tuneti.example.com with SMTP id
- 3f1490d57ef6-e5b1c4b952dso2224294276.0
- for <delta@example.org>; Fri, 07 Feb 2025 16:02:49 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=3a227.example.net; s=20230601; t=1738972968; x=1739577768;
- h=to:subject:message-id:date:from:mime-version:x-gm-message-state
- :from:to:cc:subject:date:message-id:reply-to;
+ c=relaxed/simple; s=7v7vs6w47njt4pimodk5mmttbegzsi6n;
+ d=jidunewiw.example.com; t=1738972971; v=1;
  bh=dDummUy+MM0+dummyY12d3DUuMmmyMduY45DmmUyMdM=;
- b=DUMMd0Y1uDUMmmy2Md/YumDU+mMy3MdY4umD5myUdMummydummM6YDydUu7Mm8MmYD
- yU/MdMumYDU9mMM01yYDUM2dMu3Y4D5UM/M6/mY/myDUdu7mmMMyYDUMMYDU8d9uMmMm
- yYD0dUMMuYDmU1M/MYDm2U3yMMY4D56UM7Md8u9Y0mmD+U1MyduMYmmyduDUMmMm23yd
- YDuUMmMmyduYmDUmydummM4MYydD5u6mmUy78dM9MYuD0mm12y3UdumM/MmYyd/Dum45
- +UM67m8MYydu++9DU0M12m34mM5yYDd6/Uum7+8mydMMuYmDUMMYmy9DUMMduYmmydu0
- 1Dmm==
+ h=From:To:Cc:Bcc:Subject:Date:Message-ID:MIME-Version:Content-Type:X-SES-RECEIPT;
+Received: by ibev-ih7-o807.tuneti.example.com with SMTP id 3f1490d57ef6-e5b1c4b952dso2224294276.0
+        for <delta@example.org>; Fri, 07 Feb 2025 16:02:49 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=3a227.example.net; s=20230601; t=1738972968; x=1739577768;
+        h=to:subject:message-id:date:from:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=dDummUy+MM0+dummyY12d3DUuMmmyMduY45DmmUyMdM=;
+        b=DUMMd0Y1uDUMmmy2Md/YumDU+mMy3MdY4umD5myUdMummydummM6YDydUu7Mm8MmYD
+         yU/MdMumYDU9mMM01yYDUM2dMu3Y4D5UM/M6/mY/myDUdu7mmMMyYDUMMYDU8d9uMmMm
+         yYD0dUMMuYDmU1M/MYDm2U3yMMY4D56UM7Md8u9Y0mmD+U1MyduMYmmyduDUMmMm23yd
+         YDuUMmMmyduYmDUmydummM4MYydD5u6mmUy78dM9MYuD0mm12y3UdumM/MmYyd/Dum45
+         +UM67m8MYydu++9DU0M12m34mM5yYDd6/Uum7+8mydMMuYmDUMMYmy9DUMMduYmmydu0
+         1Dmm==
 X-Gm-Message-State: DUMd0Mumm1YyDdUMu2M3mYmyd4u5DUMmmydum6MYmyDduUMMYmmyD+dU
- MM78Y9uDmU0MmyMYd12u+mDmyd/u34U5mm6yd7ummMy8dumMYmD9yUMMduYmDmyUdMumM+mYDUy
- 0dM1MYu2mDUMMm3YD4yd5+uUm6my78MMYDUMdMYuD9UmMm01MYDyUMMd2YDu+mUmMM34YyD5UMM
- 6dum+my7dYuDUmMmM+ydumYm8=
+	MM78Y9uDmU0MmyMYd12u+mDmyd/u34U5mm6yd7ummMy8dumMYmD9yUMMduYmDmyUdMumM+mYDUy
+	0dM1MYu2mDUMMm3YD4yd5+uUm6my78MMYDUMdMYuD9UmMm01MYDyUMMd2YDu+mUmMM34YyD5UMM
+	6dum+my7dYuDUmMmM+ydumYm8=
 X-Gm-Gg: DUdMummM0Yydu1mmD2Uydum3mMyMdYDumUmyMdMYDu4mm5Uyd678+MMumYmDU9M+y01
- dumMY2m34D5y6789duUMMYDm012m3UyduMMYDmUMmMydY45uD6Um7MM8mYydu9D0/mmydu12UMm
- ==
-X-Google-Smtp-Source: DUMM+YDdumUMmMYDUyMduMYD0+m/mUy1d2u/mMM34Y/DmU5ydM6umM7Y89Dmydu0Ummy1M2MYDU3dMM4YuD5mmy6Udu=
+	dumMY2m34D5y6789duUMMYDm012m3UyduMMYDmUMmMydY45uD6Um7MM8mYydu9D0/mmydu12UMm
+	==
+X-Google-Smtp-Source: 
+ DUMM+YDdumUMmMYDUyMduMYD0+m/mUy1d2u/mMM34Y/DmU5ydM6umM7Y89Dmydu0Ummy1M2MYDU3dMM4YuD5mmy6Udu=
 X-Received: by 2001:db8::7 with SMTP id
  00721157ae682-6f9b280fadamr46944357b3.8.1738972966339; Fri, 07 Feb 2025
  16:02:46 -0800 (PST)
 MIME-Version: 1.0
 Date: Fri, 7 Feb 2025 18:02:35 -0600
 X-Gm-Features: DUMMYDdummUyMMdY-DUumMmydMYDumUMMm0-YDyUMMY1D23UMd4MummY5678ydD
-Message-ID: <IFA8teg79A49v3AbUDi8rOKiLeHU+anAn00uKicAna26t319U9Z@ebod.tutim.example.com>
+Message-ID: 
+ <IFA8teg79A49v3AbUDi8rOKiLeHU+anAn00uKicAna26t319U9Z@ebod.tutim.example.com>
 Subject: turpis, esse 0, Ex #8
 To: delta@example.org
 Content-Type: multipart/related; boundary="000000000000ef8af0062d9631d9"
 X-Original-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=b787.example.org; s=google; t=1738972968; x=1739577768; darn=example.org;
- h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
- :date:message-id:reply-to;
- bh=dDummUy+MM0+dummyY12d3DUuMmmyMduY45DmmUyMdM=;
- b=DduUm0mM12MYydDumUMMYDmUMyMY3Dd4U5umM6mMY7DydUMummMyYDdUu890MmmMYD
- yd/umUmMy1d/uMYDUmmyduMmMYDU23mMMy4dummYDyU5Mdumm6My789Y/DUduMMmY0my
- d1DU2Mum3m4MydYDum5UMmydMYuDmUmMMY6Dy=
+        d=b787.example.org; s=google; t=1738972968; x=1739577768; darn=example.org;
+        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=dDummUy+MM0+dummyY12d3DUuMmmyMduY45DmmUyMdM=;
+        b=DduUm0mM12MYydDumUMMYDmUMyMY3Dd4U5umM6mMY7DydUMummMyYDdUu890MmmMYD
+         yd/umUmMy1d/uMYDUmmyduMmMYDU23mMMy4dummYDyU5Mdumm6My789Y/DUduMMmY0my
+         d1DU2Mum3m4MydYDum5UMmydMYuDmUmMMY6Dy=
 X-Original-Return-path: <iveb.vowojut@b787.example.org>
 Sender: XMPL Delta <delta@example.org>
 X-Original-From: Redo Dahovec <Iveb.Vowojut@b787.example.org>
-From: "Redo Dahovec \(via XMPL Delta\)"
+From: "Redo Dahovec (via XMPL Delta)"
  <delta+iveb.vowojut=b787.example.org+from@example.org>
 Reply-to: Redo Dahovec <Iveb.Vowojut@b787.example.org>
 

@@ -18,7 +18,7 @@ import boto3
 
 ses = boto3.client('ses')
 
-from commands import run
+from .commands import run
 
 class NotSignedException(Exception):
     pass
@@ -135,7 +135,11 @@ def get_signed_command(subject, address):
     return cmd
 
 def signature(cmd):
-    return base64.b64encode(hmac.new(signing_key, cmd.strip(), hashlib.sha1).digest())
+    # HMAC works on bytes.  For an ASCII key and command, UTF-8 gives the same
+    # bytes, and so the same signatures, as the Python 2 code did.
+    key = signing_key if isinstance(signing_key, bytes) else signing_key.encode('utf-8')
+    digest = hmac.new(key, cmd.strip().encode('utf-8'), hashlib.sha1).digest()
+    return base64.b64encode(digest).decode('ascii')
 
 def sign(subject, reply_to, validity_duration=signed_validity_interval):
     timestamp = (datetime.datetime.now() + validity_duration).strftime(timestamp_format)

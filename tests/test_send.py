@@ -175,9 +175,7 @@ def test_rewritten_headers(aws):
         'Sender: someone@example.com',
         ])))
     msg = sent_message(aws)
-    # formataddr quotes the name and backslash-escapes the parentheses.
-    assert unfold(msg['From']) == \
-        '"Alice Sender \\(via Test List\\)" <test-list+alice=example.com+from@example.org>'
+    assert unfold(msg['From']) == '"Alice Sender (via Test List)" <test-list+alice=example.com+from@example.org>'
     assert msg['Sender'] == 'Test List <test-list@example.org>'
     assert msg['Reply-to'] == 'Alice Sender <alice@example.com>'
     assert msg['X-Original-From'] == 'Alice Sender <alice@example.com>'
@@ -193,7 +191,7 @@ def test_rewritten_headers(aws):
 def test_from_without_display_name(aws):
     make_list(aws).send(parse_message(raw_message(from_='alice@example.com')))
     assert unfold(sent_message(aws)['From']) == \
-        '"alice \\(via test-list@example.org\\)" <test-list+alice=example.com+from@example.org>'
+        '"alice (via test-list@example.org)" <test-list+alice=example.com+from@example.org>'
 
 
 def test_reply_to_list(aws):
@@ -212,14 +210,14 @@ def test_reply_to_list_merges_cc(aws):
     assert unfold(msg['X-Original-CC']) == 'dave@example.com, erin@example.com'
 
 
-def test_non_ascii_sender_name_crashes(aws):
-    with pytest.raises(UnicodeEncodeError):
-        make_list(aws, **{'allow-from-non-members': True}).send(parse_message(raw_message(
-                from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>')))
+def test_non_ascii_sender_name(aws):
+    from sestools import msg_get_header
+    make_list(aws, name='Test List', **{'allow-from-non-members': True}).send(parse_message(raw_message(
+            from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>')))
+    assert msg_get_header(sent_message(aws), 'From') == \
+        u'Jos\u00e9 (via Test List) <test-list+jose=example.net+from@example.org>'
 
 
-@pytest.mark.xfail(strict=True, raises=UnicodeEncodeError,
-                   reason='Python 2 can\'t format a non-ASCII sender name into the From header.')
 def test_reply_to_list_non_ascii_sender(aws):
     make_list(aws, **{'reply-to-list': True, 'allow-from-non-members': True}).send(parse_message(raw_message(
             from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>', headers=['Cc: dave@example.com'])))
@@ -255,7 +253,7 @@ def test_from_without_at_sign(aws):
             parse_message(raw_message(from_='postmaster')))
     assert sent_to(aws) == ['alice@example.com', 'bob@example.com', 'carol@example.com']
     assert unfold(sent_message(aws)['From']) == \
-        '"postmaster \\(via test-list@example.org\\)" <test-list+postmaster+from@example.org>'
+        '"postmaster (via test-list@example.org)" <test-list+postmaster+from@example.org>'
 
 
 EIGHT_BIT_BODY = (b'From: Alice Sender <alice@example.com>\n'
@@ -269,10 +267,15 @@ EIGHT_BIT_BODY = (b'From: Alice Sender <alice@example.com>\n'
                   b'Caf\xc3\xa9 and na\xefve bytes, undeclared.\n')
 
 
-def test_eight_bit_from_header_crashes(aws):
+def test_eight_bit_from_header(aws):
+    from sestools import msg_get_header
     raw = EIGHT_BIT_BODY.replace(b'Alice Sender', b'Al\xc3\xafce Sender')
-    with pytest.raises(UnicodeDecodeError):
-        make_list(aws).send(parse_message(raw))
+    make_list(aws).send(parse_message(raw))
+    msg = sent_message(aws)
+    assert msg_get_header(msg, 'From') == \
+        u'Al\u00efce Sender (via test-list@example.org) <test-list+alice=example.com+from@example.org>'
+    # The sender's original header goes out as it came in.
+    assert b'X-Original-From: Al\xc3\xafce Sender <alice@example.com>' in aws.ses.sent_raw_emails[0]['Data']
 
 
 # ---------------------------------------------------------------- golden sends
@@ -318,8 +321,8 @@ def test_cc_lists(aws):
             parse_message(raw_message()))
     # The cc-list is sent to first, then this list, each rewriting its own copy.
     assert sent_to(aws) == ['dave@example.com', 'bob@example.com', 'carol@example.com']
-    assert unfold(sent_message(aws, 0)['From']).startswith('"Alice Sender \\(via other@example.org\\)"')
-    assert unfold(sent_message(aws, 1)['From']).startswith('"Alice Sender \\(via test-list@example.org\\)"')
+    assert unfold(sent_message(aws, 0)['From']).startswith('"Alice Sender (via other@example.org)"')
+    assert unfold(sent_message(aws, 1)['From']).startswith('"Alice Sender (via test-list@example.org)"')
     assert sent_message(aws, 1)['X-Original-From'] == 'Alice Sender <alice@example.com>'
 
 
@@ -382,7 +385,7 @@ def test_moderation_notice(aws):
     moderated_list(aws).send(parse_message(raw))
     key = 'moderation/example.org/test-list/<id_with_colons@example.com>'
     assert moderation_keys(aws) == [key]
-    assert aws.s3.body(config.s3_bucket, key) == parse_message(raw).as_string().encode('utf-8')
+    assert aws.s3.body(config.s3_bucket, key) == parse_message(raw).as_bytes(policy=listobj.SEND_POLICY)
     notices = aws.ses.sent_raw_emails
     assert [(n['Source'], n['Destinations']) for n in notices] == [
         ('lambda@example.org', ['mod1@example.com']),
@@ -398,7 +401,8 @@ def test_moderation_notice(aws):
         assert msg['From'] == 'lambda@example.org'
         assert msg['To'] == moderator
         text, forwarded = msg.get_payload()
-        assert text.get_payload(decode=True).decode('utf-8') == (
+        # Notices are sent with CRLF line endings.
+        assert text.get_payload(decode=True).decode('utf-8').replace('\r\n', '\n') == (
             'The included message needs moderator approval to be posted to test-list@example.org.\n'
             '\n'
             'To approve this message, reply to this email or send an email to lambda@example.org with subject:\n'
@@ -456,10 +460,13 @@ def test_moderation_requires_message_id(aws):
         moderated_list(aws).send(parse_message(raw_message(message_id=None)))
 
 
-def test_moderation_key_keeps_folded_message_id_space(aws):
+def test_moderation_key_for_folded_message_id(aws):
+    # Python 2 kept the leading space from a folded Message-ID header in the
+    # key.  Python 3's parser strips it; see test_mod_approve_production_held_message
+    # for a key with the space.
     raw = raw_message(message_id=None, headers=['Message-ID:', ' <folded@example.com>'])
     moderated_list(aws).send(parse_message(raw))
-    assert moderation_keys(aws) == ['moderation/example.org/test-list/ <folded@example.com>']
+    assert moderation_keys(aws) == ['moderation/example.org/test-list/<folded@example.com>']
 
 
 def store_held(aws, key_suffix='<m1@example.com>', raw=None):
@@ -588,3 +595,25 @@ def test_moderation_paths_with_lifecycle_rule(aws, from_, members):
     make_list(aws, **options).send(parse_message(raw_message(from_=from_)))
     assert [s['Destinations'] for s in aws.ses.sent_raw_emails] == [['mod1@example.com']]
     assert moderation_keys(aws) == ['moderation/example.org/test-list/<m1@example.com>']
+
+
+def test_non_ascii_list_name_in_address_headers(aws):
+    # Issue #9: the whole "name <address>" value used to be one encoded word,
+    # which mail clients can't read the address out of.
+    from sestools import msg_get_header
+    make_list(aws, name=u'Café List', **{'reply-to-list': True}).send(parse_message(raw_message()))
+    data = aws.ses.sent_raw_emails[0]['Data']
+    assert b'Sender: =?utf-8?q?Caf=C3=A9_List?= <test-list@example.org>\r\n' in data
+    assert b'Reply-to: =?utf-8?q?Caf=C3=A9_List?= <test-list@example.org>\r\n' in data
+    assert msg_get_header(sent_message(aws), 'Reply-to') == u'Café List <test-list@example.org>'
+
+
+def test_list_name_with_specials_is_quoted(aws):
+    make_list(aws, name='Test, List').send(parse_message(raw_message()))
+    assert sent_message(aws)['Sender'] == '"Test, List" <test-list@example.org>'
+
+
+def test_reply_to_is_sender_as_received(aws):
+    raw = EIGHT_BIT_BODY.replace(b'Alice Sender', b'Al\xc3\xafce Sender')
+    make_list(aws).send(parse_message(raw))
+    assert b'Reply-to: Al\xc3\xafce Sender <alice@example.com>\r\n' in aws.ses.sent_raw_emails[0]['Data']

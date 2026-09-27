@@ -1,0 +1,6 @@
+# Test dependencies.  Install with: pip install -r tests/requirements.txt
+-r ../requirements.txt
+# The Lambda runtime provides boto3; this pins the version the tests use.
+boto3==1.43.103
+freezegun==1.5.5
+pytest==9.1.1

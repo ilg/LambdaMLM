@@ -96,7 +96,7 @@ class ListMember(yaml.YAMLObject):
                         * max(weights[bounce[1]] for bounce in day_bounces))
                     for day, day_bounces
                     in groupby(
-                        sorted(self.bounces.iteritems()),
+                        sorted(self.bounces.items()),
                         lambda bounce: bounce[0].date()
                         )
                     )

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Bounce classification, recorded from Lamson's analyzer on Python 2.
+"""Bounce classification.
 
-The port replaces Lamson with a vendored copy of its bounce analyzer; these
-golden results are what the vendored copy must reproduce exactly.
+The golden results were recorded from Lamson's analyzer on Python 2; the
+vendored copy (lamson_bounce) reproduces them.
 """
 
 import glob
@@ -24,12 +24,10 @@ def sample_id(path):
 
 
 def analyze(msg):
-    """The fields of Lamson's analysis that LambdaMLM's behavior depends on."""
-    import lamson.bounce
-    import lamson.encoding
-    from obj import Obj
+    """The fields of the bounce analysis that LambdaMLM's behavior depends on."""
+    import lamson_bounce
     try:
-        analysis = lamson.bounce.detect(Obj(base=lamson.encoding.from_message(msg)))
+        analysis = lamson_bounce.detect(msg)
     except Exception as e:
         return {'error': type(e).__name__}
     return {
@@ -69,7 +67,7 @@ def test_analysis_matches_golden():
     ('ses-permanent.eml', 'hard'),
     ('ses-transient.eml', 'soft'),
     ('arf-complaint.eml', 'unknown'),
-    ('microsoft-5-1-10.eml', 'KeyError'),
+    ('microsoft-5-1-10.eml', 'hard'),
     ])
 def test_synthetic_samples(name, expected):
     msg = parse_message(read_bytes(FIXTURES, 'bounces', 'synthetic', name))
@@ -82,8 +80,21 @@ def test_complaints_are_not_detected():
     assert email_utils.detect_bounce(msg) == email_utils.ResponseType.unknown
 
 
-@pytest.mark.xfail(strict=True, raises=KeyError,
-                   reason='Lamson has no entry for status codes such as 5.1.10.')
 def test_unlisted_status_code_is_classified():
+    import lamson_bounce
     msg = parse_message(read_bytes(FIXTURES, 'bounces', 'synthetic', 'microsoft-5-1-10.eml'))
     assert email_utils.detect_bounce(msg) == email_utils.ResponseType.hard
+    analysis = lamson_bounce.detect(msg)
+    assert analysis.combined_status == (110, u'Other address status')
+
+
+def test_first_status_is_the_first_found():
+    import lamson_bounce
+    msg = parse_message(read_bytes(FIXTURES, 'bounces', 'synthetic', 'ses-permanent.eml'))
+    # Add a second recipient block with a different status after the first.
+    status = [p for p in msg.walk() if p.get_content_type() == 'message/delivery-status'][0]
+    extra = parse_message(b'Final-Recipient: rfc822; other@example.com\nAction: delayed\nStatus: 4.4.7\n\n')
+    status.get_payload().append(extra)
+    analysis = lamson_bounce.detect(msg)
+    assert analysis.primary_status[0] == 5
+    assert analysis.action == 'failed'
