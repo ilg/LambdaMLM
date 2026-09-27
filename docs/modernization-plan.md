@@ -19,6 +19,23 @@ Principles:
 - **The port preserves behavior.** Behavior changes happen as separate, deliberate, individually tested steps, never mixed into the port.
 - **Known bugs are pinned before they're fixed.** Each is first recorded as a strict `xfail` test, and the fix commit flips it.
 
+## The production deployment
+
+A read-only inventory of the one live deployment (September 2026) found:
+
+- It runs exactly the code at commit 587db49, deployed in May 2016, on `python2.7` with 128 MB of memory and a 300-second timeout.
+- **Moderation has never worked.** The bucket has no lifecycle configuration, so `moderate()` fails after storing the message and no moderator is ever notified. Held messages have accumulated since 2016.
+- **Large posts are never delivered.** Posts of roughly 1 MB or more with attachments run out of memory at 128 MB. With two automatic retries, members at the start of the list can receive a post up to three times before the run dies.
+- **Most logged errors are mail to non-list addresses** (`UnknownList` isn't caught), each followed by two retries that fail because the message was already deleted.
+- **SES rejects some re-sent posts partway through the send loop:** duplicate headers such as `List-Unsubscribe`, malformed address headers, "Recipient count exceeds 50", and malformed MIME passed through unchanged.
+- **Other bugs seen in the logs:**
+  - A raw 8-bit `From:` header crashes the handler.
+  - Lamson raises `KeyError` on status codes outside RFC 3463's base set (for example Microsoft 365's `x.1.10`), so those bounces are never recorded.
+  - A `From` address with no `@` crashes `send()`.
+  - `reply-to-list` adds a second `Cc` header instead of replacing the first.
+- **The signing key** is a long ASCII `u"""…"""` literal. Keys longer than 64 bytes are hashed before use, which is why production avoids the #34 crash. UTF-8 encoding on Python 3 gives identical signatures. The literal contains an invalid backslash escape, which Python 3.12+ warns about.
+- **A separate web app** calls the direct-invoke API. The only email commands ever run are its invitation replies (`accept_subscription_invitation` and `accept_unsubscription_invitation`).
+
 ## Compatibility contract
 
 These must survive the port unchanged, unless a step below changes one deliberately and documents it:
@@ -29,13 +46,19 @@ These must survive the port unchanged, unless a step below changes one deliberat
 - Address grammar: VERP bounce addresses (`list+user=host+bounce@host`) and munged From addresses (`list+user=host+from@host`).
 - Email command syntax and reply text, including the command names embedded in invitation emails (`accept_subscription_invitation`, `accept_unsubscription_invitation`).
 - Member flag names and list option names. The flags follow [Ecartis](https://www.ecartis.net)'s.
-- API action names and the `{StatusCode, Data | Message}` response shape.
+- API action names and the `{StatusCode, Data | Message}` response shape, which the web app depends on.
+- Moderation keys, which are built from the raw `Message-ID` value. When the header is folded, that value starts with a space, and existing keys keep it.
+- List config files whose names fail `name_regex` (for example, a name containing `_`) stay unloadable rather than being loaded under a relaxed rule.
 
 ## Decisions
 
 - **Bounce classification during the port:** vendor `lamson/bounce.py` from the [lamson-bsd fork](https://github.com/ilg/lamson-bsd) and port it to Python 3, so classification doesn't change during the port. `flufl.bounce` was considered: it classifies DSNs differently and doesn't detect complaints either. The real bounce redesign happens in step 9.
 - **BCC'd list mail:** today it's silently dropped. This is a bug and gets fixed in step 3.
 - **Step 9 (redesigns)** is part of this effort, but it gets its own design and review when reached.
+- **Production fixtures** go into the repo only after further sanitizing: list names are replaced, and member counts and bounce dates are faked where practical.
+- **The existing backlog expires.** The lifecycle rules added in step 6 apply to existing objects too, so held moderation messages and undelivered incoming mail from the past ten years expire rather than being reviewed or re-sent. Moderators start receiving notices once moderation works; that's expected.
+- **The current function's automatic retries go to 0 now**, before any of the steps below. Today no retry ever succeeds: each one either finds the message already deleted, or runs out of memory again and re-sends to the same members.
+- **Escape hatch, not planned:** Lambda's block on updating Python 2.7 functions applies to zip deployments only. A container image built on AWS's still-published `public.ecr.aws/lambda/python:2.7` base image could be deployed if something goes badly wrong.
 
 ## Steps
 
@@ -61,7 +84,9 @@ Unit tests for signing and verification, bounce scoring, member flags and `can_r
 
 Fixtures and assertions:
 
-- Sanitized real data: a list config YAML from S3 and a held moderation message. Keep non-ASCII names in them rather than sanitizing them away.
+- Sanitized production data: the list configs, held moderation messages and a small leftover incoming message from the inventory, with list names replaced and member counts and bounce dates faked where practical. Keep the oddities the inventory found: an empty `address`, members without a `name` key, `!!set {}` flow sets, a hand-edited file with unsorted keys, uppercase addresses, and a list name that fails `name_regex`.
+- Large messages (for the memory and timeout cases) generated by the tests rather than stored in the repo.
+- Bounce samples from `flufl.bounce`'s test data (Apache-2.0), in their own directory with attribution and the license text. No real bounce emails survive in production.
 - Raw 8-bit mail (headers and bodies with no encoded words and no declared charset), with assertions on the exact bytes handed to `send_raw_email`.
 - `json.dumps()` of every API result, to pin the JSON shape. Saved lists hold `bounce-weights` keyed by `IntEnum`, which serializes differently on Python 2 and 3.
 - Signature values computed through `signature()` / `check_signature()` with fixed timestamps.
@@ -94,6 +119,8 @@ Each fix flips a pinned test from step 2. Keep this step to fixes that have test
   - Treat a missing subject on list posts as empty.
 - **BCC'd list mail:** route on `receipt.recipients` alone instead of intersecting it with the header-derived `mail.destination`. Keep the requirement that commands be addressed in `To:`.
   - This is a behavior change: BCC'd spam to a list, which is currently dropped, will be processed under the list's own policy. With `allow-from-non-members: true`, that means relayed to every member. Document it in the commit and in [List Configuration](list%20configuration.md).
+- **`reply-to-list`:** replace any existing `Cc` header rather than adding a second one.
+- **A `From` address with no `@`:** handle it instead of crashing `send()`.
 - **Optional:** return `InsufficientPermissions` rather than crashing when a non-member acts on another address, and add a cycle guard for `cc-lists`.
 
 ### 4. Dependencies: last Python 2–compatible versions
@@ -123,19 +150,23 @@ Target `python3.13` or `python3.14`. `python3.10` is deprecated on Lambda from O
   - Drop the lamson dependency.
   - Complaints will still be classified `unknown`, exactly as today. That's expected; step 9 fixes it.
 - Put the vendored-bounce commit first, so the suite never fails just because lamson can't be imported.
+- After the port, as a separate commit: stop the vendored bounce analyzer raising `KeyError` on status codes outside RFC 3463's base set.
+- Keep moderation keys exactly as today, including a leading space from a folded `Message-ID`. Python 3's email parser must be checked for this specifically.
+- The signing-key tests include a key longer than 64 bytes, matching production.
 - Expect the strict xfails for Python 2 non-ASCII crashes to start passing, and flip them.
 
 ### 6. Deploy tooling: AWS SAM
 
 AWS SAM rather than plain CloudFormation, because step 9's SNS and SQS event sources are simple to declare in SAM. The fabfile is removed.
 
-- Lambda function on the Python 3 runtime, with a `Timeout` well above 10 seconds.
+- Lambda function on the Python 3 runtime, with a `Timeout` well above 10 seconds and at least 512 MB of memory. Production runs out of memory at 128 MB.
 - IAM role, including `s3:ListBucket` (without it, S3 reports a missing key as 403 rather than 404, which makes #33-style problems hard to diagnose) and `kms:Decrypt` if the receipt rule encrypts.
 - `AWS::Lambda::Permission` allowing `ses.amazonaws.com` to invoke the function, with `SourceAccount` and `SourceArn`.
 - Bucket policy letting SES write, with `SourceAccount` and `SourceArn` conditions ([#29](https://github.com/ilg/LambdaMLM/issues/29)).
 - Lifecycle rules:
   - For the moderation prefix, with a `Prefix` exactly equal to `config.s3_moderation_prefix`.
   - An expiry for `incoming/`, because failed messages are now kept.
+  - Both apply to existing objects, so the production backlog (held messages since 2016 and undelivered large posts) expires shortly after the rules are added. That's intended.
 - Bucket versioning.
 - Async invoke configuration:
   - `MaximumRetryAttempts: 0`, because a retry after a partial send would deliver the post twice to some recipients.
@@ -147,7 +178,7 @@ AWS SAM rather than plain CloudFormation, because step 9's SNS and SQS event sou
   - Import it into the stack.
   - Pass it as a parameter, with the bucket policy in the stack and versioning and lifecycle set by the script.
   - Create a new bucket and copy `config/` and `moderation/` before the cutover.
-- **Config delivery:** either keep bundling `config.py` in a build step, or move to environment variables or SSM. `signed_validity_interval` (a `timedelta`) and `bounce_weights` (enum-keyed) would need a small config loader. Keep an equivalent of the fabfile's `check_config` guard. The signing key must reach the new function as exactly the same bytes.
+- **Config delivery:** either keep bundling `config.py` in a build step, or move to environment variables or SSM. `signed_validity_interval` (a `timedelta`) and `bounce_weights` (enum-keyed) would need a small config loader. Keep an equivalent of the fabfile's `check_config` guard. The signing key must reach the new function as exactly the same bytes. The production key's literal contains an invalid backslash escape, so if it stays in a Python file, write it as a raw string or with the backslash doubled; either gives the same value without the Python 3.12+ warning.
 - Don't build in the assumption that SES is the only event source. SNS and SQS events in step 9 also carry `Records`.
 - Pin or bundle boto3, so the tests and production use the same version.
 - Keep `*.dist-info` in the bundle (the old fabfile excluded it).
@@ -167,7 +198,7 @@ AWS SAM rather than plain CloudFormation, because step 9's SNS and SQS event sou
   - Each step 3 fix.
 - **Production:**
   1. Create a new function from the stack; don't upgrade the existing function in place, because AWS doesn't allow reverting a runtime upgrade.
-  2. Before switching, confirm that an invitation token signed by the old function validates on the new one.
+  2. Before switching, confirm that an invitation token signed by the old function validates on the new one, and that the web app works against the new function's API responses.
   3. Repoint the SES receipt rule's Lambda action to the new function.
   4. Keep the old Python 2.7 function untouched for at least 3 days (the invitation lifetime) and the moderation lifecycle window, as the rollback target. Then delete it.
 
@@ -182,6 +213,10 @@ Each of these gets its own design and review before implementation.
 
 - **Bounces and complaints via SES notifications:** SES bounce and complaint notifications (SNS or event publishing) replace email-parsed bounces, which fixes [#22](https://github.com/ilg/LambdaMLM/issues/22) and enables [#11](https://github.com/ilg/LambdaMLM/issues/11). Email feedback forwarding stays on until this lands. Decide what happens to the vendored `bounce.py` (keep it as a fallback, or remove it).
 - **Sending through a queue, with fan-out** ([#30](https://github.com/ilg/LambdaMLM/issues/30)): per-recipient sends that can be retried safely, with retries reintroduced.
+- **Sending robustness:**
+  - Clean up the headers SES rejects on re-sent posts (duplicate headers, malformed address headers, the recipient-count limit).
+  - Decide what to do with malformed MIME.
+  - Serialize each post once rather than once per recipient; per-recipient serialization is the main driver of memory use.
 - **Testability refactor:** create AWS clients lazily or inject them, separate persistence from list logic, use `email.policy.default`, and remove Python 2 leftovers such as `from __future__` imports and dead code (for example the unused `rsplit` in `get_signed_command` and `if not l:` in `handle_bounce_to`).
 - **Handler dispatch** on the event source (SES, SNS or SQS).
 
