@@ -12,7 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Runs in the same Docker image as local runs, so CI and local results match.
-      - run: scripts/test -v
+      # Fails if branch coverage drops below the minimum.
+      - run: scripts/test -v --cov --cov-fail-under=98
 
   template:
     name: Template
