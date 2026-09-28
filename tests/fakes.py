@@ -45,12 +45,17 @@ class FakeStreamingBody(object):
 
 
 class FakeS3(object):
-    def __init__(self):
+    def __init__(self, log=None):
         # (bucket, key) -> bytes
         self.objects = {}
         # bucket -> lifecycle configuration dict ({'Rules': [...]})
         self.lifecycle = {}
-        self.calls = []
+        # Each call as (service, operation, key), shared with FakeSES so the
+        # order of S3 and SES calls can be checked.
+        self.log = log if log is not None else []
+        # (bucket, key) pairs, or (bucket, None) for the bucket itself, that
+        # fail with AccessDenied.
+        self.denied = set()
 
     def put(self, bucket, key, data):
         """Test helper: store an object directly."""
@@ -63,8 +68,17 @@ class FakeS3(object):
     def keys(self, bucket):
         return sorted(k for (b, k) in self.objects if b == bucket)
 
+    def deny(self, bucket, key=None):
+        """Test helper: make calls on this key (or the bucket's own settings) fail."""
+        self.denied.add((bucket, key))
+
+    def _call(self, operation, bucket, key=None):
+        self.log.append(('s3', operation, key))
+        if (bucket, key) in self.denied:
+            raise _client_error('AccessDenied', 'Access Denied', operation)
+
     def get_object(self, Bucket, Key):
-        self.calls.append(('get_object', Bucket, Key))
+        self._call('get_object', Bucket, Key)
         try:
             data = self.objects[(Bucket, Key)]
         except KeyError:
@@ -72,7 +86,7 @@ class FakeS3(object):
         return {'Body': FakeStreamingBody(data), 'ContentLength': len(data)}
 
     def head_object(self, Bucket, Key):
-        self.calls.append(('head_object', Bucket, Key))
+        self._call('head_object', Bucket, Key)
         try:
             data = self.objects[(Bucket, Key)]
         except KeyError:
@@ -80,18 +94,18 @@ class FakeS3(object):
         return {'ContentLength': len(data)}
 
     def put_object(self, Bucket, Key, Body):
-        self.calls.append(('put_object', Bucket, Key))
+        self._call('put_object', Bucket, Key)
         self.objects[(Bucket, Key)] = _to_bytes(Body)
         return {}
 
     def delete_object(self, Bucket, Key):
         # S3 doesn't report an error when deleting a key that doesn't exist.
-        self.calls.append(('delete_object', Bucket, Key))
+        self._call('delete_object', Bucket, Key)
         self.objects.pop((Bucket, Key), None)
         return {}
 
     def get_bucket_lifecycle_configuration(self, Bucket):
-        self.calls.append(('get_bucket_lifecycle_configuration', Bucket))
+        self._call('get_bucket_lifecycle_configuration', Bucket)
         try:
             return self.lifecycle[Bucket]
         except KeyError:
@@ -103,7 +117,9 @@ class FakeS3(object):
 
 
 class FakeSES(object):
-    def __init__(self):
+    def __init__(self, log=None):
+        # Each call as (service, operation, destination); see FakeS3.log.
+        self.log = log if log is not None else []
         # Each entry is the keyword arguments of one send call.
         self.sent_emails = []
         self.sent_raw_emails = []
@@ -113,6 +129,7 @@ class FakeSES(object):
         return 'fake-message-id-{}'.format(next(self._ids))
 
     def send_email(self, Source, Destination, Message):
+        self.log.append(('ses', 'send_email', Destination['ToAddresses'][0]))
         self.sent_emails.append(dict(
             Source=Source,
             Destination=Destination,
@@ -121,6 +138,7 @@ class FakeSES(object):
         return {'MessageId': self._message_id()}
 
     def send_raw_email(self, Source, Destinations, RawMessage):
+        self.log.append(('ses', 'send_raw_email', Destinations[0]))
         self.sent_raw_emails.append(dict(
             Source=Source,
             Destinations=list(Destinations),

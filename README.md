@@ -23,7 +23,7 @@ The test suite runs on Python 3.13, the Lambda runtime's version, in Docker (see
 scripts/test
 ```
 
-Arguments are passed through to `pytest`; `scripts/test --cov` also reports branch coverage, which CI requires to stay at 98% or more.  Tests never contact AWS: S3 and SES are replaced with in-memory fakes, and any real AWS request fails the test.
+Arguments are passed through to `pytest`; `scripts/test --cov` also reports branch coverage, which CI requires to stay at or above the minimum in `.github/workflows/tests.yml`.  Tests never contact AWS: S3 and SES are replaced with in-memory fakes, and any real AWS request fails the test.
 
 ## License
 

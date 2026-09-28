@@ -423,6 +423,16 @@ def test_set_lists_options(aws):
         'allow-from-non-members: None\n')
 
 
+def test_set_lists_stored_bounce_settings(aws):
+    # The listing shows what the file stores, not the defaults in effect.
+    from email_utils import ResponseType
+    make_list(aws, **{'bounce-score-threshold': 0,
+                      'bounce-weights': {ResponseType.hard: 5.0, ResponseType.soft: 0.25}})
+    output = run('admin@example.com', 'list test-list@example.org set')
+    assert 'bounce-score-threshold: 0\n' in output
+    assert 'bounce-weights: {<ResponseType.hard: 1>: 5.0, <ResponseType.soft: 2>: 0.25}\n' in output
+
+
 def test_set_lists_options_insufficient(aws):
     make_list(aws)
     assert run('plain@example.com', 'list test-list@example.org set') == (

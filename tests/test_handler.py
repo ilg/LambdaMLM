@@ -132,6 +132,27 @@ def test_list_post(aws, lambda_handler):
     assert incoming_key('id1') not in keys(aws)
 
 
+def test_list_post_call_order(aws, lambda_handler):
+    # The incoming message is read first and deleted last, only once the post
+    # has been handled.  The keys are spelled out: they're part of the S3 layout.
+    make_list(aws)
+    store_incoming(aws, 'id1', POST)
+    lambda_handler(ses_event('id1', ['test-list@example.org']), None)
+    assert aws.log == [
+        ('s3', 'get_object', 'incoming/id1'),
+        ('s3', 'get_object', 'config/example.org/test-list.yaml'),
+        ('ses', 'send_raw_email', 'bob@example.com'),
+        ('s3', 'delete_object', 'incoming/id1'),
+        ]
+
+
+def test_incoming_access_denied_is_raised(aws, lambda_handler):
+    store_incoming(aws, 'id1', POST)
+    aws.s3.deny(settings.s3_bucket, incoming_key('id1'))
+    with pytest.raises(ClientError):
+        lambda_handler(ses_event('id1', ['test-list@example.org']), None)
+
+
 def two_lists(aws):
     make_list(aws)
     make_list(aws, 'other', members=[

@@ -12,7 +12,7 @@ from freezegun import freeze_time
 import control
 import golden
 import listobj
-from email_utils import bounce_defaults
+from email_utils import ResponseType, bounce_defaults
 from helpers import (HOST, PRODUCTION, member, read_bytes, store_list_config,
                      store_production_list, stored_list_config)
 from list_exceptions import (
@@ -97,6 +97,45 @@ def test_bounce_settings_from_config_file(aws):
     l = make_list(aws, **{'bounce-score-threshold': 100000, 'bounce-decay-factor': 0.5})
     assert l.bounce_score_threshold == 100000
     assert l.bounce_decay_factor == 0.5
+
+
+EXPLICIT_WEIGHTS = {ResponseType.hard: 5.0, ResponseType.soft: 0.25,
+                    ResponseType.complaint: 3.0, ResponseType.unknown: 0.0}
+
+
+def test_bounce_weights_from_config_file(aws):
+    l = make_list(aws, **{'bounce-weights': EXPLICIT_WEIGHTS})
+    assert l.bounce_weights == EXPLICIT_WEIGHTS
+    # The API reports them keyed by name.
+    assert api_json(l.dict())['bounce-weights'] == {
+        'hard': 5.0, 'soft': 0.25, 'complaint': 3.0, 'unknown': 0.0}
+    # Saving writes them back as they were.
+    l._save()
+    assert b"bounce-weights:\n  !bouncekind 'hard': 5.0\n" in stored_list_config(aws, 'test-list')
+
+
+def test_falsy_bounce_settings_use_the_defaults(aws):
+    # A stored value of 0 or {} counts as unset: the defaults apply, but the
+    # stored values are what's reported and saved.
+    l = make_list(aws, **{'bounce-score-threshold': 0, 'bounce-weights': {}, 'bounce-decay-factor': 0})
+    assert l.bounce_score_threshold == bounce_defaults.bounce_score_threshold
+    assert l.bounce_weights == bounce_defaults.bounce_weights
+    assert l.bounce_decay_factor == bounce_defaults.bounce_decay_factor
+    d = l.dict()
+    assert (d['bounce-score-threshold'], d['bounce-weights'], d['bounce-decay-factor']) == (0, {}, 0)
+    l._save()
+    stored = stored_list_config(aws, 'test-list')
+    assert b'bounce-score-threshold: 0\n' in stored
+    assert b'bounce-weights: {}\n' in stored
+
+
+def test_config_is_loaded_and_saved_at_the_literal_key(aws):
+    l = make_list(aws)
+    l._save()
+    assert aws.log[-2:] == [
+        ('s3', 'get_object', 'config/example.org/test-list.yaml'),
+        ('s3', 'put_object', 'config/example.org/test-list.yaml'),
+        ]
 
 
 def test_property_access(aws):

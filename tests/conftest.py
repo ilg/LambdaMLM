@@ -100,19 +100,22 @@ def aws(monkeypatch):
     This is the only place clients are swapped, so if the clients move (for
     example, to lazy creation), only this fixture needs to change.
     """
-    s3 = FakeS3()
-    ses = FakeSES()
+    log = []
+    s3 = FakeS3(log)
+    ses = FakeSES(log)
     monkeypatch.setattr(listobj, 's3', s3)
     monkeypatch.setattr(listobj, 'ses', ses)
     monkeypatch.setattr(sestools, 's3', s3)
     monkeypatch.setattr(control, 'ses', ses)
-    return FakeAWS(s3=s3, ses=ses)
+    return FakeAWS(s3=s3, ses=ses, log=log)
 
 
 class FakeAWS(object):
-    def __init__(self, s3, ses):
+    def __init__(self, s3, ses, log):
         self.s3 = s3
         self.ses = ses
+        # Every S3 and SES call, in order (see fakes.FakeS3.log).
+        self.log = log
 
 
 @pytest.fixture
