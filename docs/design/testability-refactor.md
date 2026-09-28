@@ -1,6 +1,6 @@
 # Design: Testability Refactor
 
-The first of the step 9 redesigns in the [modernization plan](../modernization-plan.md). The plan describes it as: "create AWS clients lazily or inject them, separate persistence from list logic, use `email.policy.default`, and remove Python 2 leftovers such as `from __future__` imports and dead code." This design keeps all of that except `email.policy.default`, which it proposes moving to the sending-robustness redesign (see [Considered and not proposed](#considered-and-not-proposed)).
+The first of the step 9 redesigns in the [modernization plan](../modernization-plan.md). The plan describes it as: "create AWS clients lazily or inject them, separate persistence from list logic, use `email.policy.default`, and remove Python 2 leftovers such as `from __future__` imports and dead code." This design keeps all of that except `email.policy.default`, which moves to the sending-robustness redesign (see [Considered and not proposed](#considered-and-not-proposed) and [Decisions](#decisions)).
 
 An independent review checked this design against the code before it was published. Its findings are incorporated below.
 
@@ -244,7 +244,7 @@ This saves CPU time, not memory. Measured with `tracemalloc`, a 1.5 MB post to 5
 - handles the first VERP address it finds, and stops;
 - gives each list its own copy of the message.
 
-**The module name:** move the handler into `handler.py`, change `Handler` in `template.yaml` to `handler.lambda_handler`, and keep `lambda.py` as a one-line shim (`from handler import lambda_handler`). CloudFormation updates a function's code and its handler setting in separate calls. Mail arriving between the two would otherwise find a handler that doesn't exist. It would then fail and stay in `incoming/`, and API calls from the web app would fail too. The shim goes after a release has run with the new handler.
+**The module name** (decided): move the handler into `handler.py`, change `Handler` in `template.yaml` to `handler.lambda_handler`, and keep `lambda.py` as a one-line shim (`from handler import lambda_handler`). CloudFormation updates a function's code and its handler setting in separate calls. Mail arriving between the two would otherwise find a handler that doesn't exist. It would then fail and stay in `incoming/`, and API calls from the web app would fail too. The shim goes after a release has run with the new handler.
 
 The header helpers stay in `sestools`, and the SES event helpers move next to `handle_ses_event`. Renaming `sestools` isn't worth the churn.
 
@@ -351,9 +351,11 @@ Each item is one commit. They're grouped into three PRs, so each can be deployed
 - **Dependency injection throughout.** See [Lazy AWS clients](#lazy-aws-clients).
 - **Removing `except TypeError` from `lists_for_addresses`.** It looks like a Python 2 workaround for `cc-lists` being `None`, but it also catches other malformed `cc-lists` values that the API's UpdateList can store. Removing it would make those posts fail.
 
-## Questions for the owner
+## Decisions
 
-1. **`email.policy.default`:** move it to the sending-robustness redesign, as above? *Recommended.* If so, the plan's step 9 is updated to match.
-2. **Serializing each post once:** do it in this refactor (step 9 of the order of work)? It's byte-for-byte identical and needs no design. It saves CPU time, not memory, so the plan's sending-robustness item should also drop the claim about memory. *Recommended.*
-3. **Moving the handler to `handler.py`** with a `lambda.py` shim for one release? *Recommended.* The alternative is to keep `lambda.py` and the tests' `importlib` workaround.
-4. **The follow-up that moves the tests to the new names:** worth doing, or keep the delegators permanently? *Recommended:* do it. The delegators are noise once staging has confirmed the refactor.
+The owner accepted all four recommendations when reviewing this design (September 2026):
+
+1. **`email.policy.default` moves to the sending-robustness redesign**, and the plan's step 9 says so.
+2. **Serializing each post once is part of this refactor** (step 9 of the order of work). The plan's claim that it drives memory use is corrected.
+3. **The handler moves to `handler.py`**, with a `lambda.py` shim for one release.
+4. **The follow-up moves the tests to the new names** and removes the delegators and re-exports, after PR 3 has run on staging.
