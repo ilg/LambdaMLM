@@ -61,7 +61,9 @@ def approve(mlist, from_user, message_id):
     """Send a held post to the list, then delete it."""
     require_moderator(mlist, from_user)
     data = storage.held_message(mlist.host, mlist.username, message_id)
-    mlist.send(email.message_from_bytes(data), mod_approved=True)
+    # posting imports this module, so it's imported here.
+    import posting
+    posting.send(mlist, email.message_from_bytes(data), mod_approved=True)
     storage.delete_held_message(mlist.host, mlist.username, message_id)
 
 

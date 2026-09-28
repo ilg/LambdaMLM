@@ -1,11 +1,9 @@
 from sestools import msg_get_header, msg_get_response_address
 
 import mail
-# Signing moved to signing.py.  These names stay here for the code and tests
-# that use them through control.
 from signing import (
-        timestamp_format, signed_cmd_regex, NotSignedException, ExpiredSignatureException,
-        InvalidSignatureException, check_signature, get_signed_command, signature, sign)
+        ExpiredSignatureException, InvalidSignatureException, NotSignedException,
+        get_signed_command, sign)
 
 from .commands import run
 

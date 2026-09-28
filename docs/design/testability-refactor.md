@@ -360,6 +360,11 @@ Where the implementation (PRs 1–3) differs from the design above:
 - **`storage.check_held_message`** is the design's `held_message_exists`. It raises `ModeratedMessageNotFound`, as the code it replaces did, rather than returning a boolean.
 - **`List.moderate` has no delegator**: nothing but `posting` called it. The moderator check runs once per approval or rejection, instead of before each S3 call. Nothing in between can change the list's members.
 - **`SEND_POLICY` moved to `mail.py`**, which both `posting` and `moderation` use. `listobj` re-exports it.
+- **The follow-up** moved the tests to the new names, and removed the compatibility code:
+  - the delegators `List.send`, `user_mod_approve`, `user_mod_reject` and `moderation_expiration_days`, and `List._s3_key` and `_s3_moderation_prefix`;
+  - `control`'s signing re-exports, `email_utils`, and `listobj.SEND_POLICY`.
+
+  `List.handle_bounce_to` and `lists_for_addresses` stay on `List`: they're real code, not delegators. `moderation.approve` imports `posting` inside the function, because `posting` imports `moderation`. The `lambda.py` shim stays until after a release.
 - **Two extra pins.** A failed delete after approving (the post goes out, then "not found") is pinned. So is serializing each post once, and not at all when it has no recipients.
 
 ## Decisions

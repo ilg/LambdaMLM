@@ -9,6 +9,7 @@ import copy
 from api import handle_api
 from control import handle_command
 from listobj import List
+import posting
 from sestools import email_message_for_event, event_msg_is_to_command, event_recipients, msg_get_header
 
 
@@ -42,4 +43,4 @@ def handle_ses_event(event):
         for l in List.lists_for_addresses(recipients):
             print('Sending to list {}.'.format(l.address))
             # send() rewrites the message's headers, so each list gets its own copy.
-            l.send(copy.deepcopy(msg))
+            posting.send(l, copy.deepcopy(msg))
