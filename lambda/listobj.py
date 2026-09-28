@@ -1,14 +1,8 @@
 import copy
-
-import yaml
-from enum import Enum
-
 import re
 
 host_regex = re.compile(r'^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$')
 name_regex = re.compile(r'^[a-z0-9-]+$')
-
-from botocore.exceptions import ClientError
 
 import email
 import email.policy
@@ -20,10 +14,10 @@ from email.mime.text import MIMEText
 from sestools import msg_get_header
 from email_utils import detect_bounce, bounce_defaults
 
-import aws_clients
 import mail
 import settings
 import signing
+import storage
 import templates
 from list_member import ListMember, MemberFlag
 from list_member_container import ListMemberContainer
@@ -93,13 +87,10 @@ class List (ListMemberContainer):
             raise ValueError('Invalid list username.')
         if not host_regex.match(self.host):
             raise ValueError('Invalid list host.')
-        self._s3_key = '{}{}/{}.yaml'.format(settings.s3_configuration_prefix, self.host, self.username)
-        self._s3_moderation_prefix = '{}{}/{}/'.format(settings.s3_moderation_prefix, self.host, self.username)
-        try:
-            config_response = aws_clients.s3().get_object(Bucket=settings.s3_bucket, Key=self._s3_key)
-        except ClientError:
-            raise UnknownList
-        self._config = yaml.safe_load(config_response['Body'])
+        # The keys, which the tests check.
+        self._s3_key = storage.list_config_key(self.host, self.username)
+        self._s3_moderation_prefix = storage.moderation_prefix(self.host, self.username)
+        self._config, self._etag = storage.load_list_config(self.host, self.username)
         if self.name:
             self.display_address = '{} <{}>'.format(self.name, self.address)
         else:
@@ -144,11 +135,7 @@ class List (ListMemberContainer):
         self._save()
 
     def _save(self):
-        response = aws_clients.s3().put_object(
-                Bucket=settings.s3_bucket,
-                Key=self._s3_key,
-                Body=yaml.safe_dump(self._config, default_flow_style=False, allow_unicode=True),
-                )
+        storage.save_list_config(self.host, self.username, self._config)
 
     def user_subscribe_user(self, from_user, target_user):
         from_address = address_from_user(from_user)
@@ -424,27 +411,7 @@ class List (ListMemberContainer):
             
     @staticmethod
     def moderation_expiration_days(default=3):
-        """The number of days after which held messages expire.
-
-        Read from the bucket's lifecycle rule for the moderation prefix, in
-        either the older form with a top-level Prefix or the current form
-        with a Filter.  Falls back to `default` if there's no such rule.
-        """
-        try:
-            lifecycle = aws_clients.s3().get_bucket_lifecycle_configuration(Bucket=settings.s3_bucket)
-        except ClientError as e:
-            # Most likely NoSuchLifecycleConfiguration.
-            print('Unable to read the bucket lifecycle configuration: {}'.format(e))
-            return default
-        for rule in lifecycle.get('Rules', []):
-            if rule.get('Status', 'Enabled') != 'Enabled':
-                continue
-            rule_filter = rule.get('Filter') or {}
-            prefix = rule.get('Prefix', rule_filter.get('Prefix', (rule_filter.get('And') or {}).get('Prefix')))
-            days = (rule.get('Expiration') or {}).get('Days')
-            if prefix == settings.s3_moderation_prefix and days:
-                return days
-        return default
+        return storage.moderation_expiration_days(default)
 
     def moderate(self, msg):
         message_id = msg['message-id']
@@ -453,11 +420,7 @@ class List (ListMemberContainer):
             raise ValueError('Messages must contain a Message-ID: header.')
         message_id = message_id.replace(':', '_')  # Make it safe for subject-command.
         # Put the email message into the list's moderation holding space on S3.
-        response = aws_clients.s3().put_object(
-                Bucket=settings.s3_bucket,
-                Key=self._s3_moderation_prefix + message_id,
-                Body=msg.as_bytes(policy=SEND_POLICY),
-                )
+        storage.hold_message(self.host, self.username, message_id, msg.as_bytes(policy=SEND_POLICY))
         # Get the moderation auto-deletion/auto-rejection interval from the S3 bucket lifecycle configuration.
         from datetime import timedelta
         mod_interval = timedelta(days=self.moderation_expiration_days())
@@ -489,23 +452,16 @@ class List (ListMemberContainer):
         member = self.member_with_address(from_address)
         if member is None or MemberFlag.moderator not in member.flags:
             raise InsufficientPermissions
-        try:
-            return action(
-                    Bucket=settings.s3_bucket,
-                    Key=self._s3_moderation_prefix + message_id,
-                    )
-        except ClientError:
-            raise ModeratedMessageNotFound
+        return action(self.host, self.username, message_id)
 
     def user_mod_approve(self, from_user, message_id):
-        response = self._user_mod_act_on(from_user, message_id, aws_clients.s3().get_object)
-        self.send(email.message_from_bytes(response['Body'].read()), mod_approved=True)
-        self._user_mod_act_on(from_user, message_id, aws_clients.s3().delete_object)
+        data = self._user_mod_act_on(from_user, message_id, storage.held_message)
+        self.send(email.message_from_bytes(data), mod_approved=True)
+        self._user_mod_act_on(from_user, message_id, storage.delete_held_message)
 
     def user_mod_reject(self, from_user, message_id):
-        # Head the object first, since delete won't raise an exception if the object doesn't exist.
-        self._user_mod_act_on(from_user, message_id, aws_clients.s3().head_object)
-        self._user_mod_act_on(from_user, message_id, aws_clients.s3().delete_object)
+        self._user_mod_act_on(from_user, message_id, storage.check_held_message)
+        self._user_mod_act_on(from_user, message_id, storage.delete_held_message)
 
     @classmethod
     def lists_for_addresses(cls, addresses):
