@@ -4,7 +4,7 @@ from math import pow
 
 from yaml_enum import YAMLEnum
 
-from email_utils import ResponseType
+from bounces import ResponseType
 
 MemberFlag = YAMLEnum('MemberFlag', '!flag', [
     #'digest',

@@ -7,9 +7,9 @@ List configuration is stored in a [YAML](http://yaml.org/) file on S3.  The conf
 - `members` The list of members.  (Note: this property cannot be directly modified by email command.)
 - `name` The descriptive human-readable name of the list.
 - `subject-tag` The tag to prepend to the subject.
-- `bounce-score-threshold` The bounce score above which to flag a user as `bouncing` and stop sending them email (the default is in [`email_utils.py`](../lambda/email_utils.py)).
-- `bounce-weights` A dictionary of weights for each bouncing `ResponseType` (the default is in [`email_utils.py`](../lambda/email_utils.py)).
-- `bounce-decay-factor` The per-day multiplier by which bounce information decays (the default is in [`email_utils.py`](../lambda/email_utils.py)).
+- `bounce-score-threshold` The bounce score above which to flag a user as `bouncing` and stop sending them email (the default is in [`bounces.py`](../lambda/bounces.py)).
+- `bounce-weights` A dictionary of weights for each bouncing `ResponseType` (the default is in [`bounces.py`](../lambda/bounces.py)).
+- `bounce-decay-factor` The per-day multiplier by which bounce information decays (the default is in [`bounces.py`](../lambda/bounces.py)).
 - `reply-to-list` Whether the `Reply-to:` header should be set to the list address (defaults to `false`).
 - `open-subscription` Whether the list allows users to subscribe themselves (defaults to `false`).
 - `closed-unsubscription` Whether the list prevents members from unsubscribing themselves (defaults to `false`).

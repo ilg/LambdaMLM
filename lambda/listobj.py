@@ -4,7 +4,7 @@ host_regex = re.compile(r'^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.
 name_regex = re.compile(r'^[a-z0-9-]+$')
 
 from email.utils import parseaddr, formataddr
-from email_utils import detect_bounce, bounce_defaults
+from bounces import detect_bounce, bounce_defaults
 
 import mail
 from mail import SEND_POLICY  # for the tests
@@ -308,27 +308,47 @@ class List (ListMemberContainer):
         except TypeError:
             return
 
+    def record_response(self, member, response_type):
+        """Record a bounce or complaint against a member, and flag them as
+        bouncing if their score passes the list's threshold.
+
+        It doesn't save the list, so a caller handling several responses can
+        save once.
+        """
+        member.add_response(response_type)
+        score = member.bounce_score(weights=self.bounce_weights, decay=self.bounce_decay_factor)
+        print('New bounce score for {} is {}.'.format(member.address, score))
+        if score > self.bounce_score_threshold:
+            print('Score exceeds bounce score threshold, so flagging the member as bouncing.')
+            member.flags.add(MemberFlag.bouncing)
+        # TODO: send email to member and/or admin(s) noting that the bounce threshold has been reached?
+
     @classmethod
     def handle_bounce_to(cls, bounce_address, msg):
+        """Handle a bounce message sent to a member's VERP address."""
         print('Handling bounce to {}.'.format(bounce_address))
-        if '@' not in bounce_address:
-            raise ValueError('Bounced-to addresses must contain an @.')
-        username, host = bounce_address.split('@', 1)
-        if '+' not in bounce_address:
-            raise ValueError('Bounced-to username must contain a +.')
-        list_username, _ = username.split('+', 1)
-        l = cls(username=list_username, host=host)
-        print('Bounce received for list {}.'.format(l.display_address))
-        member = l.member_passing_test(lambda m: l.verp_address(m.address).lower() == bounce_address.lower())
+        l, member = list_and_member_for_verp(bounce_address)
         if not member:
             print('No member found matching the bounce address.')
             return
-        member.add_response(detect_bounce(msg))
-        score = member.bounce_score(weights=l.bounce_weights, decay=l.bounce_decay_factor)
-        print('New bounce score for {} is {}.'.format(member.address, score))
-        if score > l.bounce_score_threshold:
-            print('Score exceeds bounce score threshold, so flagging the member as bouncing.')
-            member.flags.add(MemberFlag.bouncing)
+        l.record_response(member, detect_bounce(msg))
         l._save()
-        # TODO: send email to member and/or admin(s) noting that the bounce threshold has been reached?
-        
+
+
+def list_and_member_for_verp(verp_address):
+    """The list and member a VERP address (list+member=host+bounce@host) is for.
+
+    The member is None if no member's VERP address matches.  Raises
+    ValueError for an address that isn't in that form, and UnknownList if
+    there's no such list.
+    """
+    if '@' not in verp_address:
+        raise ValueError('Bounced-to addresses must contain an @.')
+    username, host = verp_address.split('@', 1)
+    if '+' not in verp_address:
+        raise ValueError('Bounced-to username must contain a +.')
+    list_username, _ = username.split('+', 1)
+    l = List(username=list_username, host=host)
+    print('Bounce received for list {}.'.format(l.display_address))
+    member = l.member_passing_test(lambda m: l.verp_address(m.address).lower() == verp_address.lower())
+    return l, member
