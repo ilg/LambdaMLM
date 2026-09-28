@@ -1,18 +1,16 @@
-from __future__ import print_function
+from types import SimpleNamespace
 
 import lamson_bounce
-from obj import Obj
-
 from yaml_enum import YAMLEnum
 
-ResponseType = YAMLEnum('ResponseType', u'!bouncekind', [
+ResponseType = YAMLEnum('ResponseType', '!bouncekind', [
     'hard',
     'soft',
     'complaint',
     'unknown',
     ])
 
-bounce_defaults = Obj(
+bounce_defaults = SimpleNamespace(
         bounce_score_threshold=2.0,
         bounce_weights={
                 ResponseType.hard: 1.0,

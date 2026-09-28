@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
 """The real lambda/settings.py: environment variables and the SSM signing key."""
 
 import importlib.util
 import os
 from datetime import timedelta
 
-import boto3
-
+import aws_clients
 from helpers import TESTS_DIR
 
 SETTINGS = os.path.join(os.path.dirname(TESTS_DIR), 'lambda', 'settings.py')
@@ -17,7 +15,7 @@ def load(monkeypatch, **environment):
         monkeypatch.delenv(name)
     for name, value in environment.items():
         monkeypatch.setenv(name, value)
-    # Load it under another name; the tests' fake is installed as `settings`.
+    # Load a fresh copy under another name, so it reads this test's environment.
     spec = importlib.util.spec_from_file_location('real_settings', SETTINGS)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -43,19 +41,19 @@ def test_from_environment(monkeypatch):
     assert s.signing_key_parameter == '/lambdamlm/prod/signing-key'
 
 
-class FakeSSM(object):
+class FakeSSM:
     def __init__(self):
         self.calls = []
 
     def get_parameter(self, Name, WithDecryption):
         self.calls.append((Name, WithDecryption))
-        return {'Parameter': {'Name': Name, 'Value': u'key with a backslash \\ and é'}}
+        return {'Parameter': {'Name': Name, 'Value': 'key with a backslash \\ and é'}}
 
 
 def test_signing_key_is_read_from_ssm_once(monkeypatch):
     s = load(monkeypatch, LAMBDAMLM_SIGNING_KEY_PARAMETER='/lambdamlm/prod/signing-key')
     ssm = FakeSSM()
-    monkeypatch.setattr(boto3, 'client', lambda service: ssm if service == 'ssm' else None)
-    assert s.signing_key() == u'key with a backslash \\ and é'
-    assert s.signing_key() == u'key with a backslash \\ and é'
+    monkeypatch.setattr(aws_clients, 'ssm', lambda: ssm)
+    assert s.signing_key() == 'key with a backslash \\ and é'
+    assert s.signing_key() == 'key with a backslash \\ and é'
     assert ssm.calls == [('/lambdamlm/prod/signing-key', True)]

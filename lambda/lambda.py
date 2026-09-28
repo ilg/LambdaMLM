@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import copy
 
 from sestools import email_message_for_event, event_msg_is_to_command, msg_get_header, event_recipients

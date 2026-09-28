@@ -1,10 +1,9 @@
-from __future__ import print_function
 from email.utils import parseaddr
 
 from list_member import ListMember, MemberFlag
 from list_exceptions import AlreadySubscribed, NotSubscribed, InsufficientPermissions
 
-class ListMemberContainer (object):
+class ListMemberContainer:
     @property
     def moderator_addresses(self):
         return [

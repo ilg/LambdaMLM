@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import copy
 
 import yaml
@@ -9,11 +7,6 @@ import re
 
 host_regex = re.compile(r'^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$')
 name_regex = re.compile(r'^[a-z0-9-]+$')
-
-import boto3
-
-s3 = boto3.client('s3')
-ses = boto3.client('ses')
 
 from botocore.exceptions import ClientError
 
@@ -27,8 +20,10 @@ from email.mime.text import MIMEText
 from sestools import msg_get_header
 from email_utils import detect_bounce, bounce_defaults
 
+import aws_clients
+import mail
 import settings
-import control
+import signing
 import templates
 from list_member import ListMember, MemberFlag
 from list_member_container import ListMemberContainer
@@ -67,11 +62,11 @@ class _SendPolicy(email.policy.Compat32):
     and the form SES stores incoming mail in.
     """
     def _fold(self, name, value, sanitize):
-        if isinstance(value, str) and not any(u'\udc80' <= c <= u'\udcff' for c in value):
+        if isinstance(value, str) and not any('\udc80' <= c <= '\udcff' for c in value):
             lines = re.split(r'\r?\n', value)
             if len(lines) > 1 or len(name) + 2 + len(value) <= self.max_line_length:
                 return '{}: {}{}'.format(name, self.linesep.join(lines), self.linesep)
-        return super(_SendPolicy, self)._fold(name, value, sanitize)
+        return super()._fold(name, value, sanitize)
 
 
 SEND_POLICY = _SendPolicy(linesep='\r\n')
@@ -101,21 +96,21 @@ class List (ListMemberContainer):
         self._s3_key = '{}{}/{}.yaml'.format(settings.s3_configuration_prefix, self.host, self.username)
         self._s3_moderation_prefix = '{}{}/{}/'.format(settings.s3_moderation_prefix, self.host, self.username)
         try:
-            config_response = s3.get_object(Bucket=settings.s3_bucket, Key=self._s3_key)
+            config_response = aws_clients.s3().get_object(Bucket=settings.s3_bucket, Key=self._s3_key)
         except ClientError:
             raise UnknownList
         self._config = yaml.safe_load(config_response['Body'])
         if self.name:
-            self.display_address = u'{} <{}>'.format(self.name, self.address)
+            self.display_address = '{} <{}>'.format(self.name, self.address)
         else:
             self.display_address = self.address
         # Default bounce scoring constants
         if not self.bounce_score_threshold:
-            self.bounce_score_threshold = getattr(settings, 'bounce_score_threshold', bounce_defaults.bounce_score_threshold)
+            self.bounce_score_threshold = bounce_defaults.bounce_score_threshold
         if not self.bounce_weights:
-            self.bounce_weights = getattr(settings, 'bounce_weights', bounce_defaults.bounce_weights)
+            self.bounce_weights = bounce_defaults.bounce_weights
         if not self.bounce_decay_factor:
-            self.bounce_decay_factor = getattr(settings, 'bounce_decay_factor', bounce_defaults.bounce_decay_factor)
+            self.bounce_decay_factor = bounce_defaults.bounce_decay_factor
 
     def __getattr__(self, name):
         prop = name.replace('_', '-')
@@ -128,7 +123,7 @@ class List (ListMemberContainer):
             prop = name.replace('_', '-')
             self._config[prop] = value
             return
-        super(List, self).__setattr__(name, value)
+        super().__setattr__(name, value)
 
     def dict(self):
         d = {p: getattr(self, p) for p in list_properties}
@@ -149,7 +144,7 @@ class List (ListMemberContainer):
         self._save()
 
     def _save(self):
-        response = s3.put_object(
+        response = aws_clients.s3().put_object(
                 Bucket=settings.s3_bucket,
                 Key=self._s3_key,
                 Body=yaml.safe_dump(self._config, default_flow_style=False, allow_unicode=True),
@@ -247,18 +242,18 @@ class List (ListMemberContainer):
         command_address = '{}@{}'.format(settings.command_user, self.host)
         from datetime import timedelta
         validity_duration = timedelta(days=3)  # TODO: make this duration configurable
-        token = control.sign(target_address, self.address, validity_duration=validity_duration)
+        token = signing.sign(target_address, self.address, validity_duration=validity_duration)
         cmd = 'list {} {} "{}"'.format(self.address, command, token)
         list_name = self.name
         if not list_name:
             list_name = self.address
-        control.send_response(
+        mail.send_text(
                 source=command_address,
                 destination=target_address,
                 subject='Invitation to {} {} - Fwd: {}'.format(
                     verb,
                     list_name,
-                    control.sign(cmd, target_address, validity_duration=validity_duration),
+                    signing.sign(cmd, target_address, validity_duration=validity_duration),
                     ),
                 body='To accept the invitation, reply to this email.  You can leave the body of the reply blank.',
                 )
@@ -276,9 +271,9 @@ class List (ListMemberContainer):
 
     def accept_invitation(self, from_user, token, action):
         from_address = address_from_user(from_user)
-        token_address = control.get_signed_command(token, self.address)
+        token_address = signing.get_signed_command(token, self.address)
         if token_address.lower() != from_address:
-            raise control.InvalidSignatureException
+            raise signing.InvalidSignatureException
         action(from_address)
 
     def accept_subscription_invitation(self, from_user, token):
@@ -303,7 +298,7 @@ class List (ListMemberContainer):
                 ]
 
     def list_address_with_tags(self, *tags):
-        tags = map(lambda s: s.replace('@', '='), tags)
+        tags = (t.replace('@', '=') for t in tags)
         return '{}+{}@{}'.format(self.username, '+'.join(tags), self.host)
 
     def verp_address(self, address):
@@ -413,10 +408,10 @@ class List (ListMemberContainer):
 
         # See if the list has a subject tag.
         if self.subject_tag:
-            prefix = u'[{}] '.format(self.subject_tag)
-            subject = msg_get_header(msg, 'Subject') or u''
+            prefix = '[{}] '.format(self.subject_tag)
+            subject = msg_get_header(msg, 'Subject') or ''
             if prefix not in subject:
-                self.msg_replace_header(msg, 'Subject', Header(u'{}{}'.format(prefix, subject)))
+                self.msg_replace_header(msg, 'Subject', Header('{}{}'.format(prefix, subject)))
 
         # TODO: body footer
         for recipient in self.addresses_to_receive_from(from_address):
@@ -425,11 +420,7 @@ class List (ListMemberContainer):
             if not mod_approved:
                 # Suppress printing when mod-approved, because the output will go to the moderator approving it.
                 print('> Sending to {}.'.format(recipient))
-            ses.send_raw_email(
-                    Source=return_path,
-                    Destinations=[ recipient, ],
-                    RawMessage={ 'Data': msg.as_bytes(policy=SEND_POLICY), },
-                    )
+            mail.send_raw(return_path, recipient, msg.as_bytes(policy=SEND_POLICY))
             
     @staticmethod
     def moderation_expiration_days(default=3):
@@ -440,7 +431,7 @@ class List (ListMemberContainer):
         with a Filter.  Falls back to `default` if there's no such rule.
         """
         try:
-            lifecycle = s3.get_bucket_lifecycle_configuration(Bucket=settings.s3_bucket)
+            lifecycle = aws_clients.s3().get_bucket_lifecycle_configuration(Bucket=settings.s3_bucket)
         except ClientError as e:
             # Most likely NoSuchLifecycleConfiguration.
             print('Unable to read the bucket lifecycle configuration: {}'.format(e))
@@ -456,15 +447,13 @@ class List (ListMemberContainer):
         return default
 
     def moderate(self, msg):
-        # For some reason, this import doesn't work at the file level.
-        from control import sign
         message_id = msg['message-id']
         if not message_id:
             print('Unable to moderate incoming message due to lack of Message-ID: header.')
             raise ValueError('Messages must contain a Message-ID: header.')
         message_id = message_id.replace(':', '_')  # Make it safe for subject-command.
         # Put the email message into the list's moderation holding space on S3.
-        response = s3.put_object(
+        response = aws_clients.s3().put_object(
                 Bucket=settings.s3_bucket,
                 Key=self._s3_moderation_prefix + message_id,
                 Body=msg.as_bytes(policy=SEND_POLICY),
@@ -478,8 +467,8 @@ class List (ListMemberContainer):
         for moderator in self.moderator_addresses:
             # Build up the notification email per-moderator so that we can include
             # pre-signed moderation commands specific to that moderator.
-            approve_cmd = sign('list {} mod approve "{}"'.format(self.address, message_id), moderator, mod_interval)
-            reject_cmd = sign('list {} mod reject "{}"'.format(self.address, message_id), moderator, mod_interval)
+            approve_cmd = signing.sign('list {} mod approve "{}"'.format(self.address, message_id), moderator, mod_interval)
+            reject_cmd = signing.sign('list {} mod reject "{}"'.format(self.address, message_id), moderator, mod_interval)
             message = MIMEMultipart()
             message['Subject'] = 'Message to {} needs approval: {}'.format(self.address, approve_cmd)
             message['From'] = control_address
@@ -493,11 +482,7 @@ class List (ListMemberContainer):
                 moderation_days=mod_interval.days
                 )))
             message.attach(forward_mime)
-            ses.send_raw_email(
-                    Source=control_address,
-                    Destinations=[ moderator, ],
-                    RawMessage={ 'Data': message.as_bytes(policy=SEND_POLICY), },
-                    )
+            mail.send_raw(control_address, moderator, message.as_bytes(policy=SEND_POLICY))
 
     def _user_mod_act_on(self, from_user, message_id, action):
         from_address = address_from_user(from_user)
@@ -513,14 +498,14 @@ class List (ListMemberContainer):
             raise ModeratedMessageNotFound
 
     def user_mod_approve(self, from_user, message_id):
-        response = self._user_mod_act_on(from_user, message_id, s3.get_object)
+        response = self._user_mod_act_on(from_user, message_id, aws_clients.s3().get_object)
         self.send(email.message_from_bytes(response['Body'].read()), mod_approved=True)
-        self._user_mod_act_on(from_user, message_id, s3.delete_object)
+        self._user_mod_act_on(from_user, message_id, aws_clients.s3().delete_object)
 
     def user_mod_reject(self, from_user, message_id):
         # Head the object first, since delete won't raise an exception if the object doesn't exist.
-        self._user_mod_act_on(from_user, message_id, s3.head_object)
-        self._user_mod_act_on(from_user, message_id, s3.delete_object)
+        self._user_mod_act_on(from_user, message_id, aws_clients.s3().head_object)
+        self._user_mod_act_on(from_user, message_id, aws_clients.s3().delete_object)
 
     @classmethod
     def lists_for_addresses(cls, addresses):
@@ -544,8 +529,6 @@ class List (ListMemberContainer):
             raise ValueError('Bounced-to username must contain a +.')
         list_username, _ = username.split('+', 1)
         l = cls(username=list_username, host=host)
-        if not l:
-            raise ValueError('Bounced-to address does not resolve to a known list.')
         print('Bounce received for list {}.'.format(l.display_address))
         member = l.member_passing_test(lambda m: l.verp_address(m.address).lower() == bounce_address.lower())
         if not member:

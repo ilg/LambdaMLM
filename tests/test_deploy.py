@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The deployment tools: packaging, environments, parameters and signing keys."""
 
 import datetime
@@ -151,7 +150,7 @@ def test_fingerprint():
     assert len(signing_key.fingerprint('k')) == 16
 
 
-class FakeAWS(object):
+class FakeAWS:
     def __init__(self, zip_bytes):
         self.zip_bytes = zip_bytes
 
@@ -171,11 +170,11 @@ def package(config_source):
 
 def test_key_from_function(monkeypatch):
     # An old config.py, with a u'' key containing an invalid escape sequence.
-    source = (u"# -*- coding: utf-8 -*-\ncommand_user = 'lists'\n"
-              u"signing_key = u\"\"\"Old key with \\q and café\"\"\"\n"
-              u"from datetime import timedelta\nsigned_validity_interval = timedelta(hours=1)\n").encode('utf-8')
+    source = ("# -*- coding: utf-8 -*-\ncommand_user = 'lists'\n"
+              "signing_key = u\"\"\"Old key with \\q and café\"\"\"\n"
+              "from datetime import timedelta\nsigned_validity_interval = timedelta(hours=1)\n").encode('utf-8')
     monkeypatch.setattr(signing_key.urllib.request, 'urlopen', lambda url: io.BytesIO(package(source)))
-    assert signing_key.key_from_function(FakeAWS(None), 'LambdaMLM') == u'Old key with \\q and café'
+    assert signing_key.key_from_function(FakeAWS(None), 'LambdaMLM') == 'Old key with \\q and café'
 
 
 def test_key_from_function_without_config(monkeypatch):
@@ -184,7 +183,7 @@ def test_key_from_function_without_config(monkeypatch):
         signing_key.key_from_function(FakeAWS(None), 'LambdaMLM')
 
 
-class FailingAWS(object):
+class FailingAWS:
     def __init__(self, stderr):
         self.stderr = stderr
 
@@ -251,7 +250,7 @@ def test_bucket_from_an_earlier_storing_rule():
         {'Name': 'LambdaMLM', 'Enabled': True, 'Actions': [{'LambdaAction': {'FunctionArn': arn}}]},
     ]}
 
-    class AWS(object):
+    class AWS:
         def json(self, *args, **kwargs):
             return rule_set
     assert find_deployments.rules_invoking(AWS(), arn) == [

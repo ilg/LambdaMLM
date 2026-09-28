@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Bounce classification.
 
 The golden results were recorded from Lamson's analyzer on Python 2; the
@@ -85,7 +84,7 @@ def test_unlisted_status_code_is_classified():
     msg = parse_message(read_bytes(FIXTURES, 'bounces', 'synthetic', 'microsoft-5-1-10.eml'))
     assert email_utils.detect_bounce(msg) == email_utils.ResponseType.hard
     analysis = lamson_bounce.detect(msg)
-    assert analysis.combined_status == (110, u'Other address status')
+    assert analysis.combined_status == (110, 'Other address status')
 
 
 def test_first_status_is_the_first_found():

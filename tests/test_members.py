@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """List members, flags, bounce scoring and membership permissions."""
 
 from datetime import datetime
@@ -200,7 +199,7 @@ def test_member_with_address_ignores_case():
     assert Container(m).member_with_address('mixed.case@example.com') is m
 
 
-class TestAddressWillModifyAddress(object):
+class TestAddressWillModifyAddress:
     def container(self):
         return Container(
                 member('plain@example.com'),

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Posting to a list: policy, header rewriting, moderation and bounces."""
 
 import re
@@ -215,14 +214,14 @@ def test_non_ascii_sender_name(aws):
     make_list(aws, name='Test List', **{'allow-from-non-members': True}).send(parse_message(raw_message(
             from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>')))
     assert msg_get_header(sent_message(aws), 'From') == \
-        u'Jos\u00e9 (via Test List) <test-list+jose=example.net+from@example.org>'
+        'Jos\u00e9 (via Test List) <test-list+jose=example.net+from@example.org>'
 
 
 def test_reply_to_list_non_ascii_sender(aws):
     make_list(aws, **{'reply-to-list': True, 'allow-from-non-members': True}).send(parse_message(raw_message(
             from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>', headers=['Cc: dave@example.com'])))
     from sestools import msg_get_header
-    assert msg_get_header(sent_message(aws), 'CC') == u'dave@example.com, Jos\u00e9 <jose@example.net>'
+    assert msg_get_header(sent_message(aws), 'CC') == 'dave@example.com, Jos\u00e9 <jose@example.net>'
 
 
 def test_subject_tag(aws):
@@ -273,7 +272,7 @@ def test_eight_bit_from_header(aws):
     make_list(aws).send(parse_message(raw))
     msg = sent_message(aws)
     assert msg_get_header(msg, 'From') == \
-        u'Al\u00efce Sender (via test-list@example.org) <test-list+alice=example.com+from@example.org>'
+        'Al\u00efce Sender (via test-list@example.org) <test-list+alice=example.com+from@example.org>'
     # The sender's original header goes out as it came in.
     assert b'X-Original-From: Al\xc3\xafce Sender <alice@example.com>' in aws.ses.sent_raw_emails[0]['Data']
 
@@ -556,6 +555,16 @@ def test_handle_bounce_threshold_is_exclusive(aws):
     assert MemberFlag.bouncing not in members[0].flags
 
 
+@freeze_time(NOW)
+def test_handle_bounce_uses_weights_from_config_file(aws):
+    # A hard bounce weighs 1.0 by default, under the default threshold of 2.0.
+    bounce_list(aws, **{'bounce-weights': {ResponseType.hard: 5.0, ResponseType.soft: 0.5,
+                                           ResponseType.complaint: 3.0, ResponseType.unknown: 0.0}})
+    listobj.List.handle_bounce_to('alpha-list+member=example.com+bounce@example.org', parse_message(BOUNCE))
+    members = yaml.safe_load(stored_list_config(aws, 'alpha-list'))['members']
+    assert MemberFlag.bouncing in members[0].flags
+
+
 def test_handle_bounce_no_matching_member(aws):
     bounce_list(aws)
     before = stored_list_config(aws, 'alpha-list')
@@ -601,11 +610,11 @@ def test_non_ascii_list_name_in_address_headers(aws):
     # Issue #9: the whole "name <address>" value used to be one encoded word,
     # which mail clients can't read the address out of.
     from sestools import msg_get_header
-    make_list(aws, name=u'Café List', **{'reply-to-list': True}).send(parse_message(raw_message()))
+    make_list(aws, name='Café List', **{'reply-to-list': True}).send(parse_message(raw_message()))
     data = aws.ses.sent_raw_emails[0]['Data']
     assert b'Sender: =?utf-8?q?Caf=C3=A9_List?= <test-list@example.org>\r\n' in data
     assert b'Reply-to: =?utf-8?q?Caf=C3=A9_List?= <test-list@example.org>\r\n' in data
-    assert msg_get_header(sent_message(aws), 'Reply-to') == u'Café List <test-list@example.org>'
+    assert msg_get_header(sent_message(aws), 'Reply-to') == 'Café List <test-list@example.org>'
 
 
 def test_list_name_with_specials_is_quoted(aws):
@@ -617,3 +626,101 @@ def test_reply_to_is_sender_as_received(aws):
     raw = EIGHT_BIT_BODY.replace(b'Alice Sender', b'Al\xc3\xafce Sender')
     make_list(aws).send(parse_message(raw))
     assert b'Reply-to: Al\xc3\xafce Sender <alice@example.com>\r\n' in aws.ses.sent_raw_emails[0]['Data']
+
+
+# ---------------------------------------------------------------- call order and S3 errors
+#
+# These pin the order of S3 and SES calls, and which S3 errors are caught
+# where, so that moving the S3 and SES calls into their own modules can't
+# change either.
+
+CONFIG_KEY = 'config/example.org/test-list.yaml'
+HELD_KEY = 'moderation/example.org/test-list/<m1@example.com>'
+
+
+@freeze_time(NOW)
+def test_moderation_call_order(aws):
+    l = moderated_list(aws)
+    l.send(parse_message(raw_message(from_='stranger@example.net')))
+    assert aws.log == [
+        ('s3', 'get_object', CONFIG_KEY),
+        ('s3', 'put_object', HELD_KEY),
+        ('s3', 'get_bucket_lifecycle_configuration', None),
+        ('ses', 'send_raw_email', 'mod1@example.com'),
+        ('ses', 'send_raw_email', 'mod2@example.com'),
+        ]
+
+
+def test_post_call_order(aws):
+    make_list(aws).send(parse_message(raw_message()))
+    assert aws.log == [
+        ('s3', 'get_object', CONFIG_KEY),
+        ('ses', 'send_raw_email', 'bob@example.com'),
+        ('ses', 'send_raw_email', 'carol@example.com'),
+        ]
+
+
+def test_mod_approve_call_order(aws):
+    store_held(aws)
+    moderated_list(aws).user_mod_approve('mod1@example.com', '<m1@example.com>')
+    assert aws.log == [
+        ('s3', 'get_object', CONFIG_KEY),
+        ('s3', 'get_object', HELD_KEY),
+        ('ses', 'send_raw_email', 'mod1@example.com'),
+        ('ses', 'send_raw_email', 'mod2@example.com'),
+        ('ses', 'send_raw_email', 'alice@example.com'),
+        ('s3', 'delete_object', HELD_KEY),
+        ]
+
+
+def test_mod_reject_call_order(aws):
+    store_held(aws)
+    moderated_list(aws).user_mod_reject('mod1@example.com', '<m1@example.com>')
+    assert aws.log == [
+        ('s3', 'get_object', CONFIG_KEY),
+        ('s3', 'head_object', HELD_KEY),
+        ('s3', 'delete_object', HELD_KEY),
+        ]
+
+
+@freeze_time(NOW)
+def test_handle_bounce_call_order(aws):
+    bounce_list(aws)
+    listobj.List.handle_bounce_to('alpha-list+member=example.com+bounce@example.org', parse_message(BOUNCE))
+    assert aws.log == [
+        ('s3', 'get_object', 'config/example.org/alpha-list.yaml'),
+        ('s3', 'put_object', 'config/example.org/alpha-list.yaml'),
+        ]
+
+
+def test_list_config_access_denied_is_unknown_list(aws):
+    make_list(aws)
+    aws.s3.deny(settings.s3_bucket, CONFIG_KEY)
+    with pytest.raises(UnknownList):
+        listobj.List('test-list@example.org')
+
+
+def test_held_message_access_denied_is_not_found(aws):
+    store_held(aws)
+    l = moderated_list(aws)
+    aws.s3.deny(settings.s3_bucket, HELD_KEY)
+    with pytest.raises(ModeratedMessageNotFound):
+        l.user_mod_approve('mod1@example.com', '<m1@example.com>')
+    with pytest.raises(ModeratedMessageNotFound):
+        l.user_mod_reject('mod1@example.com', '<m1@example.com>')
+
+
+def test_lifecycle_access_denied_uses_default(aws):
+    aws.s3.lifecycle[settings.s3_bucket] = FLAT_RULE
+    aws.s3.deny(settings.s3_bucket)
+    assert listobj.List.moderation_expiration_days() == 3
+
+
+def test_post_without_from_header_fails_before_moderation(aws):
+    # Reading the sender comes first, so a post with no From header fails
+    # before anything is held or sent.
+    l = moderated_list(aws)
+    with pytest.raises(TypeError):
+        l.send(parse_message(b'To: test-list@example.org\nSubject: Hi\nMessage-ID: <m1@example.com>\n\nHi.\n'))
+    assert moderation_keys(aws) == []
+    assert aws.ses.sent_raw_emails == []

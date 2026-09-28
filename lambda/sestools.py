@@ -1,26 +1,21 @@
-from __future__ import print_function
-
 from contextlib import contextmanager
 
 import email
 import email.header
-import boto3
 
-s3 = boto3.client('s3')
-
-from settings import command_user, s3_bucket, s3_incoming_email_prefix
-command_address_prefix = command_user + '@'
+import aws_clients
+import settings
 
 @contextmanager
 def email_message_for_event(event):
-    key = s3_incoming_email_prefix + event['Records'][0]['ses']['mail']['messageId']
+    key = settings.s3_incoming_email_prefix + event['Records'][0]['ses']['mail']['messageId']
     
     # Get the email from S3
     try:
-        response = s3.get_object(Bucket=s3_bucket, Key=key)
+        response = aws_clients.s3().get_object(Bucket=settings.s3_bucket, Key=key)
     except Exception as e:
         print(e)
-        print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, s3_bucket))
+        print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, settings.s3_bucket))
         raise e
     
     yield email.message_from_bytes(response['Body'].read())
@@ -28,11 +23,11 @@ def email_message_for_event(event):
     # Clean up: delete the email from S3.  This only happens once the email has
     # been handled; if handling raised, the email stays in S3 so it isn't lost.
     try:
-        response = s3.delete_object(Bucket=s3_bucket, Key=key)
+        response = aws_clients.s3().delete_object(Bucket=settings.s3_bucket, Key=key)
         print("Removed email from S3.")
     except Exception as e:
         print(e)
-        print('Error removing object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, s3_bucket))
+        print('Error removing object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, settings.s3_bucket))
         raise e
 
 def msg_get_header(msg, header_name):
@@ -67,6 +62,7 @@ def event_recipients(event):
     return set(event['Records'][0]['ses']['receipt']['recipients'])
 
 def event_msg_is_to_command(event, msg):
+    command_address_prefix = settings.command_user + '@'
     # Validate that the control address is the only recipient.
     recipients = event['Records'][0]['ses']['receipt']['recipients']
     if len(recipients) != 1:

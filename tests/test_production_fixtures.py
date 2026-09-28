@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Checks that the production fixtures are usable by the current code."""
 
 import email
@@ -52,7 +51,5 @@ def test_list_config_loads(aws, path):
 def test_message_parses(path):
     with open(path, 'rb') as f:
         data = f.read()
-    # message_from_bytes only exists on Python 3.
-    parse = getattr(email, 'message_from_bytes', email.message_from_string)
-    msg = parse(data)
+    msg = email.message_from_bytes(data)
     assert msg.get_content_type()

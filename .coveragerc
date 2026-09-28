@@ -1,0 +1,13 @@
+# Coverage settings for `scripts/test --cov` (CI runs it with a minimum).
+[run]
+source = lambda
+branch = True
+# The source tree is mounted read-only in the test container.
+data_file = /tmp/lambdamlm.coverage
+
+[report]
+# Two decimals, so the minimum CI sets (such as 99.2) is compared exactly:
+# with none, 99.21% rounds to 99 and fails it.
+precision = 2
+show_missing = True
+skip_covered = True

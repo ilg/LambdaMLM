@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Email commands: the signing round trip and each command's output."""
 
 from datetime import timedelta
@@ -244,7 +243,7 @@ def test_unknown_list(aws):
 
 
 def test_non_ascii_arguments():
-    assert u'José' in run(u'a@example.com', u'echo José')
+    assert 'José' in run('a@example.com', 'echo José')
 
 
 # ---------------------------------------------------------------- run: subscription
@@ -421,6 +420,16 @@ def test_set_lists_options(aws):
         'moderated: None\n'
         'reject-from-non-members: None\n'
         'allow-from-non-members: None\n')
+
+
+def test_set_lists_stored_bounce_settings(aws):
+    # The listing shows what the file stores, not the defaults in effect.
+    from email_utils import ResponseType
+    make_list(aws, **{'bounce-score-threshold': 0,
+                      'bounce-weights': {ResponseType.hard: 5.0, ResponseType.soft: 0.25}})
+    output = run('admin@example.com', 'list test-list@example.org set')
+    assert 'bounce-score-threshold: 0\n' in output
+    assert 'bounce-weights: {<ResponseType.hard: 1>: 5.0, <ResponseType.soft: 2>: 0.25}\n' in output
 
 
 def test_set_lists_options_insufficient(aws):

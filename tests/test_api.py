@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The direct-invoke API used by the web app."""
 
 import json

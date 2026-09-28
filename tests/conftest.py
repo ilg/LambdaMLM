@@ -1,22 +1,18 @@
-# -*- coding: utf-8 -*-
 """Test setup for the Lambda code.
 
-The app modules create boto3 clients and read `config` at import time, so
-everything here must happen, in this order, before any app module is
-imported:
+`settings` reads the environment when it's imported, so everything here must
+happen, in this order, before any app module is imported:
 
 1. Point AWS configuration at fake credentials, so no real credentials or
    profiles can ever be picked up.
 2. Block every real AWS request at the botocore level.
-3. Install a fake `settings` module.
+3. Set the app's settings in the environment.
 4. Put `lambda/` on the import path.
 """
 
 import importlib
 import os
 import sys
-import types
-from datetime import timedelta
 
 # 1. Fake AWS configuration.
 os.environ.pop('AWS_PROFILE', None)
@@ -46,19 +42,19 @@ def _block_request(request, **kwargs):
 boto3.setup_default_session()
 boto3.DEFAULT_SESSION.events.register('before-send', _block_request)
 
-# 3. Fake settings module, with the same settings as lambda/settings.py and a
-# fixed signing key instead of one from SSM.  (tests/test_settings.py tests
-# the real module.)
-settings = types.ModuleType('settings')
-settings.command_user = 'lambda'
-settings.s3_bucket = 'lambdamlm-test'
-settings.s3_incoming_email_prefix = 'incoming/'
-settings.s3_configuration_prefix = 'config/'
-settings.s3_moderation_prefix = 'moderation/'
-settings.signed_validity_interval = timedelta(hours=1)
-settings.signing_key_parameter = '/lambdamlm/test/signing-key'
-settings.signing_key = lambda: 'test signing key'
-sys.modules['settings'] = settings
+# 3. The app's settings, replacing any from the environment the tests run in.
+# The `aws` fixture replaces the signing key, which otherwise comes from SSM.
+for name in [n for n in os.environ if n.startswith('LAMBDAMLM_')]:
+    del os.environ[name]
+os.environ.update({
+    'LAMBDAMLM_COMMAND_USER': 'lambda',
+    'LAMBDAMLM_BUCKET': 'lambdamlm-test',
+    'LAMBDAMLM_CONFIGURATION_PREFIX': 'config/',
+    'LAMBDAMLM_INCOMING_PREFIX': 'incoming/',
+    'LAMBDAMLM_MODERATION_PREFIX': 'moderation/',
+    'LAMBDAMLM_SIGNED_VALIDITY_HOURS': '1',
+    'LAMBDAMLM_SIGNING_KEY_PARAMETER': '/lambdamlm/test/signing-key',
+    })
 
 # 4. Import path.
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -76,43 +72,49 @@ from fakes import FakeS3, FakeSES
 yaml.SafeDumper.add_representer(FakeDatetime, yaml.representer.SafeRepresenter.represent_datetime)
 yaml.SafeDumper.add_representer(FakeDate, yaml.representer.SafeRepresenter.represent_date)
 
-# Import every module that creates a client now, so they're all created
-# under the setup above.
-import listobj
-import sestools
-import control
+import aws_clients
+import settings
+
+# The real accessors, before the `aws` fixture replaces them.
+REAL_CLIENT_ACCESSORS = {'s3': aws_clients.s3, 'ses': aws_clients.ses, 'ssm': aws_clients.ssm}
 # The handler module is named `lambda`, which is a keyword.
 handler_module = importlib.import_module('lambda')
 
-# The real clients the app created, kept so tests can check they're blocked.
-import_time_clients = {
-    'listobj.s3': listobj.s3,
-    'listobj.ses': listobj.ses,
-    'sestools.s3': sestools.s3,
-    'control.ses': control.ses,
-    }
+
+class RealAWSClientCreated(Exception):
+    pass
+
+
+def _no_real_clients(*args, **kwargs):
+    raise RealAWSClientCreated('Tests tried to create an AWS client: {}'.format(args))
 
 
 @pytest.fixture(autouse=True)
 def aws(monkeypatch):
-    """Replace every module-level AWS client with in-memory fakes.
+    """Replace the app's AWS clients with in-memory fakes, and the signing key
+    (otherwise read from SSM) with a fixed one.
 
-    This is the only place clients are swapped, so if the clients move (for
-    example, to lazy creation), only this fixture needs to change.
+    The app gets every client from aws_clients, so this is the only place
+    clients are swapped.  Creating a client any other way fails the test.
     """
-    s3 = FakeS3()
-    ses = FakeSES()
-    monkeypatch.setattr(listobj, 's3', s3)
-    monkeypatch.setattr(listobj, 'ses', ses)
-    monkeypatch.setattr(sestools, 's3', s3)
-    monkeypatch.setattr(control, 'ses', ses)
-    return FakeAWS(s3=s3, ses=ses)
+    monkeypatch.setattr(settings, 'signing_key', lambda: 'test signing key')
+    log = []
+    s3 = FakeS3(log)
+    ses = FakeSES(log)
+    for accessor in (aws_clients.s3, aws_clients.ses, aws_clients.ssm):
+        accessor.cache_clear()
+    monkeypatch.setattr(aws_clients, 's3', lambda: s3)
+    monkeypatch.setattr(aws_clients, 'ses', lambda: ses)
+    monkeypatch.setattr(boto3, 'client', _no_real_clients)
+    return FakeAWS(s3=s3, ses=ses, log=log)
 
 
-class FakeAWS(object):
-    def __init__(self, s3, ses):
+class FakeAWS:
+    def __init__(self, s3, ses, log):
         self.s3 = s3
         self.ses = ses
+        # Every S3 and SES call, in order (see fakes.FakeS3.log).
+        self.log = log
 
 
 @pytest.fixture

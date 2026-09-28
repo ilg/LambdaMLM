@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Signed commands: signature values and token validation."""
 
 from datetime import timedelta
@@ -15,8 +14,8 @@ COMMAND = 'list alpha-list@example.org subscribe'
 # Longer than the 64-byte HMAC block size and containing a backslash, like the
 # production key (whose value isn't known here).  Keys longer than the block
 # size are hashed first, which is why a unicode key works on Python 2 for them.
-LONG_UNICODE_KEY = (u'This is a long ASCII signing key used only by the tests, '
-                    u'with a backslash \\ in it, long enough to be hashed first.')
+LONG_UNICODE_KEY = ('This is a long ASCII signing key used only by the tests, '
+                    'with a backslash \\ in it, long enough to be hashed first.')
 NOW = '2026-09-14 12:00:00'
 
 
@@ -153,9 +152,12 @@ def test_signed_for_named_address_rejects_bare_address():
 
 
 def test_short_unicode_key(monkeypatch):
-    # Issue #34: a short unicode key crashed hmac on Python 2.
-    use_key(monkeypatch, u'short unicode key')
-    assert control.signature('anything') == control.signature(u'anything')
+    # Issue #34: a short unicode key crashed hmac on Python 2.  It signs
+    # exactly like the same key as bytes.
+    use_key(monkeypatch, 'short unicode key')
+    text_signature = control.signature('anything')
+    use_key(monkeypatch, b'short unicode key')
+    assert text_signature == control.signature('anything')
 
 
 def test_bytes_key(monkeypatch):
@@ -166,7 +168,7 @@ def test_bytes_key(monkeypatch):
 
 
 def test_non_ascii_command():
-    cmd = u'list alpha-list@example.org subscribe "José <j@example.com>"'
+    cmd = 'list alpha-list@example.org subscribe "José <j@example.com>"'
     with freeze_time(NOW):
         assert control.get_signed_command(control.sign(cmd, ADDRESS), ADDRESS) == cmd
 

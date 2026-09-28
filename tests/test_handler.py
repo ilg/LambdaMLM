@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The Lambda entry point, end to end, and the SES/email helpers it uses."""
 
 import pytest
@@ -34,18 +33,18 @@ def keys(aws):
 
 def test_msg_get_header():
     msg = parse_message(b'Subject: =?utf-8?q?Caf=C3=A9?= time\nFrom: a@example.com\n\n')
-    assert sestools.msg_get_header(msg, 'subject') == u'Café time'
-    assert sestools.msg_get_header(msg, 'from') == u'a@example.com'
+    assert sestools.msg_get_header(msg, 'subject') == 'Café time'
+    assert sestools.msg_get_header(msg, 'from') == 'a@example.com'
     assert sestools.msg_get_header(msg, 'reply-to') is None
 
 
 def test_msg_get_header_raw_eight_bit():
     # Undeclared 8-bit header bytes are read as UTF-8...
     msg = parse_message(b'From: Jos\xc3\xa9 <j@example.com>\n\n')
-    assert sestools.msg_get_header(msg, 'from') == u'José <j@example.com>'
+    assert sestools.msg_get_header(msg, 'from') == 'José <j@example.com>'
     # ...or as Latin-1 if they aren't valid UTF-8.
     msg = parse_message(b'From: Jos\xe9 <j@example.com>\n\n')
-    assert sestools.msg_get_header(msg, 'from') == u'José <j@example.com>'
+    assert sestools.msg_get_header(msg, 'from') == 'José <j@example.com>'
 
 
 @pytest.mark.parametrize('headers, expected', [
@@ -132,6 +131,27 @@ def test_list_post(aws, lambda_handler):
     assert incoming_key('id1') not in keys(aws)
 
 
+def test_list_post_call_order(aws, lambda_handler):
+    # The incoming message is read first and deleted last, only once the post
+    # has been handled.  The keys are spelled out: they're part of the S3 layout.
+    make_list(aws)
+    store_incoming(aws, 'id1', POST)
+    lambda_handler(ses_event('id1', ['test-list@example.org']), None)
+    assert aws.log == [
+        ('s3', 'get_object', 'incoming/id1'),
+        ('s3', 'get_object', 'config/example.org/test-list.yaml'),
+        ('ses', 'send_raw_email', 'bob@example.com'),
+        ('s3', 'delete_object', 'incoming/id1'),
+        ]
+
+
+def test_incoming_access_denied_is_raised(aws, lambda_handler):
+    store_incoming(aws, 'id1', POST)
+    aws.s3.deny(settings.s3_bucket, incoming_key('id1'))
+    with pytest.raises(ClientError):
+        lambda_handler(ses_event('id1', ['test-list@example.org']), None)
+
+
 def two_lists(aws):
     make_list(aws)
     make_list(aws, 'other', members=[
@@ -157,6 +177,16 @@ def test_command(aws, lambda_handler):
     assert aws.ses.sent_emails[0]['Message']['Subject']['Data'] == \
         'Re: ' + control.sign('about', 'a@example.com')
     assert incoming_key('id1') not in keys(aws)
+
+
+@freeze_time('2026-09-14 12:00:00')
+def test_command_to_other_command_user(aws, lambda_handler, monkeypatch):
+    # Settings are read when they're used, so the command address follows them.
+    monkeypatch.setattr(settings, 'command_user', 'lists')
+    store_incoming(aws, 'id1', b'From: a@example.com\nTo: lists@example.org\nSubject: about\n\n')
+    lambda_handler(ses_event('id1', ['lists@example.org']), None)
+    assert aws.ses.sent_emails[0]['Message']['Subject']['Data'] == \
+        'Re: ' + control.sign('about', 'a@example.com')
 
 
 def test_command_with_other_recipient_is_not_a_command(aws, lambda_handler):
