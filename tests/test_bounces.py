@@ -9,7 +9,7 @@ import os
 
 import pytest
 
-import email_utils
+import bounces
 import golden
 from helpers import FIXTURES, parse_message, read_bytes
 
@@ -42,7 +42,7 @@ def analyze(msg):
 
 def classify(msg):
     try:
-        return email_utils.detect_bounce(msg).name
+        return bounces.detect_bounce(msg).name
     except Exception as e:
         return type(e).__name__
 
@@ -74,15 +74,15 @@ def test_synthetic_samples(name, expected):
 
 
 def test_complaints_are_not_detected():
-    # email_utils.detect_bounce has "# TODO: detect complaints" (issue #22).
+    # bounces.detect_bounce has "# TODO: detect complaints" (issue #22).
     msg = parse_message(read_bytes(FIXTURES, 'bounces', 'synthetic', 'arf-complaint.eml'))
-    assert email_utils.detect_bounce(msg) == email_utils.ResponseType.unknown
+    assert bounces.detect_bounce(msg) == bounces.ResponseType.unknown
 
 
 def test_unlisted_status_code_is_classified():
     import lamson_bounce
     msg = parse_message(read_bytes(FIXTURES, 'bounces', 'synthetic', 'microsoft-5-1-10.eml'))
-    assert email_utils.detect_bounce(msg) == email_utils.ResponseType.hard
+    assert bounces.detect_bounce(msg) == bounces.ResponseType.hard
     analysis = lamson_bounce.detect(msg)
     assert analysis.combined_status == (110, 'Other address status')
 

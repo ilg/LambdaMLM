@@ -8,6 +8,7 @@ from freezegun import freeze_time
 
 import settings
 import control
+import signing
 from control import commands
 from helpers import member, parse_message, store_list_config, stored_list_config
 from list_member import MemberFlag
@@ -47,7 +48,7 @@ def command_message(subject, from_='Plain <plain@example.com>', headers=()):
 def test_unsigned_command_gets_signed_reply(aws):
     control.handle_command(COMMAND_ADDRESS, command_message('list test-list@example.org subscribe'))
     (sent,) = aws.ses.sent_emails
-    signed = control.sign('list test-list@example.org subscribe', 'Plain <plain@example.com>')
+    signed = signing.sign('list test-list@example.org subscribe', 'Plain <plain@example.com>')
     assert sent == {
         'Source': COMMAND_ADDRESS,
         'Destination': {'ToAddresses': ['Plain <plain@example.com>']},
@@ -67,7 +68,7 @@ def test_reply_prefixes_are_stripped(aws):
 @freeze_time(NOW)
 def test_signed_command_is_run(aws):
     make_list(aws, **{'open-subscription': True})
-    signed = control.sign('list test-list@example.org subscribe', 'New <new@example.com>')
+    signed = signing.sign('list test-list@example.org subscribe', 'New <new@example.com>')
     control.handle_command(COMMAND_ADDRESS, command_message('Re: ' + signed, from_='New <new@example.com>'))
     (sent,) = aws.ses.sent_emails
     assert sent['Destination'] == {'ToAddresses': ['New <new@example.com>']}
@@ -80,7 +81,7 @@ def test_signed_command_is_run(aws):
 
 def test_expired_command_is_ignored(aws):
     with freeze_time(NOW):
-        signed = control.sign('about', 'plain@example.com')
+        signed = signing.sign('about', 'plain@example.com')
     with freeze_time('2026-09-14 13:00:01'):
         control.handle_command(COMMAND_ADDRESS, command_message(signed, from_='plain@example.com'))
     assert aws.ses.sent_emails == []
@@ -88,7 +89,7 @@ def test_expired_command_is_ignored(aws):
 
 @freeze_time(NOW)
 def test_command_signed_for_someone_else_is_ignored(aws):
-    signed = control.sign('about', 'other@example.com')
+    signed = signing.sign('about', 'other@example.com')
     control.handle_command(COMMAND_ADDRESS, command_message(signed, from_='plain@example.com'))
     assert aws.ses.sent_emails == []
 
@@ -310,7 +311,7 @@ def test_unsubscribe_insufficient(aws):
 
 def invitation(address, verb='subscription'):
     with freeze_time(NOW):
-        token = control.sign(address, 'test-list@example.org', validity_duration=timedelta(days=3))
+        token = signing.sign(address, 'test-list@example.org', validity_duration=timedelta(days=3))
     return 'list test-list@example.org accept_{}_invitation "{}"'.format(verb, token)
 
 
@@ -424,7 +425,7 @@ def test_set_lists_options(aws):
 
 def test_set_lists_stored_bounce_settings(aws):
     # The listing shows what the file stores, not the defaults in effect.
-    from email_utils import ResponseType
+    from bounces import ResponseType
     make_list(aws, **{'bounce-score-threshold': 0,
                       'bounce-weights': {ResponseType.hard: 5.0, ResponseType.soft: 0.25}})
     output = run('admin@example.com', 'list test-list@example.org set')

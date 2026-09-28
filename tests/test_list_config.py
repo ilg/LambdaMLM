@@ -8,10 +8,11 @@ from datetime import timedelta
 import pytest
 from freezegun import freeze_time
 
-import control
 import golden
 import listobj
-from email_utils import ResponseType, bounce_defaults
+import signing
+import storage
+from bounces import ResponseType, bounce_defaults
 from helpers import (HOST, PRODUCTION, member, read_bytes, store_list_config,
                      store_production_list, stored_list_config)
 from list_exceptions import (
@@ -42,8 +43,8 @@ def test_load_by_address(aws):
     store_list_config(aws, 'test-list', {'members': []})
     l = listobj.List('Test-List@Example.ORG')
     assert (l.address, l.username, l.host) == ('test-list@example.org', 'test-list', 'example.org')
-    assert l._s3_key == 'config/example.org/test-list.yaml'
-    assert l._s3_moderation_prefix == 'moderation/example.org/test-list/'
+    assert storage.list_config_key(l.host, l.username) == 'config/example.org/test-list.yaml'
+    assert storage.moderation_prefix(l.host, l.username) == 'moderation/example.org/test-list/'
 
 
 def test_load_by_username_and_host(aws):
@@ -79,9 +80,9 @@ def test_display_address(aws):
     assert listobj.List('unnamed@example.org').display_address == 'unnamed@example.org'
 
 
-def test_bounce_defaults_are_instance_attributes_only(aws):
-    # __setattr__ compares the underscored name with the hyphenated property
-    # names, so the defaults set in __init__ never reach the stored config.
+def test_bounce_defaults_are_not_stored(aws):
+    # The defaults apply when a list doesn't set a value, but they're never
+    # saved or reported as the list's own.
     l = make_list(aws)
     assert l.bounce_score_threshold == bounce_defaults.bounce_score_threshold
     assert l.bounce_weights == bounce_defaults.bounce_weights
@@ -381,7 +382,7 @@ def test_invite_subscribe_member(aws):
     l = admin_list(aws, name='Test List')
     l.invite_subscribe_member('new@example.com')
     (sent,) = aws.ses.sent_emails
-    token = control.sign('new@example.com', 'test-list@example.org',
+    token = signing.sign('new@example.com', 'test-list@example.org',
                          validity_duration=timedelta(days=3))
     cmd = 'list test-list@example.org accept_subscription_invitation "{}"'.format(token)
     assert sent == {
@@ -389,7 +390,7 @@ def test_invite_subscribe_member(aws):
         'Destination': {'ToAddresses': ['new@example.com']},
         'Message': {
             'Subject': {'Data': 'Invitation to join Test List - Fwd: {}'.format(
-                control.sign(cmd, 'new@example.com', validity_duration=timedelta(days=3)))},
+                signing.sign(cmd, 'new@example.com', validity_duration=timedelta(days=3)))},
             'Body': {'Text': {'Data': 'To accept the invitation, reply to this email.  '
                                       'You can leave the body of the reply blank.'}},
         },
@@ -425,7 +426,7 @@ def test_invite_unsubscribe_non_member(aws):
 
 def invitation_token(address):
     with freeze_time(NOW):
-        return control.sign(address, 'test-list@example.org', validity_duration=timedelta(days=3))
+        return signing.sign(address, 'test-list@example.org', validity_duration=timedelta(days=3))
 
 
 def test_accept_subscription_invitation(aws):
@@ -439,7 +440,7 @@ def test_accept_subscription_invitation(aws):
 def test_accept_invitation_from_other_address(aws):
     token = invitation_token('new@example.com')
     with freeze_time(NOW):
-        with pytest.raises(control.InvalidSignatureException):
+        with pytest.raises(signing.InvalidSignatureException):
             admin_list(aws).accept_subscription_invitation('other@example.com', token)
 
 
@@ -454,7 +455,7 @@ def test_accept_invitation_for_mixed_case_address(aws):
 def test_accept_expired_invitation(aws):
     token = invitation_token('new@example.com')
     with freeze_time('2026-09-17 12:00:01'):
-        with pytest.raises(control.ExpiredSignatureException):
+        with pytest.raises(signing.ExpiredSignatureException):
             admin_list(aws).accept_subscription_invitation('new@example.com', token)
 
 

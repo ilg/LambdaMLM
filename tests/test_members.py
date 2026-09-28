@@ -6,7 +6,7 @@ import pytest
 import yaml
 from freezegun import freeze_time
 
-from email_utils import ResponseType, bounce_defaults
+from bounces import ResponseType, bounce_defaults
 from list_exceptions import AlreadySubscribed, InsufficientPermissions, NotSubscribed
 from list_member import ListMember, MemberFlag
 from list_member_container import ListMemberContainer

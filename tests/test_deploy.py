@@ -9,7 +9,7 @@ import zipfile
 import pytest
 from freezegun import freeze_time
 
-import control
+import signing
 from deploytools import common, deploy, import_bucket, pull_config, signing_key
 from helpers import TESTS_DIR
 
@@ -138,9 +138,9 @@ def test_override_arguments_quote_values():
 def test_script_signs_like_the_function():
     expires = datetime.datetime(2026, 9, 14, 13, 0, 0)
     assert signing_key.sign('test signing key', 'about', 'a@example.com', expires) == \
-        control.sign('about', 'a@example.com')
+        signing.sign('about', 'a@example.com')
     with freeze_time('2026-09-14 12:30:00'):
-        assert control.get_signed_command(
+        assert signing.get_signed_command(
                 signing_key.sign('test signing key', 'about', 'a@example.com', expires), 'a@example.com') == 'about'
 
 
