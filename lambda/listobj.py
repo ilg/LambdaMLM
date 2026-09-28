@@ -1,16 +1,13 @@
-import copy
 import re
 
 host_regex = re.compile(r'^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$')
 name_regex = re.compile(r'^[a-z0-9-]+$')
 
 import email
-from email.header import Header
 from email.utils import parseaddr, formataddr
 from email.mime.multipart import MIMEMultipart
 from email.mime.message import MIMEMessage
 from email.mime.text import MIMEText
-from sestools import msg_get_header
 from email_utils import detect_bounce, bounce_defaults
 
 import mail
@@ -285,112 +282,11 @@ class List (ListMemberContainer):
             return formataddr((self.name, self.address))
         return self.address
 
-    @staticmethod
-    def msg_replace_header(msg, header, new_value=None):
-        # The value exactly as received.  (msg.get() would turn undeclared
-        # 8-bit bytes into an encoded word with the charset unknown-8bit.)
-        old_value = next((v for k, v in msg.raw_items() if k.lower() == header.lower()), None)
-        if old_value:
-            msg['X-Original-' + header] = old_value
-        del msg[header]
-        if new_value:
-            msg[header] = new_value
-
     def send(self, msg, mod_approved=False, cc_chain=()):
-        # cc_chain holds the addresses of the lists that cc'd this one, so
-        # cc-lists that refer back to each other don't loop forever.
-        from_user = msg_get_header(msg, 'From')
-        # The From header exactly as received, for copying into Reply-to and
-        # Cc without decoding and re-encoding it.
-        raw_from = next((v for k, v in msg.raw_items() if k.lower() == 'from'), from_user)
-        raw_from = re.sub(r'\r?\n[ \t]', ' ', raw_from)
-        from_name, from_address = parseaddr(from_user)
-        from_address = from_address.lower()
-        if not from_name:
-            # Use the local part (or the whole address, if it has no @).
-            from_name = from_address.split('@', 1)[0]
-        if not mod_approved:
-            member = self.member_with_address(from_address)
-            if member is None and self.reject_from_non_members:
-                print('{} cannot send email to {} (not a member and list rejects email from non-members).'.format(from_address, self.address))
-                return
-            if member and MemberFlag.noPost in member.flags:
-                print('{} cannot send email to {} (noPost is set).'.format(from_address, self.address))
-                return
-            if member is None and not self.allow_from_non_members:
-                print('Moderating message from non-member.')
-                self.moderate(msg)
-                return
-            if member and MemberFlag.modPost in member.flags:
-                print('Moderating message because member has modPost set.')
-                self.moderate(msg)
-                return
-            if self.moderated and (
-                    member is None
-                    or MemberFlag.preapprove not in member.flags):
-                print('Moderating message because list is moderated and message is not from a member with preapprove set.')
-                self.moderate(msg)
-                return
+        # posting imports this module, so it's imported here.
+        import posting
+        posting.send(self, msg, mod_approved, cc_chain)
 
-        # Send to CC lists.
-        cc_chain = cc_chain + (self.address,)
-        for cc_list in List.lists_for_addresses(self.cc_lists):
-            if cc_list.address in cc_chain:
-                continue
-            # send() rewrites the message's headers, so each list gets its own copy.
-            cc_list.send(copy.deepcopy(msg), mod_approved=True, cc_chain=cc_chain)
-
-        # Strip out any exising DKIM signature.
-        self.msg_replace_header(msg, 'DKIM-Signature')
-
-        # Strip out any existing return path.
-        self.msg_replace_header(msg, 'Return-path')
-
-        # Make the list be the sender of the email.
-        self.msg_replace_header(msg, 'Sender', self.address_header())
-
-        # Munge the From: header.
-        # While munging the From: header probably technically violates an RFC,
-        # it does appear to be the current best practice for MLMs:
-        # https://dmarc.org/supplemental/mailman-project-mlm-dmarc-reqs.html
-        list_name = self.name
-        if not list_name:
-            list_name = self.address
-        self.msg_replace_header(
-                msg,
-                'From',
-                formataddr((
-                    '{} (via {})'.format(from_name, list_name),
-                    self.munged_from(from_address),
-                    )),
-                )
-
-        # See if replies should default to the list.
-        if self.reply_to_list:
-            self.msg_replace_header(msg, 'Reply-to', self.address_header())
-            # Cc the sender so replies reach them too, in a single Cc: header
-            # that keeps anyone who was already Cc'd.
-            existing_cc = [re.sub(r'\r?\n[ \t]', ' ', v) for k, v in msg.raw_items() if k.lower() == 'cc']
-            self.msg_replace_header(msg, 'CC', ', '.join(existing_cc + [raw_from]))
-        else:
-            self.msg_replace_header(msg, 'Reply-to', raw_from)
-
-        # See if the list has a subject tag.
-        if self.subject_tag:
-            prefix = '[{}] '.format(self.subject_tag)
-            subject = msg_get_header(msg, 'Subject') or ''
-            if prefix not in subject:
-                self.msg_replace_header(msg, 'Subject', Header('{}{}'.format(prefix, subject)))
-
-        # TODO: body footer
-        for recipient in self.addresses_to_receive_from(from_address):
-            # Set the return-path VERP-style: [list username]+[recipient s/@/=/]+bounce@[host]
-            return_path = self.verp_address(recipient)
-            if not mod_approved:
-                # Suppress printing when mod-approved, because the output will go to the moderator approving it.
-                print('> Sending to {}.'.format(recipient))
-            mail.send_raw(return_path, recipient, msg.as_bytes(policy=SEND_POLICY))
-            
     @staticmethod
     def moderation_expiration_days(default=3):
         return storage.moderation_expiration_days(default)
