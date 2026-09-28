@@ -1,4 +1,3 @@
-from __future__ import print_function
 import yaml
 from itertools import groupby
 from math import pow
@@ -7,7 +6,7 @@ from yaml_enum import YAMLEnum
 
 from email_utils import ResponseType
 
-MemberFlag = YAMLEnum('MemberFlag', u'!flag', [
+MemberFlag = YAMLEnum('MemberFlag', '!flag', [
     #'digest',
     #'digest2',
     'modPost',
@@ -36,7 +35,7 @@ MemberFlag.userlevel_flags = classmethod(
         )
 
 class ListMember(yaml.YAMLObject):
-    yaml_tag = u'!Member'
+    yaml_tag = '!Member'
     yaml_loader = yaml.SafeLoader
     yaml_dumper = yaml.SafeDumper
     def __init__(self, address, *args, **kwargs):
@@ -50,14 +49,11 @@ class ListMember(yaml.YAMLObject):
             return None
         raise AttributeError(name)
     def __repr__(self):
-        return u'{}({} <{}>, flags: {})'.format(
+        return '{}({} <{}>, flags: {})'.format(
                 self.__class__.__name__,
                 self.name,
                 self.address,
-                ', '.join(
-                    map(lambda f: f.name,
-                        self.flags)
-                    ),
+                ', '.join(f.name for f in self.flags),
                 )
     def dict(self):
         return {

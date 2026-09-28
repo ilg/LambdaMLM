@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import copy
 
 import yaml
@@ -67,11 +65,11 @@ class _SendPolicy(email.policy.Compat32):
     and the form SES stores incoming mail in.
     """
     def _fold(self, name, value, sanitize):
-        if isinstance(value, str) and not any(u'\udc80' <= c <= u'\udcff' for c in value):
+        if isinstance(value, str) and not any('\udc80' <= c <= '\udcff' for c in value):
             lines = re.split(r'\r?\n', value)
             if len(lines) > 1 or len(name) + 2 + len(value) <= self.max_line_length:
                 return '{}: {}{}'.format(name, self.linesep.join(lines), self.linesep)
-        return super(_SendPolicy, self)._fold(name, value, sanitize)
+        return super()._fold(name, value, sanitize)
 
 
 SEND_POLICY = _SendPolicy(linesep='\r\n')
@@ -106,16 +104,16 @@ class List (ListMemberContainer):
             raise UnknownList
         self._config = yaml.safe_load(config_response['Body'])
         if self.name:
-            self.display_address = u'{} <{}>'.format(self.name, self.address)
+            self.display_address = '{} <{}>'.format(self.name, self.address)
         else:
             self.display_address = self.address
         # Default bounce scoring constants
         if not self.bounce_score_threshold:
-            self.bounce_score_threshold = getattr(settings, 'bounce_score_threshold', bounce_defaults.bounce_score_threshold)
+            self.bounce_score_threshold = bounce_defaults.bounce_score_threshold
         if not self.bounce_weights:
-            self.bounce_weights = getattr(settings, 'bounce_weights', bounce_defaults.bounce_weights)
+            self.bounce_weights = bounce_defaults.bounce_weights
         if not self.bounce_decay_factor:
-            self.bounce_decay_factor = getattr(settings, 'bounce_decay_factor', bounce_defaults.bounce_decay_factor)
+            self.bounce_decay_factor = bounce_defaults.bounce_decay_factor
 
     def __getattr__(self, name):
         prop = name.replace('_', '-')
@@ -128,7 +126,7 @@ class List (ListMemberContainer):
             prop = name.replace('_', '-')
             self._config[prop] = value
             return
-        super(List, self).__setattr__(name, value)
+        super().__setattr__(name, value)
 
     def dict(self):
         d = {p: getattr(self, p) for p in list_properties}
@@ -303,7 +301,7 @@ class List (ListMemberContainer):
                 ]
 
     def list_address_with_tags(self, *tags):
-        tags = map(lambda s: s.replace('@', '='), tags)
+        tags = (t.replace('@', '=') for t in tags)
         return '{}+{}@{}'.format(self.username, '+'.join(tags), self.host)
 
     def verp_address(self, address):
@@ -413,10 +411,10 @@ class List (ListMemberContainer):
 
         # See if the list has a subject tag.
         if self.subject_tag:
-            prefix = u'[{}] '.format(self.subject_tag)
-            subject = msg_get_header(msg, 'Subject') or u''
+            prefix = '[{}] '.format(self.subject_tag)
+            subject = msg_get_header(msg, 'Subject') or ''
             if prefix not in subject:
-                self.msg_replace_header(msg, 'Subject', Header(u'{}{}'.format(prefix, subject)))
+                self.msg_replace_header(msg, 'Subject', Header('{}{}'.format(prefix, subject)))
 
         # TODO: body footer
         for recipient in self.addresses_to_receive_from(from_address):
@@ -544,8 +542,6 @@ class List (ListMemberContainer):
             raise ValueError('Bounced-to username must contain a +.')
         list_username, _ = username.split('+', 1)
         l = cls(username=list_username, host=host)
-        if not l:
-            raise ValueError('Bounced-to address does not resolve to a known list.')
         print('Bounce received for list {}.'.format(l.display_address))
         member = l.member_passing_test(lambda m: l.verp_address(m.address).lower() == bounce_address.lower())
         if not member:

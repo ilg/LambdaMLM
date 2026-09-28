@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import base64
 import datetime
 import hmac
@@ -113,12 +111,9 @@ def get_signed_command(subject, address):
     match = signed_cmd_regex.match(subject)
     if not match:
         raise NotSignedException
-    (cmd, timestamp, sig) = ('  ' + subject).rsplit(' ', 2)
     cmd = match.group('cmd').strip()
     sig = match.group('signature')
     timestamp = match.group('timestamp')
-    if not sig or not timestamp:
-        raise NotSignedException
     try:
         expiration = datetime.datetime.strptime(timestamp, timestamp_format)
     except ValueError:

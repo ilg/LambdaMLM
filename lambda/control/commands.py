@@ -1,9 +1,6 @@
-from __future__ import print_function
-
 import shlex
 from traceback import format_exception
-
-from obj import Obj
+from types import SimpleNamespace
 
 import click
 from click.testing import CliRunner
@@ -14,7 +11,7 @@ runner = CliRunner()
 @click.argument('user', required=True)
 @click.pass_context
 def command(ctx, user, **kwargs):
-    ctx.obj = Obj(user=user)
+    ctx.obj = SimpleNamespace(user=user)
 
 @command.command(name='about')
 @click.pass_context
