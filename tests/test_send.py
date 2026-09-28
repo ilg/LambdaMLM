@@ -739,3 +739,30 @@ def test_post_without_from_header_fails_before_moderation(aws):
         l.send(parse_message(b'To: test-list@example.org\nSubject: Hi\nMessage-ID: <m1@example.com>\n\nHi.\n'))
     assert moderation_keys(aws) == []
     assert aws.ses.sent_raw_emails == []
+
+
+def count_serializations(monkeypatch):
+    import email.message
+    calls = []
+    original = email.message.Message.as_bytes
+
+    def as_bytes(self, *args, **kwargs):
+        calls.append(1)
+        return original(self, *args, **kwargs)
+    monkeypatch.setattr(email.message.Message, 'as_bytes', as_bytes)
+    return calls
+
+
+def test_post_is_serialized_once(aws, monkeypatch):
+    l = make_list(aws)
+    calls = count_serializations(monkeypatch)
+    l.send(parse_message(raw_message()))
+    assert sent_to(aws) == ['bob@example.com', 'carol@example.com']
+    assert len(calls) == 1
+
+
+def test_post_without_recipients_is_not_serialized(aws, monkeypatch):
+    l = make_list(aws, members=[member('alice@example.com')])
+    calls = count_serializations(monkeypatch)
+    l.send(parse_message(raw_message()))
+    assert calls == []

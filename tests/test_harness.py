@@ -1,5 +1,6 @@
 """Checks that the test harness itself is set up safely."""
 
+import importlib
 import json
 import os
 import subprocess
@@ -39,6 +40,18 @@ def test_handler_module_imports():
     assert callable(handler_module.lambda_handler)
 
 
+def test_template_uses_the_handler():
+    with open(os.path.join(os.path.dirname(LAMBDA_DIR), 'template.yaml')) as f:
+        assert '      Handler: handler.lambda_handler\n' in f.read()
+
+
+def test_old_handler_name_still_works():
+    # lambda.py stays for a release, for mail that arrives while a deploy has
+    # updated the code but not yet the handler setting.  `lambda` is a keyword,
+    # so it can only be imported like this.
+    assert importlib.import_module('lambda').lambda_handler is handler_module.lambda_handler
+
+
 def test_each_client_is_created_once(monkeypatch):
     created = []
     monkeypatch.setattr(boto3, 'client', lambda service: created.append(service) or object())
@@ -76,7 +89,7 @@ boto3.client = fail
 boto3.session.Session.client = fail
 
 sys.path.insert(0, sys.argv[1])
-importlib.import_module('lambda')
+importlib.import_module('handler')
 # Only the handler is imported, as in Lambda, so this shows which commands
 # its imports register.
 root = sys.modules['control.commands'].command
@@ -114,5 +127,5 @@ def test_no_real_clients_left_in_app_modules(aws):
         for attr, value in vars(module).items():
             if isinstance(value, BaseClient):
                 leftovers.append('{}.{}'.format(module_name, attr))
-    assert {'aws_clients', 'listobj', 'sestools', 'control', 'lambda'} <= scanned
+    assert {'aws_clients', 'listobj', 'sestools', 'control', 'handler'} <= scanned
     assert leftovers == []

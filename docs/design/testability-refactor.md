@@ -351,6 +351,17 @@ Each item is one commit. They're grouped into three PRs, so each can be deployed
 - **Dependency injection throughout.** See [Lazy AWS clients](#lazy-aws-clients).
 - **Removing `except TypeError` from `lists_for_addresses`.** It looks like a Python 2 workaround for `cc-lists` being `None`, but it also catches other malformed `cc-lists` values that the API's UpdateList can store. Removing it would make those posts fail.
 
+## Implementation notes
+
+Where the implementation (PRs 1–3) differs from the design above:
+
+- **`bounces.py` holds only `ResponseType`, the default scoring settings and `detect_bounce`.** `list_member` needs `ResponseType`, so a `bounces` module that also looked up lists would form a cycle. `list_and_member_for_verp` is in `listobj`, next to `List`.
+- **The SES event helpers stay in `sestools`.** Moving them next to `handle_ses_event` would make `sestools` re-export them from a module that imports `sestools`.
+- **`storage.check_held_message`** is the design's `held_message_exists`. It raises `ModeratedMessageNotFound`, as the code it replaces did, rather than returning a boolean.
+- **`List.moderate` has no delegator**: nothing but `posting` called it. The moderator check runs once per approval or rejection, instead of before each S3 call. Nothing in between can change the list's members.
+- **`SEND_POLICY` moved to `mail.py`**, which both `posting` and `moderation` use. `listobj` re-exports it.
+- **Two extra pins.** A failed delete after approving (the post goes out, then "not found") is pinned. So is serializing each post once, and not at all when it has no recipients.
+
 ## Decisions
 
 The owner accepted all four recommendations when reviewing this design (September 2026):

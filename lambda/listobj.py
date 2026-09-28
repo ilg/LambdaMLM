@@ -1,24 +1,16 @@
-import copy
 import re
 
 host_regex = re.compile(r'^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$')
 name_regex = re.compile(r'^[a-z0-9-]+$')
 
-import email
-import email.policy
-from email.header import Header
 from email.utils import parseaddr, formataddr
-from email.mime.multipart import MIMEMultipart
-from email.mime.message import MIMEMessage
-from email.mime.text import MIMEText
-from sestools import msg_get_header
-from email_utils import detect_bounce, bounce_defaults
+from bounces import detect_bounce, bounce_defaults
 
 import mail
+from mail import SEND_POLICY  # for the tests
 import settings
 import signing
 import storage
-import templates
 from list_member import ListMember, MemberFlag
 from list_member_container import ListMemberContainer
 from list_exceptions import (
@@ -45,26 +37,6 @@ list_properties_protected = [
         'members',
         'cc-lists',
         ]
-
-class _SendPolicy(email.policy.Compat32):
-    """How messages are written when they're sent or stored.
-
-    Like the default compat32 policy, except that a header that's already
-    folded, or short enough not to need folding, is written exactly as it is.
-    The default re-wraps every long header, which would rewrite the trace
-    headers of every post.  Lines end in CRLF, the canonical form for email
-    and the form SES stores incoming mail in.
-    """
-    def _fold(self, name, value, sanitize):
-        if isinstance(value, str) and not any('\udc80' <= c <= '\udcff' for c in value):
-            lines = re.split(r'\r?\n', value)
-            if len(lines) > 1 or len(name) + 2 + len(value) <= self.max_line_length:
-                return '{}: {}{}'.format(name, self.linesep.join(lines), self.linesep)
-        return super()._fold(name, value, sanitize)
-
-
-SEND_POLICY = _SendPolicy(linesep='\r\n')
-
 
 def address_from_user(user):
     _, address = parseaddr(user)
@@ -305,165 +277,24 @@ class List (ListMemberContainer):
             return formataddr((self.name, self.address))
         return self.address
 
-    @staticmethod
-    def msg_replace_header(msg, header, new_value=None):
-        # The value exactly as received.  (msg.get() would turn undeclared
-        # 8-bit bytes into an encoded word with the charset unknown-8bit.)
-        old_value = next((v for k, v in msg.raw_items() if k.lower() == header.lower()), None)
-        if old_value:
-            msg['X-Original-' + header] = old_value
-        del msg[header]
-        if new_value:
-            msg[header] = new_value
-
     def send(self, msg, mod_approved=False, cc_chain=()):
-        # cc_chain holds the addresses of the lists that cc'd this one, so
-        # cc-lists that refer back to each other don't loop forever.
-        from_user = msg_get_header(msg, 'From')
-        # The From header exactly as received, for copying into Reply-to and
-        # Cc without decoding and re-encoding it.
-        raw_from = next((v for k, v in msg.raw_items() if k.lower() == 'from'), from_user)
-        raw_from = re.sub(r'\r?\n[ \t]', ' ', raw_from)
-        from_name, from_address = parseaddr(from_user)
-        from_address = from_address.lower()
-        if not from_name:
-            # Use the local part (or the whole address, if it has no @).
-            from_name = from_address.split('@', 1)[0]
-        if not mod_approved:
-            member = self.member_with_address(from_address)
-            if member is None and self.reject_from_non_members:
-                print('{} cannot send email to {} (not a member and list rejects email from non-members).'.format(from_address, self.address))
-                return
-            if member and MemberFlag.noPost in member.flags:
-                print('{} cannot send email to {} (noPost is set).'.format(from_address, self.address))
-                return
-            if member is None and not self.allow_from_non_members:
-                print('Moderating message from non-member.')
-                self.moderate(msg)
-                return
-            if member and MemberFlag.modPost in member.flags:
-                print('Moderating message because member has modPost set.')
-                self.moderate(msg)
-                return
-            if self.moderated and (
-                    member is None
-                    or MemberFlag.preapprove not in member.flags):
-                print('Moderating message because list is moderated and message is not from a member with preapprove set.')
-                self.moderate(msg)
-                return
+        # posting imports this module, so it's imported here.
+        import posting
+        posting.send(self, msg, mod_approved, cc_chain)
 
-        # Send to CC lists.
-        cc_chain = cc_chain + (self.address,)
-        for cc_list in List.lists_for_addresses(self.cc_lists):
-            if cc_list.address in cc_chain:
-                continue
-            # send() rewrites the message's headers, so each list gets its own copy.
-            cc_list.send(copy.deepcopy(msg), mod_approved=True, cc_chain=cc_chain)
-
-        # Strip out any exising DKIM signature.
-        self.msg_replace_header(msg, 'DKIM-Signature')
-
-        # Strip out any existing return path.
-        self.msg_replace_header(msg, 'Return-path')
-
-        # Make the list be the sender of the email.
-        self.msg_replace_header(msg, 'Sender', self.address_header())
-
-        # Munge the From: header.
-        # While munging the From: header probably technically violates an RFC,
-        # it does appear to be the current best practice for MLMs:
-        # https://dmarc.org/supplemental/mailman-project-mlm-dmarc-reqs.html
-        list_name = self.name
-        if not list_name:
-            list_name = self.address
-        self.msg_replace_header(
-                msg,
-                'From',
-                formataddr((
-                    '{} (via {})'.format(from_name, list_name),
-                    self.munged_from(from_address),
-                    )),
-                )
-
-        # See if replies should default to the list.
-        if self.reply_to_list:
-            self.msg_replace_header(msg, 'Reply-to', self.address_header())
-            # Cc the sender so replies reach them too, in a single Cc: header
-            # that keeps anyone who was already Cc'd.
-            existing_cc = [re.sub(r'\r?\n[ \t]', ' ', v) for k, v in msg.raw_items() if k.lower() == 'cc']
-            self.msg_replace_header(msg, 'CC', ', '.join(existing_cc + [raw_from]))
-        else:
-            self.msg_replace_header(msg, 'Reply-to', raw_from)
-
-        # See if the list has a subject tag.
-        if self.subject_tag:
-            prefix = '[{}] '.format(self.subject_tag)
-            subject = msg_get_header(msg, 'Subject') or ''
-            if prefix not in subject:
-                self.msg_replace_header(msg, 'Subject', Header('{}{}'.format(prefix, subject)))
-
-        # TODO: body footer
-        for recipient in self.addresses_to_receive_from(from_address):
-            # Set the return-path VERP-style: [list username]+[recipient s/@/=/]+bounce@[host]
-            return_path = self.verp_address(recipient)
-            if not mod_approved:
-                # Suppress printing when mod-approved, because the output will go to the moderator approving it.
-                print('> Sending to {}.'.format(recipient))
-            mail.send_raw(return_path, recipient, msg.as_bytes(policy=SEND_POLICY))
-            
     @staticmethod
     def moderation_expiration_days(default=3):
         return storage.moderation_expiration_days(default)
 
-    def moderate(self, msg):
-        message_id = msg['message-id']
-        if not message_id:
-            print('Unable to moderate incoming message due to lack of Message-ID: header.')
-            raise ValueError('Messages must contain a Message-ID: header.')
-        message_id = message_id.replace(':', '_')  # Make it safe for subject-command.
-        # Put the email message into the list's moderation holding space on S3.
-        storage.hold_message(self.host, self.username, message_id, msg.as_bytes(policy=SEND_POLICY))
-        # Get the moderation auto-deletion/auto-rejection interval from the S3 bucket lifecycle configuration.
-        from datetime import timedelta
-        mod_interval = timedelta(days=self.moderation_expiration_days())
-        # Wrap the moderated message for inclusion in the notification to mods.
-        forward_mime = MIMEMessage(msg)
-        control_address = '{}@{}'.format(settings.command_user, self.host)
-        for moderator in self.moderator_addresses:
-            # Build up the notification email per-moderator so that we can include
-            # pre-signed moderation commands specific to that moderator.
-            approve_cmd = signing.sign('list {} mod approve "{}"'.format(self.address, message_id), moderator, mod_interval)
-            reject_cmd = signing.sign('list {} mod reject "{}"'.format(self.address, message_id), moderator, mod_interval)
-            message = MIMEMultipart()
-            message['Subject'] = 'Message to {} needs approval: {}'.format(self.address, approve_cmd)
-            message['From'] = control_address
-            message['To'] = moderator
-            message.attach(MIMEText(templates.render(
-                'notify_moderators.jinja2',
-                list_name=self.address,
-                control_address=control_address,
-                approve_command=approve_cmd,
-                reject_command=reject_cmd,
-                moderation_days=mod_interval.days
-                )))
-            message.attach(forward_mime)
-            mail.send_raw(control_address, moderator, message.as_bytes(policy=SEND_POLICY))
-
-    def _user_mod_act_on(self, from_user, message_id, action):
-        from_address = address_from_user(from_user)
-        member = self.member_with_address(from_address)
-        if member is None or MemberFlag.moderator not in member.flags:
-            raise InsufficientPermissions
-        return action(self.host, self.username, message_id)
+    # Moderation is in moderation.py, which imports this module.
 
     def user_mod_approve(self, from_user, message_id):
-        data = self._user_mod_act_on(from_user, message_id, storage.held_message)
-        self.send(email.message_from_bytes(data), mod_approved=True)
-        self._user_mod_act_on(from_user, message_id, storage.delete_held_message)
+        import moderation
+        moderation.approve(self, from_user, message_id)
 
     def user_mod_reject(self, from_user, message_id):
-        self._user_mod_act_on(from_user, message_id, storage.check_held_message)
-        self._user_mod_act_on(from_user, message_id, storage.delete_held_message)
+        import moderation
+        moderation.reject(self, from_user, message_id)
 
     @classmethod
     def lists_for_addresses(cls, addresses):
@@ -477,27 +308,47 @@ class List (ListMemberContainer):
         except TypeError:
             return
 
+    def record_response(self, member, response_type):
+        """Record a bounce or complaint against a member, and flag them as
+        bouncing if their score passes the list's threshold.
+
+        It doesn't save the list, so a caller handling several responses can
+        save once.
+        """
+        member.add_response(response_type)
+        score = member.bounce_score(weights=self.bounce_weights, decay=self.bounce_decay_factor)
+        print('New bounce score for {} is {}.'.format(member.address, score))
+        if score > self.bounce_score_threshold:
+            print('Score exceeds bounce score threshold, so flagging the member as bouncing.')
+            member.flags.add(MemberFlag.bouncing)
+        # TODO: send email to member and/or admin(s) noting that the bounce threshold has been reached?
+
     @classmethod
     def handle_bounce_to(cls, bounce_address, msg):
+        """Handle a bounce message sent to a member's VERP address."""
         print('Handling bounce to {}.'.format(bounce_address))
-        if '@' not in bounce_address:
-            raise ValueError('Bounced-to addresses must contain an @.')
-        username, host = bounce_address.split('@', 1)
-        if '+' not in bounce_address:
-            raise ValueError('Bounced-to username must contain a +.')
-        list_username, _ = username.split('+', 1)
-        l = cls(username=list_username, host=host)
-        print('Bounce received for list {}.'.format(l.display_address))
-        member = l.member_passing_test(lambda m: l.verp_address(m.address).lower() == bounce_address.lower())
+        l, member = list_and_member_for_verp(bounce_address)
         if not member:
             print('No member found matching the bounce address.')
             return
-        member.add_response(detect_bounce(msg))
-        score = member.bounce_score(weights=l.bounce_weights, decay=l.bounce_decay_factor)
-        print('New bounce score for {} is {}.'.format(member.address, score))
-        if score > l.bounce_score_threshold:
-            print('Score exceeds bounce score threshold, so flagging the member as bouncing.')
-            member.flags.add(MemberFlag.bouncing)
+        l.record_response(member, detect_bounce(msg))
         l._save()
-        # TODO: send email to member and/or admin(s) noting that the bounce threshold has been reached?
-        
+
+
+def list_and_member_for_verp(verp_address):
+    """The list and member a VERP address (list+member=host+bounce@host) is for.
+
+    The member is None if no member's VERP address matches.  Raises
+    ValueError for an address that isn't in that form, and UnknownList if
+    there's no such list.
+    """
+    if '@' not in verp_address:
+        raise ValueError('Bounced-to addresses must contain an @.')
+    username, host = verp_address.split('@', 1)
+    if '+' not in verp_address:
+        raise ValueError('Bounced-to username must contain a +.')
+    list_username, _ = username.split('+', 1)
+    l = List(username=list_username, host=host)
+    print('Bounce received for list {}.'.format(l.display_address))
+    member = l.member_passing_test(lambda m: l.verp_address(m.address).lower() == verp_address.lower())
+    return l, member

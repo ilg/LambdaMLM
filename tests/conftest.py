@@ -10,7 +10,6 @@ happen, in this order, before any app module is imported:
 4. Put `lambda/` on the import path.
 """
 
-import importlib
 import os
 import sys
 
@@ -77,8 +76,7 @@ import settings
 
 # The real accessors, before the `aws` fixture replaces them.
 REAL_CLIENT_ACCESSORS = {'s3': aws_clients.s3, 'ses': aws_clients.ses, 'ssm': aws_clients.ssm}
-# The handler module is named `lambda`, which is a keyword.
-handler_module = importlib.import_module('lambda')
+import handler as handler_module
 
 
 class RealAWSClientCreated(Exception):

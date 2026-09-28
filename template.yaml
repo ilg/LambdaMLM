@@ -160,7 +160,7 @@ Resources:
       Description: LambdaMLM mailing list manager
       # scripts/deploy stages the function's code here.
       CodeUri: build/src/
-      Handler: lambda.lambda_handler
+      Handler: handler.lambda_handler
       Runtime: python3.13
       Architectures: [x86_64]
       MemorySize: 512

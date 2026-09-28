@@ -43,7 +43,7 @@ def test_stage_packages_code_only(tmp_path):
 def test_stage_real_function(tmp_path):
     destination = tmp_path / 'build'
     deploy.stage(destination=str(destination))
-    for name in ('lambda.py', 'settings.py', 'listobj.py', 'lamson_bounce.py', 'requirements.txt',
+    for name in ('handler.py', 'lambda.py', 'settings.py', 'listobj.py', 'lamson_bounce.py', 'requirements.txt',
                  'templates/notify_moderators.jinja2', 'control/list_commands.py', 'api/actions.py'):
         assert (destination / name).exists(), name
 
