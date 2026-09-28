@@ -19,6 +19,7 @@ from email.header import Header
 from email.utils import formataddr, parseaddr
 
 import mail
+import moderation
 from list_member import MemberFlag
 from mail import SEND_POLICY
 from sestools import msg_get_header
@@ -80,7 +81,7 @@ def send(mlist, msg, mod_approved=False, cc_chain=()):
         if action is not Disposition.deliver:
             print(message)
             if action is Disposition.moderate:
-                mlist.moderate(msg)
+                moderation.moderate(mlist, msg)
             return
 
     # Send to CC lists.

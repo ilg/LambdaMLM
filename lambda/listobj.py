@@ -3,19 +3,14 @@ import re
 host_regex = re.compile(r'^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$')
 name_regex = re.compile(r'^[a-z0-9-]+$')
 
-import email
 from email.utils import parseaddr, formataddr
-from email.mime.multipart import MIMEMultipart
-from email.mime.message import MIMEMessage
-from email.mime.text import MIMEText
 from email_utils import detect_bounce, bounce_defaults
 
 import mail
-from mail import SEND_POLICY
+from mail import SEND_POLICY  # for the tests
 import settings
 import signing
 import storage
-import templates
 from list_member import ListMember, MemberFlag
 from list_member_container import ListMemberContainer
 from list_exceptions import (
@@ -291,55 +286,15 @@ class List (ListMemberContainer):
     def moderation_expiration_days(default=3):
         return storage.moderation_expiration_days(default)
 
-    def moderate(self, msg):
-        message_id = msg['message-id']
-        if not message_id:
-            print('Unable to moderate incoming message due to lack of Message-ID: header.')
-            raise ValueError('Messages must contain a Message-ID: header.')
-        message_id = message_id.replace(':', '_')  # Make it safe for subject-command.
-        # Put the email message into the list's moderation holding space on S3.
-        storage.hold_message(self.host, self.username, message_id, msg.as_bytes(policy=SEND_POLICY))
-        # Get the moderation auto-deletion/auto-rejection interval from the S3 bucket lifecycle configuration.
-        from datetime import timedelta
-        mod_interval = timedelta(days=self.moderation_expiration_days())
-        # Wrap the moderated message for inclusion in the notification to mods.
-        forward_mime = MIMEMessage(msg)
-        control_address = '{}@{}'.format(settings.command_user, self.host)
-        for moderator in self.moderator_addresses:
-            # Build up the notification email per-moderator so that we can include
-            # pre-signed moderation commands specific to that moderator.
-            approve_cmd = signing.sign('list {} mod approve "{}"'.format(self.address, message_id), moderator, mod_interval)
-            reject_cmd = signing.sign('list {} mod reject "{}"'.format(self.address, message_id), moderator, mod_interval)
-            message = MIMEMultipart()
-            message['Subject'] = 'Message to {} needs approval: {}'.format(self.address, approve_cmd)
-            message['From'] = control_address
-            message['To'] = moderator
-            message.attach(MIMEText(templates.render(
-                'notify_moderators.jinja2',
-                list_name=self.address,
-                control_address=control_address,
-                approve_command=approve_cmd,
-                reject_command=reject_cmd,
-                moderation_days=mod_interval.days
-                )))
-            message.attach(forward_mime)
-            mail.send_raw(control_address, moderator, message.as_bytes(policy=SEND_POLICY))
-
-    def _user_mod_act_on(self, from_user, message_id, action):
-        from_address = address_from_user(from_user)
-        member = self.member_with_address(from_address)
-        if member is None or MemberFlag.moderator not in member.flags:
-            raise InsufficientPermissions
-        return action(self.host, self.username, message_id)
+    # Moderation is in moderation.py, which imports this module.
 
     def user_mod_approve(self, from_user, message_id):
-        data = self._user_mod_act_on(from_user, message_id, storage.held_message)
-        self.send(email.message_from_bytes(data), mod_approved=True)
-        self._user_mod_act_on(from_user, message_id, storage.delete_held_message)
+        import moderation
+        moderation.approve(self, from_user, message_id)
 
     def user_mod_reject(self, from_user, message_id):
-        self._user_mod_act_on(from_user, message_id, storage.check_held_message)
-        self._user_mod_act_on(from_user, message_id, storage.delete_held_message)
+        import moderation
+        moderation.reject(self, from_user, message_id)
 
     @classmethod
     def lists_for_addresses(cls, addresses):
