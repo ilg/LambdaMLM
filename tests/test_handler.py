@@ -179,6 +179,16 @@ def test_command(aws, lambda_handler):
     assert incoming_key('id1') not in keys(aws)
 
 
+@freeze_time('2026-09-14 12:00:00')
+def test_command_to_other_command_user(aws, lambda_handler, monkeypatch):
+    # Settings are read when they're used, so the command address follows them.
+    monkeypatch.setattr(settings, 'command_user', 'lists')
+    store_incoming(aws, 'id1', b'From: a@example.com\nTo: lists@example.org\nSubject: about\n\n')
+    lambda_handler(ses_event('id1', ['lists@example.org']), None)
+    assert aws.ses.sent_emails[0]['Message']['Subject']['Data'] == \
+        'Re: ' + control.sign('about', 'a@example.com')
+
+
 def test_command_with_other_recipient_is_not_a_command(aws, lambda_handler):
     make_list(aws)
     store_incoming(aws, 'id1', POST.replace(b'To: test-list@example.org', b'To: lambda@example.org'))

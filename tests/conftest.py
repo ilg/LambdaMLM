@@ -1,21 +1,19 @@
 """Test setup for the Lambda code.
 
-The app modules create boto3 clients and read `config` at import time, so
-everything here must happen, in this order, before any app module is
-imported:
+The app modules create boto3 clients at import time, and `settings` reads
+the environment when it's imported, so everything here must happen, in this
+order, before any app module is imported:
 
 1. Point AWS configuration at fake credentials, so no real credentials or
    profiles can ever be picked up.
 2. Block every real AWS request at the botocore level.
-3. Install a fake `settings` module.
+3. Set the app's settings in the environment.
 4. Put `lambda/` on the import path.
 """
 
 import importlib
 import os
 import sys
-import types
-from datetime import timedelta
 
 # 1. Fake AWS configuration.
 os.environ.pop('AWS_PROFILE', None)
@@ -45,19 +43,19 @@ def _block_request(request, **kwargs):
 boto3.setup_default_session()
 boto3.DEFAULT_SESSION.events.register('before-send', _block_request)
 
-# 3. Fake settings module, with the same settings as lambda/settings.py and a
-# fixed signing key instead of one from SSM.  (tests/test_settings.py tests
-# the real module.)
-settings = types.ModuleType('settings')
-settings.command_user = 'lambda'
-settings.s3_bucket = 'lambdamlm-test'
-settings.s3_incoming_email_prefix = 'incoming/'
-settings.s3_configuration_prefix = 'config/'
-settings.s3_moderation_prefix = 'moderation/'
-settings.signed_validity_interval = timedelta(hours=1)
-settings.signing_key_parameter = '/lambdamlm/test/signing-key'
-settings.signing_key = lambda: 'test signing key'
-sys.modules['settings'] = settings
+# 3. The app's settings, replacing any from the environment the tests run in.
+# The `aws` fixture replaces the signing key, which otherwise comes from SSM.
+for name in [n for n in os.environ if n.startswith('LAMBDAMLM_')]:
+    del os.environ[name]
+os.environ.update({
+    'LAMBDAMLM_COMMAND_USER': 'lambda',
+    'LAMBDAMLM_BUCKET': 'lambdamlm-test',
+    'LAMBDAMLM_CONFIGURATION_PREFIX': 'config/',
+    'LAMBDAMLM_INCOMING_PREFIX': 'incoming/',
+    'LAMBDAMLM_MODERATION_PREFIX': 'moderation/',
+    'LAMBDAMLM_SIGNED_VALIDITY_HOURS': '1',
+    'LAMBDAMLM_SIGNING_KEY_PARAMETER': '/lambdamlm/test/signing-key',
+    })
 
 # 4. Import path.
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -77,6 +75,7 @@ yaml.SafeDumper.add_representer(FakeDate, yaml.representer.SafeRepresenter.repre
 
 # Import every module that creates a client now, so they're all created
 # under the setup above.
+import settings
 import listobj
 import sestools
 import control
@@ -94,11 +93,13 @@ import_time_clients = {
 
 @pytest.fixture(autouse=True)
 def aws(monkeypatch):
-    """Replace every module-level AWS client with in-memory fakes.
+    """Replace every module-level AWS client with in-memory fakes, and the
+    signing key (otherwise read from SSM) with a fixed one.
 
     This is the only place clients are swapped, so if the clients move (for
     example, to lazy creation), only this fixture needs to change.
     """
+    monkeypatch.setattr(settings, 'signing_key', lambda: 'test signing key')
     log = []
     s3 = FakeS3(log)
     ses = FakeSES(log)

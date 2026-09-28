@@ -16,7 +16,7 @@ def load(monkeypatch, **environment):
         monkeypatch.delenv(name)
     for name, value in environment.items():
         monkeypatch.setenv(name, value)
-    # Load it under another name; the tests' fake is installed as `settings`.
+    # Load a fresh copy under another name, so it reads this test's environment.
     spec = importlib.util.spec_from_file_location('real_settings', SETTINGS)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
