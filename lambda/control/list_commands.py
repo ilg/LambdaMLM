@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 
 from .commands import command
 import listobj
+from signing import ExpiredSignatureException, InvalidSignatureException
 
 def handle_not_subscribed(user, address, list_address):
     if user == address:
@@ -76,7 +77,6 @@ def unsubscribe(ctx, address=None):
         click.echo('{} does not allow members to unsubscribe themselves.  Please contact the list administrator to be removed from the list.'.format(ctx.obj.list_address), err=True)
 
 def accept_invitation(ctx, token, action, success_msg):
-    from control import ExpiredSignatureException, InvalidSignatureException
     try:
         action(ctx.obj.user, token)
         click.echo(success_msg)

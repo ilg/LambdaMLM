@@ -1,3 +1,4 @@
+import signing
 from list_member import ListMember
 from list_exceptions import AlreadySubscribed, NotSubscribed
 
@@ -75,14 +76,13 @@ def verify_signed_command(Subject, Address, **kwargs):
     For scripts/signing-key, to check that the deployed function validates
     signatures made with the stored key.  Only the verdict is returned.
     """
-    import control
     try:
-        command = control.get_signed_command(Subject, Address)
-    except control.NotSignedException:
+        command = signing.get_signed_command(Subject, Address)
+    except signing.NotSignedException:
         return Success({'Result': 'NotSigned'})
-    except control.ExpiredSignatureException:
+    except signing.ExpiredSignatureException:
         return Success({'Result': 'Expired'})
-    except control.InvalidSignatureException:
+    except signing.InvalidSignatureException:
         return Success({'Result': 'Invalid'})
     return Success({'Result': 'Valid', 'Command': command})
 

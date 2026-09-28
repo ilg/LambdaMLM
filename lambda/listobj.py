@@ -21,8 +21,9 @@ from sestools import msg_get_header
 from email_utils import detect_bounce, bounce_defaults
 
 import aws_clients
+import mail
 import settings
-import control
+import signing
 import templates
 from list_member import ListMember, MemberFlag
 from list_member_container import ListMemberContainer
@@ -241,18 +242,18 @@ class List (ListMemberContainer):
         command_address = '{}@{}'.format(settings.command_user, self.host)
         from datetime import timedelta
         validity_duration = timedelta(days=3)  # TODO: make this duration configurable
-        token = control.sign(target_address, self.address, validity_duration=validity_duration)
+        token = signing.sign(target_address, self.address, validity_duration=validity_duration)
         cmd = 'list {} {} "{}"'.format(self.address, command, token)
         list_name = self.name
         if not list_name:
             list_name = self.address
-        control.send_response(
+        mail.send_text(
                 source=command_address,
                 destination=target_address,
                 subject='Invitation to {} {} - Fwd: {}'.format(
                     verb,
                     list_name,
-                    control.sign(cmd, target_address, validity_duration=validity_duration),
+                    signing.sign(cmd, target_address, validity_duration=validity_duration),
                     ),
                 body='To accept the invitation, reply to this email.  You can leave the body of the reply blank.',
                 )
@@ -270,9 +271,9 @@ class List (ListMemberContainer):
 
     def accept_invitation(self, from_user, token, action):
         from_address = address_from_user(from_user)
-        token_address = control.get_signed_command(token, self.address)
+        token_address = signing.get_signed_command(token, self.address)
         if token_address.lower() != from_address:
-            raise control.InvalidSignatureException
+            raise signing.InvalidSignatureException
         action(from_address)
 
     def accept_subscription_invitation(self, from_user, token):
@@ -419,11 +420,7 @@ class List (ListMemberContainer):
             if not mod_approved:
                 # Suppress printing when mod-approved, because the output will go to the moderator approving it.
                 print('> Sending to {}.'.format(recipient))
-            aws_clients.ses().send_raw_email(
-                    Source=return_path,
-                    Destinations=[ recipient, ],
-                    RawMessage={ 'Data': msg.as_bytes(policy=SEND_POLICY), },
-                    )
+            mail.send_raw(return_path, recipient, msg.as_bytes(policy=SEND_POLICY))
             
     @staticmethod
     def moderation_expiration_days(default=3):
@@ -450,8 +447,6 @@ class List (ListMemberContainer):
         return default
 
     def moderate(self, msg):
-        # For some reason, this import doesn't work at the file level.
-        from control import sign
         message_id = msg['message-id']
         if not message_id:
             print('Unable to moderate incoming message due to lack of Message-ID: header.')
@@ -472,8 +467,8 @@ class List (ListMemberContainer):
         for moderator in self.moderator_addresses:
             # Build up the notification email per-moderator so that we can include
             # pre-signed moderation commands specific to that moderator.
-            approve_cmd = sign('list {} mod approve "{}"'.format(self.address, message_id), moderator, mod_interval)
-            reject_cmd = sign('list {} mod reject "{}"'.format(self.address, message_id), moderator, mod_interval)
+            approve_cmd = signing.sign('list {} mod approve "{}"'.format(self.address, message_id), moderator, mod_interval)
+            reject_cmd = signing.sign('list {} mod reject "{}"'.format(self.address, message_id), moderator, mod_interval)
             message = MIMEMultipart()
             message['Subject'] = 'Message to {} needs approval: {}'.format(self.address, approve_cmd)
             message['From'] = control_address
@@ -487,11 +482,7 @@ class List (ListMemberContainer):
                 moderation_days=mod_interval.days
                 )))
             message.attach(forward_mime)
-            aws_clients.ses().send_raw_email(
-                    Source=control_address,
-                    Destinations=[ moderator, ],
-                    RawMessage={ 'Data': message.as_bytes(policy=SEND_POLICY), },
-                    )
+            mail.send_raw(control_address, moderator, message.as_bytes(policy=SEND_POLICY))
 
     def _user_mod_act_on(self, from_user, message_id, action):
         from_address = address_from_user(from_user)
