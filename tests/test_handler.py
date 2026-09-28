@@ -6,8 +6,8 @@ from botocore.exceptions import ClientError
 from freezegun import freeze_time
 
 import settings
-import control
 import sestools
+import signing
 from helpers import (FIXTURES, member, parse_message, read_bytes, ses_event,
                      store_incoming, incoming_key, store_list_config,
                      stored_list_config)
@@ -175,7 +175,7 @@ def test_command(aws, lambda_handler):
     store_incoming(aws, 'id1', b'From: a@example.com\nTo: lambda@example.org\nSubject: about\n\n')
     lambda_handler(ses_event('id1', ['lambda@example.org']), None)
     assert aws.ses.sent_emails[0]['Message']['Subject']['Data'] == \
-        'Re: ' + control.sign('about', 'a@example.com')
+        'Re: ' + signing.sign('about', 'a@example.com')
     assert incoming_key('id1') not in keys(aws)
 
 
@@ -186,7 +186,7 @@ def test_command_to_other_command_user(aws, lambda_handler, monkeypatch):
     store_incoming(aws, 'id1', b'From: a@example.com\nTo: lists@example.org\nSubject: about\n\n')
     lambda_handler(ses_event('id1', ['lists@example.org']), None)
     assert aws.ses.sent_emails[0]['Message']['Subject']['Data'] == \
-        'Re: ' + control.sign('about', 'a@example.com')
+        'Re: ' + signing.sign('about', 'a@example.com')
 
 
 def test_command_with_other_recipient_is_not_a_command(aws, lambda_handler):

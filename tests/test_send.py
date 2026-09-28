@@ -8,10 +8,14 @@ import yaml
 from freezegun import freeze_time
 
 import settings
-import control
 import golden
 import listobj
-from email_utils import ResponseType
+import mail
+import moderation
+import posting
+import signing
+import storage
+from bounces import ResponseType
 from helpers import (HOST, PRODUCTION, member, parse_message, read_bytes,
                      store_list_config, store_production_list, stored_list_config)
 from list_exceptions import InsufficientPermissions, ModeratedMessageNotFound, UnknownList
@@ -66,7 +70,7 @@ def test_list_address_forms(aws):
 # ---------------------------------------------------------------- recipients
 
 def test_member_post_goes_to_other_members(aws):
-    make_list(aws).send(parse_message(raw_message()))
+    posting.send(make_list(aws), parse_message(raw_message()))
     assert sent_to(aws) == ['bob@example.com', 'carol@example.com']
     assert [s['Source'] for s in aws.ses.sent_raw_emails] == [
         'test-list+bob=example.com+bounce@example.org',
@@ -77,23 +81,24 @@ def test_member_post_goes_to_other_members(aws):
 
 
 def test_echo_vacation_and_bouncing(aws):
-    make_list(aws, members=[
+    l = make_list(aws, members=[
         member('alice@example.com', 'echoPost'),
         member('bob@example.com', 'vacation'),
         member('carol@example.com', 'bouncing'),
         member('dave@example.com'),
-        ]).send(parse_message(raw_message()))
+        ])
+    posting.send(l, parse_message(raw_message()))
     assert sent_to(aws) == ['alice@example.com', 'dave@example.com']
 
 
 def test_sender_address_is_lowercased_for_lookup(aws):
-    make_list(aws).send(parse_message(raw_message(from_='ALICE@EXAMPLE.COM')))
+    posting.send(make_list(aws), parse_message(raw_message(from_='ALICE@EXAMPLE.COM')))
     assert sent_to(aws) == ['bob@example.com', 'carol@example.com']
 
 
 def test_mixed_case_member_is_a_member(aws):
     l = make_list(aws, members=[member('Alice@Example.com'), member('Bob@Example.com')])
-    l.send(parse_message(raw_message(from_='alice@example.com')))
+    posting.send(l, parse_message(raw_message(from_='alice@example.com')))
     # Alice doesn't get her own post back; Bob gets it at his stored address.
     assert sent_to(aws) == ['Bob@Example.com']
     assert moderation_keys(aws) == []
@@ -102,27 +107,27 @@ def test_mixed_case_member_is_a_member(aws):
 # ---------------------------------------------------------------- policy
 
 def test_reject_from_non_members(aws):
-    make_list(aws, **{'reject-from-non-members': True}).send(
-            parse_message(raw_message(from_='stranger@example.net')))
+    l = make_list(aws, **{'reject-from-non-members': True})
+    posting.send(l, parse_message(raw_message(from_='stranger@example.net')))
     assert aws.ses.sent_raw_emails == []
     assert aws.s3.keys(settings.s3_bucket) == ['config/example.org/test-list.yaml']
 
 
 def test_no_post_member(aws):
-    make_list(aws, members=[member('alice@example.com', 'noPost'), member('bob@example.com')]).send(
-            parse_message(raw_message()))
+    l = make_list(aws, members=[member('alice@example.com', 'noPost'), member('bob@example.com')])
+    posting.send(l, parse_message(raw_message()))
     assert aws.ses.sent_raw_emails == []
 
 
 def test_allow_from_non_members(aws):
-    make_list(aws, **{'allow-from-non-members': True}).send(
-            parse_message(raw_message(from_='stranger@example.net')))
+    l = make_list(aws, **{'allow-from-non-members': True})
+    posting.send(l, parse_message(raw_message(from_='stranger@example.net')))
     assert sent_to(aws) == ['alice@example.com', 'bob@example.com', 'carol@example.com']
 
 
 def test_reject_wins_over_allow(aws):
-    make_list(aws, **{'reject-from-non-members': True, 'allow-from-non-members': True}).send(
-            parse_message(raw_message(from_='stranger@example.net')))
+    l = make_list(aws, **{'reject-from-non-members': True, 'allow-from-non-members': True})
+    posting.send(l, parse_message(raw_message(from_='stranger@example.net')))
     assert aws.ses.sent_raw_emails == []
 
 
@@ -139,36 +144,37 @@ def moderation_keys(aws):
     ])
 def test_moderated(aws, options, from_, members):
     options['members'] = (members or []) + [member('mod@example.com', 'moderator')]
-    make_list(aws, **options).send(parse_message(raw_message(from_=from_)))
+    posting.send(make_list(aws, **options), parse_message(raw_message(from_=from_)))
     assert moderation_keys(aws) == ['moderation/example.org/test-list/<m1@example.com>']
     # Only the moderator hears about it.
     assert sent_to(aws) == ['mod@example.com']
 
 
 def test_moderated_list_preapproved_member(aws):
-    make_list(aws, moderated=True,
-              members=[member('alice@example.com', 'preapprove'), member('bob@example.com')]).send(
-            parse_message(raw_message()))
+    l = make_list(aws, moderated=True,
+                  members=[member('alice@example.com', 'preapprove'), member('bob@example.com')])
+    posting.send(l, parse_message(raw_message()))
     assert sent_to(aws) == ['bob@example.com']
 
 
 def test_no_post_wins_over_mod_post(aws):
-    make_list(aws, members=[member('alice@example.com', 'noPost', 'modPost')]).send(
-            parse_message(raw_message()))
+    l = make_list(aws, members=[member('alice@example.com', 'noPost', 'modPost')])
+    posting.send(l, parse_message(raw_message()))
     assert aws.ses.sent_raw_emails == []
     assert moderation_keys(aws) == []
 
 
 def test_mod_approved_skips_policy(aws):
-    make_list(aws, **{'reject-from-non-members': True}).send(
-            parse_message(raw_message(from_='stranger@example.net')), mod_approved=True)
+    l = make_list(aws, **{'reject-from-non-members': True})
+    posting.send(l, parse_message(raw_message(from_='stranger@example.net')), mod_approved=True)
     assert sent_to(aws) == ['alice@example.com', 'bob@example.com', 'carol@example.com']
 
 
 # ---------------------------------------------------------------- headers
 
 def test_rewritten_headers(aws):
-    make_list(aws, name='Test List').send(parse_message(raw_message(headers=[
+    l = make_list(aws, name='Test List')
+    posting.send(l, parse_message(raw_message(headers=[
         'DKIM-Signature: v=1; d=example.com; b=abc',
         'Return-Path: <alice@example.com>',
         'Sender: someone@example.com',
@@ -188,21 +194,21 @@ def test_rewritten_headers(aws):
 
 
 def test_from_without_display_name(aws):
-    make_list(aws).send(parse_message(raw_message(from_='alice@example.com')))
+    posting.send(make_list(aws), parse_message(raw_message(from_='alice@example.com')))
     assert unfold(sent_message(aws)['From']) == \
         '"alice (via test-list@example.org)" <test-list+alice=example.com+from@example.org>'
 
 
 def test_reply_to_list(aws):
-    make_list(aws, name='Test List', **{'reply-to-list': True}).send(parse_message(raw_message()))
+    posting.send(make_list(aws, name='Test List', **{'reply-to-list': True}), parse_message(raw_message()))
     msg = sent_message(aws)
     assert msg['Reply-to'] == 'Test List <test-list@example.org>'
     assert msg.get_all('CC') == ['Alice Sender <alice@example.com>']
 
 
 def test_reply_to_list_merges_cc(aws):
-    make_list(aws, **{'reply-to-list': True}).send(
-            parse_message(raw_message(headers=['Cc: dave@example.com,', ' erin@example.com'])))
+    l = make_list(aws, **{'reply-to-list': True})
+    posting.send(l, parse_message(raw_message(headers=['Cc: dave@example.com,', ' erin@example.com'])))
     msg = sent_message(aws)
     assert [unfold(v) for v in msg.get_all('CC')] == \
         ['dave@example.com, erin@example.com, Alice Sender <alice@example.com>']
@@ -211,45 +217,47 @@ def test_reply_to_list_merges_cc(aws):
 
 def test_non_ascii_sender_name(aws):
     from sestools import msg_get_header
-    make_list(aws, name='Test List', **{'allow-from-non-members': True}).send(parse_message(raw_message(
+    l = make_list(aws, name='Test List', **{'allow-from-non-members': True})
+    posting.send(l, parse_message(raw_message(
             from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>')))
     assert msg_get_header(sent_message(aws), 'From') == \
         'Jos\u00e9 (via Test List) <test-list+jose=example.net+from@example.org>'
 
 
 def test_reply_to_list_non_ascii_sender(aws):
-    make_list(aws, **{'reply-to-list': True, 'allow-from-non-members': True}).send(parse_message(raw_message(
+    l = make_list(aws, **{'reply-to-list': True, 'allow-from-non-members': True})
+    posting.send(l, parse_message(raw_message(
             from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>', headers=['Cc: dave@example.com'])))
     from sestools import msg_get_header
     assert msg_get_header(sent_message(aws), 'CC') == 'dave@example.com, Jos\u00e9 <jose@example.net>'
 
 
 def test_subject_tag(aws):
-    make_list(aws, **{'subject-tag': 'Tag'}).send(parse_message(raw_message(subject='Re: Hello')))
+    posting.send(make_list(aws, **{'subject-tag': 'Tag'}), parse_message(raw_message(subject='Re: Hello')))
     assert sent_message(aws)['Subject'] == '[Tag] Re: Hello'
     assert sent_message(aws)['X-Original-Subject'] == 'Re: Hello'
 
 
 def test_subject_tag_already_present(aws):
-    make_list(aws, **{'subject-tag': 'Tag'}).send(parse_message(raw_message(subject='Re: [Tag] Hello')))
+    posting.send(make_list(aws, **{'subject-tag': 'Tag'}), parse_message(raw_message(subject='Re: [Tag] Hello')))
     assert sent_message(aws)['Subject'] == 'Re: [Tag] Hello'
     assert sent_message(aws)['X-Original-Subject'] is None
 
 
 def test_subjectless_post_with_subject_tag(aws):
-    make_list(aws, **{'subject-tag': 'Tag'}).send(parse_message(raw_message(subject=None)))
+    posting.send(make_list(aws, **{'subject-tag': 'Tag'}), parse_message(raw_message(subject=None)))
     assert sent_message(aws)['Subject'] == '[Tag] '
     assert sent_message(aws)['X-Original-Subject'] is None
 
 
 def test_subjectless_post_without_subject_tag(aws):
-    make_list(aws).send(parse_message(raw_message(subject=None)))
+    posting.send(make_list(aws), parse_message(raw_message(subject=None)))
     assert sent_message(aws)['Subject'] is None
 
 
 def test_from_without_at_sign(aws):
-    make_list(aws, **{'allow-from-non-members': True}).send(
-            parse_message(raw_message(from_='postmaster')))
+    l = make_list(aws, **{'allow-from-non-members': True})
+    posting.send(l, parse_message(raw_message(from_='postmaster')))
     assert sent_to(aws) == ['alice@example.com', 'bob@example.com', 'carol@example.com']
     assert unfold(sent_message(aws)['From']) == \
         '"postmaster (via test-list@example.org)" <test-list+postmaster+from@example.org>'
@@ -269,7 +277,7 @@ EIGHT_BIT_BODY = (b'From: Alice Sender <alice@example.com>\n'
 def test_eight_bit_from_header(aws):
     from sestools import msg_get_header
     raw = EIGHT_BIT_BODY.replace(b'Alice Sender', b'Al\xc3\xafce Sender')
-    make_list(aws).send(parse_message(raw))
+    posting.send(make_list(aws), parse_message(raw))
     msg = sent_message(aws)
     assert msg_get_header(msg, 'From') == \
         'Al\u00efce Sender (via test-list@example.org) <test-list+alice=example.com+from@example.org>'
@@ -302,12 +310,12 @@ def test_production_sends(aws, list_name, fixture, name):
     for n in ('alpha-list', 'bravo-roster', 'charlie-sub-list', 'delta'):
         store_production_list(aws, n)
     l = listobj.List('{}@{}'.format(list_name, HOST))
-    l.send(parse_message(read_bytes(PRODUCTION, fixture)), mod_approved=True)
+    posting.send(l, parse_message(read_bytes(PRODUCTION, fixture)), mod_approved=True)
     record_sends(aws, name)
 
 
 def test_eight_bit_body_send(aws):
-    make_list(aws).send(parse_message(EIGHT_BIT_BODY))
+    posting.send(make_list(aws), parse_message(EIGHT_BIT_BODY))
     assert b'Caf\xc3\xa9 and na\xefve' in aws.ses.sent_raw_emails[0]['Data']
     record_sends(aws, 'eight-bit-body')
 
@@ -316,8 +324,8 @@ def test_eight_bit_body_send(aws):
 
 def test_cc_lists(aws):
     make_list(aws, 'other', members=[member('dave@example.com'), member('alice@example.com')])
-    make_list(aws, **{'cc-lists': ['other@example.org', 'not a list', 'nosuch-but-valid@bad_host']}).send(
-            parse_message(raw_message()))
+    l = make_list(aws, **{'cc-lists': ['other@example.org', 'not a list', 'nosuch-but-valid@bad_host']})
+    posting.send(l, parse_message(raw_message()))
     # The cc-list is sent to first, then this list, each rewriting its own copy.
     assert sent_to(aws) == ['dave@example.com', 'bob@example.com', 'carol@example.com']
     assert unfold(sent_message(aws, 0)['From']).startswith('"Alice Sender (via other@example.org)"')
@@ -326,7 +334,7 @@ def test_cc_lists(aws):
 
 
 def test_cc_list_that_does_not_exist(aws):
-    make_list(aws, **{'cc-lists': ['nosuch@example.org']}).send(parse_message(raw_message()))
+    posting.send(make_list(aws, **{'cc-lists': ['nosuch@example.org']}), parse_message(raw_message()))
     assert sent_to(aws) == ['bob@example.com', 'carol@example.com']
 
 
@@ -334,7 +342,7 @@ def test_mutual_cc_lists(aws):
     make_list(aws, 'other', members=[member('dave@example.com')], **{'cc-lists': ['test-list@example.org']})
     make_list(aws, 'third', members=[member('erin@example.com')], **{'cc-lists': ['other@example.org']})
     make_list(aws, **{'cc-lists': ['other@example.org', 'third@example.org']})
-    listobj.List('test-list@example.org').send(parse_message(raw_message()))
+    posting.send(listobj.List('test-list@example.org'), parse_message(raw_message()))
     # test-list -> other (which would cc test-list again), and test-list ->
     # third -> other.  Only lists already in the chain are skipped.
     assert sent_to(aws) == ['dave@example.com', 'dave@example.com', 'erin@example.com',
@@ -381,10 +389,10 @@ def moderated_list(aws, **options):
 def test_moderation_notice(aws):
     aws.s3.lifecycle[settings.s3_bucket] = FLAT_RULE
     raw = raw_message(message_id='<id:with:colons@example.com>')
-    moderated_list(aws).send(parse_message(raw))
+    posting.send(moderated_list(aws), parse_message(raw))
     key = 'moderation/example.org/test-list/<id_with_colons@example.com>'
     assert moderation_keys(aws) == [key]
-    assert aws.s3.body(settings.s3_bucket, key) == parse_message(raw).as_bytes(policy=listobj.SEND_POLICY)
+    assert aws.s3.body(settings.s3_bucket, key) == parse_message(raw).as_bytes(policy=mail.SEND_POLICY)
     notices = aws.ses.sent_raw_emails
     assert [(n['Source'], n['Destinations']) for n in notices] == [
         ('lambda@example.org', ['mod1@example.com']),
@@ -392,9 +400,9 @@ def test_moderation_notice(aws):
     ]
     for notice, moderator in zip(notices, ['mod1@example.com', 'mod2@example.com']):
         msg = parse_message(notice['Data'])
-        approve = control.sign('list test-list@example.org mod approve "<id_with_colons@example.com>"',
+        approve = signing.sign('list test-list@example.org mod approve "<id_with_colons@example.com>"',
                                moderator, timedelta(days=5))
-        reject = control.sign('list test-list@example.org mod reject "<id_with_colons@example.com>"',
+        reject = signing.sign('list test-list@example.org mod reject "<id_with_colons@example.com>"',
                               moderator, timedelta(days=5))
         assert unfold(msg['Subject']) == 'Message to test-list@example.org needs approval: ' + approve
         assert msg['From'] == 'lambda@example.org'
@@ -422,7 +430,7 @@ def test_moderation_notice(aws):
 def test_moderation_without_matching_rule_defaults_to_three_days(aws):
     aws.s3.lifecycle[settings.s3_bucket] = {'Rules': [
         {'ID': 'x', 'Prefix': 'other/', 'Status': 'Enabled', 'Expiration': {'Days': 9}}]}
-    moderated_list(aws).send(parse_message(raw_message()))
+    posting.send(moderated_list(aws), parse_message(raw_message()))
     assert b'automatically rejected' in aws.ses.sent_raw_emails[0]['Data']
     assert b'in 3 days' in aws.ses.sent_raw_emails[0]['Data']
 
@@ -442,7 +450,7 @@ def test_moderation_without_matching_rule_defaults_to_three_days(aws):
 def test_moderation_expiration_days(aws, lifecycle, days):
     if lifecycle is not None:
         aws.s3.lifecycle[settings.s3_bucket] = lifecycle
-    moderated_list(aws).send(parse_message(raw_message()))
+    posting.send(moderated_list(aws), parse_message(raw_message()))
     assert len(aws.ses.sent_raw_emails) == 2
     assert 'in {} days'.format(days).encode('ascii') in aws.ses.sent_raw_emails[0]['Data']
 
@@ -450,13 +458,13 @@ def test_moderation_expiration_days(aws, lifecycle, days):
 def test_moderation_notice_uses_command_user(aws, monkeypatch):
     monkeypatch.setattr(settings, 'command_user', 'lists')
     aws.s3.lifecycle[settings.s3_bucket] = FLAT_RULE
-    moderated_list(aws).send(parse_message(raw_message()))
+    posting.send(moderated_list(aws), parse_message(raw_message()))
     assert aws.ses.sent_raw_emails[0]['Source'] == 'lists@example.org'
 
 
 def test_moderation_requires_message_id(aws):
     with pytest.raises(ValueError):
-        moderated_list(aws).send(parse_message(raw_message(message_id=None)))
+        posting.send(moderated_list(aws), parse_message(raw_message(message_id=None)))
 
 
 def test_moderation_key_for_folded_message_id(aws):
@@ -464,7 +472,7 @@ def test_moderation_key_for_folded_message_id(aws):
     # key.  Python 3's parser strips it; see test_mod_approve_production_held_message
     # for a key with the space.
     raw = raw_message(message_id=None, headers=['Message-ID:', ' <folded@example.com>'])
-    moderated_list(aws).send(parse_message(raw))
+    posting.send(moderated_list(aws), parse_message(raw))
     assert moderation_keys(aws) == ['moderation/example.org/test-list/<folded@example.com>']
 
 
@@ -476,7 +484,7 @@ def store_held(aws, key_suffix='<m1@example.com>', raw=None):
 
 def test_mod_approve(aws):
     key = store_held(aws)
-    moderated_list(aws).user_mod_approve('mod1@example.com', '<m1@example.com>')
+    moderation.approve(moderated_list(aws), 'mod1@example.com', '<m1@example.com>')
     assert sent_to(aws) == ['mod1@example.com', 'mod2@example.com', 'alice@example.com']
     assert key not in aws.s3.keys(settings.s3_bucket)
 
@@ -490,7 +498,7 @@ def test_mod_approve_production_held_message(aws):
     aws.s3.put(settings.s3_bucket, key, data)
     l = listobj.List('charlie-sub-list@example.org')
     moderator = l.moderator_addresses[0]
-    l.user_mod_approve(moderator, ' ' + msg_id)
+    moderation.approve(l, moderator, ' ' + msg_id)
     assert aws.ses.sent_raw_emails
     assert key not in aws.s3.keys(settings.s3_bucket)
 
@@ -498,24 +506,24 @@ def test_mod_approve_production_held_message(aws):
 def test_mod_approve_not_moderator(aws):
     store_held(aws)
     with pytest.raises(InsufficientPermissions):
-        moderated_list(aws).user_mod_approve('alice@example.com', '<m1@example.com>')
+        moderation.approve(moderated_list(aws), 'alice@example.com', '<m1@example.com>')
 
 
 def test_mod_approve_missing(aws):
     with pytest.raises(ModeratedMessageNotFound):
-        moderated_list(aws).user_mod_approve('mod1@example.com', '<nosuch@example.com>')
+        moderation.approve(moderated_list(aws), 'mod1@example.com', '<nosuch@example.com>')
 
 
 def test_mod_reject(aws):
     key = store_held(aws)
-    moderated_list(aws).user_mod_reject('mod1@example.com', '<m1@example.com>')
+    moderation.reject(moderated_list(aws), 'mod1@example.com', '<m1@example.com>')
     assert aws.ses.sent_raw_emails == []
     assert key not in aws.s3.keys(settings.s3_bucket)
 
 
 def test_mod_reject_missing(aws):
     with pytest.raises(ModeratedMessageNotFound):
-        moderated_list(aws).user_mod_reject('mod1@example.com', '<nosuch@example.com>')
+        moderation.reject(moderated_list(aws), 'mod1@example.com', '<nosuch@example.com>')
 
 
 # ---------------------------------------------------------------- bounces
@@ -601,7 +609,7 @@ def test_moderation_paths_with_lifecycle_rule(aws, from_, members):
         options['members'] = members
     else:
         options['members'] = [member('mod1@example.com', 'moderator'), member('alice@example.com')]
-    make_list(aws, **options).send(parse_message(raw_message(from_=from_)))
+    posting.send(make_list(aws, **options), parse_message(raw_message(from_=from_)))
     assert [s['Destinations'] for s in aws.ses.sent_raw_emails] == [['mod1@example.com']]
     assert moderation_keys(aws) == ['moderation/example.org/test-list/<m1@example.com>']
 
@@ -610,7 +618,7 @@ def test_non_ascii_list_name_in_address_headers(aws):
     # Issue #9: the whole "name <address>" value used to be one encoded word,
     # which mail clients can't read the address out of.
     from sestools import msg_get_header
-    make_list(aws, name='Café List', **{'reply-to-list': True}).send(parse_message(raw_message()))
+    posting.send(make_list(aws, name='Café List', **{'reply-to-list': True}), parse_message(raw_message()))
     data = aws.ses.sent_raw_emails[0]['Data']
     assert b'Sender: =?utf-8?q?Caf=C3=A9_List?= <test-list@example.org>\r\n' in data
     assert b'Reply-to: =?utf-8?q?Caf=C3=A9_List?= <test-list@example.org>\r\n' in data
@@ -618,13 +626,13 @@ def test_non_ascii_list_name_in_address_headers(aws):
 
 
 def test_list_name_with_specials_is_quoted(aws):
-    make_list(aws, name='Test, List').send(parse_message(raw_message()))
+    posting.send(make_list(aws, name='Test, List'), parse_message(raw_message()))
     assert sent_message(aws)['Sender'] == '"Test, List" <test-list@example.org>'
 
 
 def test_reply_to_is_sender_as_received(aws):
     raw = EIGHT_BIT_BODY.replace(b'Alice Sender', b'Al\xc3\xafce Sender')
-    make_list(aws).send(parse_message(raw))
+    posting.send(make_list(aws), parse_message(raw))
     assert b'Reply-to: Al\xc3\xafce Sender <alice@example.com>\r\n' in aws.ses.sent_raw_emails[0]['Data']
 
 
@@ -641,7 +649,7 @@ HELD_KEY = 'moderation/example.org/test-list/<m1@example.com>'
 @freeze_time(NOW)
 def test_moderation_call_order(aws):
     l = moderated_list(aws)
-    l.send(parse_message(raw_message(from_='stranger@example.net')))
+    posting.send(l, parse_message(raw_message(from_='stranger@example.net')))
     assert aws.log == [
         ('s3', 'get_object', CONFIG_KEY),
         ('s3', 'put_object', HELD_KEY),
@@ -652,7 +660,7 @@ def test_moderation_call_order(aws):
 
 
 def test_post_call_order(aws):
-    make_list(aws).send(parse_message(raw_message()))
+    posting.send(make_list(aws), parse_message(raw_message()))
     assert aws.log == [
         ('s3', 'get_object', CONFIG_KEY),
         ('ses', 'send_raw_email', 'bob@example.com'),
@@ -662,7 +670,7 @@ def test_post_call_order(aws):
 
 def test_mod_approve_call_order(aws):
     store_held(aws)
-    moderated_list(aws).user_mod_approve('mod1@example.com', '<m1@example.com>')
+    moderation.approve(moderated_list(aws), 'mod1@example.com', '<m1@example.com>')
     assert aws.log == [
         ('s3', 'get_object', CONFIG_KEY),
         ('s3', 'get_object', HELD_KEY),
@@ -675,7 +683,7 @@ def test_mod_approve_call_order(aws):
 
 def test_mod_reject_call_order(aws):
     store_held(aws)
-    moderated_list(aws).user_mod_reject('mod1@example.com', '<m1@example.com>')
+    moderation.reject(moderated_list(aws), 'mod1@example.com', '<m1@example.com>')
     assert aws.log == [
         ('s3', 'get_object', CONFIG_KEY),
         ('s3', 'head_object', HELD_KEY),
@@ -705,9 +713,9 @@ def test_held_message_access_denied_is_not_found(aws):
     l = moderated_list(aws)
     aws.s3.deny(settings.s3_bucket, HELD_KEY)
     with pytest.raises(ModeratedMessageNotFound):
-        l.user_mod_approve('mod1@example.com', '<m1@example.com>')
+        moderation.approve(l, 'mod1@example.com', '<m1@example.com>')
     with pytest.raises(ModeratedMessageNotFound):
-        l.user_mod_reject('mod1@example.com', '<m1@example.com>')
+        moderation.reject(l, 'mod1@example.com', '<m1@example.com>')
 
 
 def test_mod_approve_delete_failure(aws, monkeypatch):
@@ -721,14 +729,14 @@ def test_mod_approve_delete_failure(aws, monkeypatch):
         raise ClientError({'Error': {'Code': 'AccessDenied', 'Message': 'no'}}, 'DeleteObject')
     monkeypatch.setattr(aws.s3, 'delete_object', fail)
     with pytest.raises(ModeratedMessageNotFound):
-        l.user_mod_approve('mod1@example.com', '<m1@example.com>')
+        moderation.approve(l, 'mod1@example.com', '<m1@example.com>')
     assert sent_to(aws) == ['mod1@example.com', 'mod2@example.com', 'alice@example.com']
 
 
 def test_lifecycle_access_denied_uses_default(aws):
     aws.s3.lifecycle[settings.s3_bucket] = FLAT_RULE
     aws.s3.deny(settings.s3_bucket)
-    assert listobj.List.moderation_expiration_days() == 3
+    assert storage.moderation_expiration_days() == 3
 
 
 def test_post_without_from_header_fails_before_moderation(aws):
@@ -736,7 +744,7 @@ def test_post_without_from_header_fails_before_moderation(aws):
     # before anything is held or sent.
     l = moderated_list(aws)
     with pytest.raises(TypeError):
-        l.send(parse_message(b'To: test-list@example.org\nSubject: Hi\nMessage-ID: <m1@example.com>\n\nHi.\n'))
+        posting.send(l, parse_message(b'To: test-list@example.org\nSubject: Hi\nMessage-ID: <m1@example.com>\n\nHi.\n'))
     assert moderation_keys(aws) == []
     assert aws.ses.sent_raw_emails == []
 
@@ -756,7 +764,7 @@ def count_serializations(monkeypatch):
 def test_post_is_serialized_once(aws, monkeypatch):
     l = make_list(aws)
     calls = count_serializations(monkeypatch)
-    l.send(parse_message(raw_message()))
+    posting.send(l, parse_message(raw_message()))
     assert sent_to(aws) == ['bob@example.com', 'carol@example.com']
     assert len(calls) == 1
 
@@ -764,5 +772,5 @@ def test_post_is_serialized_once(aws, monkeypatch):
 def test_post_without_recipients_is_not_serialized(aws, monkeypatch):
     l = make_list(aws, members=[member('alice@example.com')])
     calls = count_serializations(monkeypatch)
-    l.send(parse_message(raw_message()))
+    posting.send(l, parse_message(raw_message()))
     assert calls == []

@@ -7,7 +7,6 @@ from email.utils import parseaddr, formataddr
 from bounces import detect_bounce, bounce_defaults
 
 import mail
-from mail import SEND_POLICY  # for the tests
 import settings
 import signing
 import storage
@@ -59,9 +58,6 @@ class List (ListMemberContainer):
             raise ValueError('Invalid list username.')
         if not host_regex.match(self.host):
             raise ValueError('Invalid list host.')
-        # The keys, which the tests check.
-        self._s3_key = storage.list_config_key(self.host, self.username)
-        self._s3_moderation_prefix = storage.moderation_prefix(self.host, self.username)
         # The config as stored.  Reading an attribute named for a list property
         # (self.subject_tag for subject-tag) reads it; see __getattr__.
         self.config, self._etag = storage.load_list_config(self.host, self.username)
@@ -276,25 +272,6 @@ class List (ListMemberContainer):
         if self.name:
             return formataddr((self.name, self.address))
         return self.address
-
-    def send(self, msg, mod_approved=False, cc_chain=()):
-        # posting imports this module, so it's imported here.
-        import posting
-        posting.send(self, msg, mod_approved, cc_chain)
-
-    @staticmethod
-    def moderation_expiration_days(default=3):
-        return storage.moderation_expiration_days(default)
-
-    # Moderation is in moderation.py, which imports this module.
-
-    def user_mod_approve(self, from_user, message_id):
-        import moderation
-        moderation.approve(self, from_user, message_id)
-
-    def user_mod_reject(self, from_user, message_id):
-        import moderation
-        moderation.reject(self, from_user, message_id)
 
     @classmethod
     def lists_for_addresses(cls, addresses):

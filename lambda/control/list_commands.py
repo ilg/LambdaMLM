@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 
 from .commands import command
 import listobj
+import moderation
 from signing import ExpiredSignatureException, InvalidSignatureException
 
 def handle_not_subscribed(user, address, list_address):
@@ -195,7 +196,7 @@ def moderate(ctx):
 @require_list
 def approve(ctx, message_id):
     try:
-        ctx.obj.listobj.user_mod_approve(ctx.obj.user, message_id)
+        moderation.approve(ctx.obj.listobj, ctx.obj.user, message_id)
         click.echo('Post approved.')
     except listobj.InsufficientPermissions:
         handle_insufficient_permissions('moderate messages on {}.'.format(ctx.obj.list_address))
@@ -207,7 +208,7 @@ def approve(ctx, message_id):
 @require_list
 def reject(ctx, message_id):
     try:
-        ctx.obj.listobj.user_mod_reject(ctx.obj.user, message_id)
+        moderation.reject(ctx.obj.listobj, ctx.obj.user, message_id)
         click.echo('Post rejected.')
     except listobj.InsufficientPermissions:
         handle_insufficient_permissions('moderate messages on {}.'.format(ctx.obj.list_address))

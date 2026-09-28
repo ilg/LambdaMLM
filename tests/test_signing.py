@@ -5,9 +5,9 @@ from datetime import timedelta
 import pytest
 from freezegun import freeze_time
 
-import control
 import golden
 import settings
+import signing
 
 ADDRESS = 'alice@example.com'
 COMMAND = 'list alpha-list@example.org subscribe'
@@ -29,7 +29,7 @@ def long_unicode_key(monkeypatch):
 
 
 def split_signed(signed):
-    match = control.signed_cmd_regex.match(signed)
+    match = signing.signed_cmd_regex.match(signed)
     assert match
     return match.group('cmd'), match.group('signature'), match.group('timestamp')
 
@@ -43,56 +43,56 @@ def test_signature_values(monkeypatch):
         '',
     ]
     for i, text in enumerate(inputs):
-        values['test-key/{}'.format(i)] = control.signature(text)
+        values['test-key/{}'.format(i)] = signing.signature(text)
     use_key(monkeypatch, LONG_UNICODE_KEY)
     for i, text in enumerate(inputs):
-        values['long-unicode-key/{}'.format(i)] = control.signature(text)
+        values['long-unicode-key/{}'.format(i)] = signing.signature(text)
     golden.check_json('signatures.json', values)
 
 
 def test_signature_ignores_surrounding_whitespace():
-    assert control.signature(' x ') == control.signature('x')
+    assert signing.signature(' x ') == signing.signature('x')
 
 
 def test_signature_shape():
     # 20-byte SHA-1 HMAC, base64: 27 characters and one '=' of padding.
-    sig = control.signature('anything')
+    sig = signing.signature('anything')
     assert len(sig) == 28
     assert sig.endswith('=')
 
 
 @freeze_time(NOW)
 def test_sign_format():
-    signed = control.sign(COMMAND, ADDRESS)
+    signed = signing.sign(COMMAND, ADDRESS)
     cmd, sig, timestamp = split_signed(signed)
     assert cmd == COMMAND
     # Default validity is settings.signed_validity_interval (1 hour in tests).
     assert timestamp == '20260914130000'
-    assert sig == control.signature(' '.join([ADDRESS, timestamp, COMMAND]))
+    assert sig == signing.signature(' '.join([ADDRESS, timestamp, COMMAND]))
     assert signed == '{} {}{}'.format(COMMAND, sig, timestamp)
 
 
 @freeze_time(NOW)
 def test_sign_with_validity_duration():
-    signed = control.sign(COMMAND, ADDRESS, validity_duration=timedelta(days=3))
+    signed = signing.sign(COMMAND, ADDRESS, validity_duration=timedelta(days=3))
     assert split_signed(signed)[2] == '20260917120000'
 
 
 @freeze_time(NOW)
 def test_sign_with_long_unicode_key(long_unicode_key):
-    signed = control.sign(COMMAND, ADDRESS)
-    assert control.get_signed_command(signed, ADDRESS) == COMMAND
+    signed = signing.sign(COMMAND, ADDRESS)
+    assert signing.get_signed_command(signed, ADDRESS) == COMMAND
 
 
 def signed_now():
     with freeze_time(NOW):
-        return control.sign(COMMAND, ADDRESS)
+        return signing.sign(COMMAND, ADDRESS)
 
 
 def test_get_signed_command_round_trip():
     signed = signed_now()
     with freeze_time('2026-09-14 12:59:59'):
-        assert control.get_signed_command(signed, ADDRESS) == COMMAND
+        assert signing.get_signed_command(signed, ADDRESS) == COMMAND
 
 
 def test_get_signed_command_accepts_extra_leading_text():
@@ -100,80 +100,80 @@ def test_get_signed_command_accepts_extra_leading_text():
     # regex itself allows anything before the signature.
     signed = signed_now()
     with freeze_time(NOW):
-        assert control.get_signed_command('   ' + signed, ADDRESS) == COMMAND
+        assert signing.get_signed_command('   ' + signed, ADDRESS) == COMMAND
 
 
 def test_unsigned_subject():
-    with pytest.raises(control.NotSignedException):
-        control.get_signed_command(COMMAND, ADDRESS)
+    with pytest.raises(signing.NotSignedException):
+        signing.get_signed_command(COMMAND, ADDRESS)
 
 
 def test_expired_signature():
     signed = signed_now()
     with freeze_time('2026-09-14 13:00:01'):
-        with pytest.raises(control.ExpiredSignatureException):
-            control.get_signed_command(signed, ADDRESS)
+        with pytest.raises(signing.ExpiredSignatureException):
+            signing.get_signed_command(signed, ADDRESS)
 
 
 def test_wrong_address():
     signed = signed_now()
     with freeze_time(NOW):
-        with pytest.raises(control.InvalidSignatureException):
-            control.get_signed_command(signed, 'bob@example.com')
+        with pytest.raises(signing.InvalidSignatureException):
+            signing.get_signed_command(signed, 'bob@example.com')
 
 
 def test_address_case_matters():
     signed = signed_now()
     with freeze_time(NOW):
-        with pytest.raises(control.InvalidSignatureException):
-            control.get_signed_command(signed, 'Alice@example.com')
+        with pytest.raises(signing.InvalidSignatureException):
+            signing.get_signed_command(signed, 'Alice@example.com')
 
 
 def test_tampered_command():
     cmd, sig, timestamp = split_signed(signed_now())
     with freeze_time(NOW):
-        with pytest.raises(control.InvalidSignatureException):
-            control.get_signed_command(
+        with pytest.raises(signing.InvalidSignatureException):
+            signing.get_signed_command(
                     '{} {}{}'.format(cmd + ' extra', sig, timestamp), ADDRESS)
 
 
 def test_signed_for_bare_address_accepts_named_address():
     signed = signed_now()
     with freeze_time(NOW):
-        assert control.get_signed_command(signed, 'Alice <alice@example.com>') == COMMAND
+        assert signing.get_signed_command(signed, 'Alice <alice@example.com>') == COMMAND
 
 
 def test_signed_for_named_address_rejects_bare_address():
     with freeze_time(NOW):
-        signed = control.sign(COMMAND, 'Alice <alice@example.com>')
-        assert control.get_signed_command(signed, 'Alice <alice@example.com>') == COMMAND
-        with pytest.raises(control.InvalidSignatureException):
-            control.get_signed_command(signed, ADDRESS)
+        signed = signing.sign(COMMAND, 'Alice <alice@example.com>')
+        assert signing.get_signed_command(signed, 'Alice <alice@example.com>') == COMMAND
+        with pytest.raises(signing.InvalidSignatureException):
+            signing.get_signed_command(signed, ADDRESS)
 
 
 def test_short_unicode_key(monkeypatch):
     # Issue #34: a short unicode key crashed hmac on Python 2.  It signs
     # exactly like the same key as bytes.
     use_key(monkeypatch, 'short unicode key')
-    text_signature = control.signature('anything')
+    text_signature = signing.signature('anything')
     use_key(monkeypatch, b'short unicode key')
-    assert text_signature == control.signature('anything')
+    assert text_signature == signing.signature('anything')
 
 
 def test_bytes_key(monkeypatch):
     use_key(monkeypatch, LONG_UNICODE_KEY.encode('utf-8'))
-    bytes_signature = control.signature('anything')
+    bytes_signature = signing.signature('anything')
     use_key(monkeypatch, LONG_UNICODE_KEY)
-    assert control.signature('anything') == bytes_signature
+    assert signing.signature('anything') == bytes_signature
 
 
 def test_non_ascii_command():
     cmd = 'list alpha-list@example.org subscribe "José <j@example.com>"'
     with freeze_time(NOW):
-        assert control.get_signed_command(control.sign(cmd, ADDRESS), ADDRESS) == cmd
+        assert signing.get_signed_command(signing.sign(cmd, ADDRESS), ADDRESS) == cmd
 
 
 def test_impossible_timestamp_is_invalid():
-    signed = '{} {}{}'.format(COMMAND, control.signature('x'), '20261399000000')
-    with pytest.raises(control.InvalidSignatureException):
-        control.get_signed_command(signed, ADDRESS)
+    signed = '{} {}{}'.format(COMMAND, signing.signature('x'), '20261399000000')
+    with pytest.raises(signing.InvalidSignatureException):
+        signing.get_signed_command(signed, ADDRESS)

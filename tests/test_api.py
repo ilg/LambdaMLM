@@ -6,6 +6,7 @@ import pytest
 import yaml
 from freezegun import freeze_time
 
+import signing
 from api import handle_api
 from helpers import member, store_list_config, stored_list_config
 
@@ -180,9 +181,8 @@ def test_delete_unknown_member(aws):
 
 
 def test_verify_signed_command(aws):
-    import control
     with freeze_time('2026-09-14 12:00:00'):
-        signed = control.sign('about', 'admin@example.com')
+        signed = signing.sign('about', 'admin@example.com')
         assert call(Action='VerifySignedCommand', Subject=signed, Address='admin@example.com') == \
             {'StatusCode': 200, 'Data': {'Result': 'Valid', 'Command': 'about'}}
         assert call(Action='VerifySignedCommand', Subject=signed.replace('about', 'abort'),
