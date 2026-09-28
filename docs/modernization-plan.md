@@ -231,7 +231,7 @@ Done with Click 8.5.0, Jinja2 3.1.6 and MarkupSafe 3.0.3. `Result.output` still 
 
 Each of these gets its own design and review before implementation.
 
-- **Bounces and complaints via SES notifications** ([design](design/bounce-notifications.md)): SES bounce and complaint notifications (SNS or event publishing) replace email-parsed bounces, which fixes [#22](https://github.com/ilg/LambdaMLM/issues/22) and enables [#11](https://github.com/ilg/LambdaMLM/issues/11). Email feedback forwarding stays on until this lands. Decide what happens to the vendored `bounce.py` (keep it as a fallback, or remove it).
+- **Bounces and complaints via SES notifications** ([design](design/bounce-notifications.md)): SES bounce and complaint notifications (SNS or event publishing) replace email-parsed bounces, which fixes [#22](https://github.com/ilg/LambdaMLM/issues/22) and enables [#11](https://github.com/ilg/LambdaMLM/issues/11). Email feedback forwarding stays on until this lands, and is then turned off per deployment. The vendored bounce analyzer is removed once the switch has run on staging.
 - **Sending through a queue, with fan-out** ([#30](https://github.com/ilg/LambdaMLM/issues/30)): per-recipient sends that can be retried safely, with retries reintroduced.
 - **Sending robustness:**
   - Clean up the headers SES rejects on re-sent posts (duplicate headers, malformed address headers, the recipient-count limit).

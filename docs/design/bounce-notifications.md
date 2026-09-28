@@ -273,12 +273,12 @@ This is compatible with rolling back to the Python 2 function, provided staging'
 - **Retrying email commands and API calls on a conflict.** See [Conditional writes everywhere](#conditional-writes-everywhere).
 - **Notifying members or admins about bounces** ([#11](https://github.com/ilg/LambdaMLM/issues/11)). It's a feature request, and out of scope. `record_response` is where crossing the threshold is detected, so it's where #11 would hook in.
 
-## Questions for the owner
+## Decisions
 
-1. **Complaints:** let one complaint flag the member as `bouncing` (the existing weight and threshold)? *Recommended.* The alternative is changing the default weight. Suppression-list "complaints" count as hard bounces, not complaints.
-2. **Conditional writes for every save**, so that a racing command or API call fails instead of overwriting? *Recommended.*
-3. **Removing the Lamson classifier** and its fixtures in PR 4, once PR 3 has run on staging? *Recommended.*
-4. **Turning off feedback forwarding** on each deployment's list domains, as a documented manual step, for staging now and for production at the switchover? *Recommended.* It isn't needed for correctness (forwarded feedback is dropped), only to stop the duplicates.
-5. **The bounces of mail sent before the switch:** accept losing them (a few days' worth at each switch)? *Recommended.*
-   - The alternative is two phases. First, the new events are only logged, next to what the Lamson classifier makes of the same bounces, while emailed bounces keep being recorded. Then, after some days, events are recorded and emailed bounces dropped.
-   - That loses nothing, and compares the two classifiers for free. But it's an extra deploy, and the production switchover would need the two phases as well.
+The owner accepted all five recommendations when reviewing this design (September 2026):
+
+1. **One complaint flags the member as `bouncing`**, with the existing weight and threshold. Suppression-list "complaints" count as hard bounces.
+2. **Every save is conditional.**
+3. **The Lamson classifier and its fixtures are removed** in PR 4, once PR 3 has run on staging.
+4. **Feedback forwarding is turned off** on each deployment's list domains, as a documented manual step: on staging during PR 3, and on production at the switchover.
+5. **The bounces of mail sent before each switch are lost** (a few days' worth), rather than switching in two phases.
