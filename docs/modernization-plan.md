@@ -237,7 +237,7 @@ Each of these gets its own design and review before implementation.
   - Clean up the headers SES rejects on re-sent posts (duplicate headers, malformed address headers, the recipient-count limit).
   - Decide what to do with malformed MIME.
   - Serialize each post once rather than once per recipient; per-recipient serialization is the main driver of memory use.
-- **Testability refactor:** create AWS clients lazily or inject them, separate persistence from list logic, use `email.policy.default`, and remove Python 2 leftovers such as `from __future__` imports and dead code (for example the unused `rsplit` in `get_signed_command` and `if not l:` in `handle_bounce_to`).
+- **Testability refactor** ([design](design/testability-refactor.md)): create AWS clients lazily or inject them, separate persistence from list logic, use `email.policy.default`, and remove Python 2 leftovers such as `from __future__` imports and dead code (for example the unused `rsplit` in `get_signed_command` and `if not l:` in `handle_bounce_to`).
 - **Handler dispatch** on the event source (SES, SNS or SQS).
 
 ## Out of scope
