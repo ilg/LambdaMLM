@@ -153,10 +153,15 @@ def rewrite_headers(mlist, msg, sender):
 
 def deliver(mlist, msg, sender, mod_approved):
     # TODO: body footer
+    data = None
     for recipient in mlist.addresses_to_receive_from(sender.address):
         # Set the return-path VERP-style: [list username]+[recipient s/@/=/]+bounce@[host]
         return_path = mlist.verp_address(recipient)
         if not mod_approved:
             # Suppress printing when mod-approved, because the output will go to the moderator approving it.
             print('> Sending to {}.'.format(recipient))
-        mail.send_raw(return_path, recipient, msg.as_bytes(policy=SEND_POLICY))
+        if data is None:
+            # The message is the same for every recipient, so it's written out
+            # once, when it's first needed.
+            data = msg.as_bytes(policy=SEND_POLICY)
+        mail.send_raw(return_path, recipient, data)
