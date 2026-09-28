@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Checks that the test harness itself is set up safely."""
 
 import os
@@ -41,10 +40,10 @@ def test_real_aws_requests_are_blocked():
 
 
 def test_fake_s3_returns_bytes_stream(aws):
-    aws.s3.put('bucket', 'key', u'café')
+    aws.s3.put('bucket', 'key', 'café')
     body = aws.s3.get_object(Bucket='bucket', Key='key')['Body']
     assert body.read(3) == b'caf'
-    assert body.read() == u'é'.encode('utf-8')
+    assert body.read() == 'é'.encode('utf-8')
     assert body.read() == b''
 
 

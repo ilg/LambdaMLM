@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """In-memory stand-ins for the S3 and SES clients used by the Lambda code.
 
 Only the operations the code actually calls are implemented.  Bodies are
@@ -25,7 +24,7 @@ def _to_bytes(data):
     return data.encode('utf-8')
 
 
-class FakeStreamingBody(object):
+class FakeStreamingBody:
     """Mimics botocore's StreamingBody: read(amt=None) returning bytes."""
 
     def __init__(self, data):
@@ -44,7 +43,7 @@ class FakeStreamingBody(object):
         pass
 
 
-class FakeS3(object):
+class FakeS3:
     def __init__(self, log=None):
         # (bucket, key) -> bytes
         self.objects = {}
@@ -116,7 +115,7 @@ class FakeS3(object):
                     )
 
 
-class FakeSES(object):
+class FakeSES:
     def __init__(self, log=None):
         # Each call as (service, operation, destination); see FakeS3.log.
         self.log = log if log is not None else []

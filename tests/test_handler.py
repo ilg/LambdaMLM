@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The Lambda entry point, end to end, and the SES/email helpers it uses."""
 
 import pytest
@@ -34,18 +33,18 @@ def keys(aws):
 
 def test_msg_get_header():
     msg = parse_message(b'Subject: =?utf-8?q?Caf=C3=A9?= time\nFrom: a@example.com\n\n')
-    assert sestools.msg_get_header(msg, 'subject') == u'Café time'
-    assert sestools.msg_get_header(msg, 'from') == u'a@example.com'
+    assert sestools.msg_get_header(msg, 'subject') == 'Café time'
+    assert sestools.msg_get_header(msg, 'from') == 'a@example.com'
     assert sestools.msg_get_header(msg, 'reply-to') is None
 
 
 def test_msg_get_header_raw_eight_bit():
     # Undeclared 8-bit header bytes are read as UTF-8...
     msg = parse_message(b'From: Jos\xc3\xa9 <j@example.com>\n\n')
-    assert sestools.msg_get_header(msg, 'from') == u'José <j@example.com>'
+    assert sestools.msg_get_header(msg, 'from') == 'José <j@example.com>'
     # ...or as Latin-1 if they aren't valid UTF-8.
     msg = parse_message(b'From: Jos\xe9 <j@example.com>\n\n')
-    assert sestools.msg_get_header(msg, 'from') == u'José <j@example.com>'
+    assert sestools.msg_get_header(msg, 'from') == 'José <j@example.com>'
 
 
 @pytest.mark.parametrize('headers, expected', [

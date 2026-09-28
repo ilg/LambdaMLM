@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """List loading, saving, configuration and membership operations."""
 
 import glob
@@ -74,8 +73,8 @@ def test_unknown_list(aws):
 
 
 def test_display_address(aws):
-    assert make_list(aws, name='Test List').display_address == u'Test List <test-list@example.org>'
-    assert make_list(aws, name='other').display_address == u'other <test-list@example.org>'
+    assert make_list(aws, name='Test List').display_address == 'Test List <test-list@example.org>'
+    assert make_list(aws, name='other').display_address == 'other <test-list@example.org>'
     store_list_config(aws, 'unnamed', {'members': []})
     assert listobj.List('unnamed@example.org').display_address == 'unnamed@example.org'
 

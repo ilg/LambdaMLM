@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Posting to a list: policy, header rewriting, moderation and bounces."""
 
 import re
@@ -215,14 +214,14 @@ def test_non_ascii_sender_name(aws):
     make_list(aws, name='Test List', **{'allow-from-non-members': True}).send(parse_message(raw_message(
             from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>')))
     assert msg_get_header(sent_message(aws), 'From') == \
-        u'Jos\u00e9 (via Test List) <test-list+jose=example.net+from@example.org>'
+        'Jos\u00e9 (via Test List) <test-list+jose=example.net+from@example.org>'
 
 
 def test_reply_to_list_non_ascii_sender(aws):
     make_list(aws, **{'reply-to-list': True, 'allow-from-non-members': True}).send(parse_message(raw_message(
             from_='=?utf-8?q?Jos=C3=A9?= <jose@example.net>', headers=['Cc: dave@example.com'])))
     from sestools import msg_get_header
-    assert msg_get_header(sent_message(aws), 'CC') == u'dave@example.com, Jos\u00e9 <jose@example.net>'
+    assert msg_get_header(sent_message(aws), 'CC') == 'dave@example.com, Jos\u00e9 <jose@example.net>'
 
 
 def test_subject_tag(aws):
@@ -273,7 +272,7 @@ def test_eight_bit_from_header(aws):
     make_list(aws).send(parse_message(raw))
     msg = sent_message(aws)
     assert msg_get_header(msg, 'From') == \
-        u'Al\u00efce Sender (via test-list@example.org) <test-list+alice=example.com+from@example.org>'
+        'Al\u00efce Sender (via test-list@example.org) <test-list+alice=example.com+from@example.org>'
     # The sender's original header goes out as it came in.
     assert b'X-Original-From: Al\xc3\xafce Sender <alice@example.com>' in aws.ses.sent_raw_emails[0]['Data']
 
@@ -611,11 +610,11 @@ def test_non_ascii_list_name_in_address_headers(aws):
     # Issue #9: the whole "name <address>" value used to be one encoded word,
     # which mail clients can't read the address out of.
     from sestools import msg_get_header
-    make_list(aws, name=u'Café List', **{'reply-to-list': True}).send(parse_message(raw_message()))
+    make_list(aws, name='Café List', **{'reply-to-list': True}).send(parse_message(raw_message()))
     data = aws.ses.sent_raw_emails[0]['Data']
     assert b'Sender: =?utf-8?q?Caf=C3=A9_List?= <test-list@example.org>\r\n' in data
     assert b'Reply-to: =?utf-8?q?Caf=C3=A9_List?= <test-list@example.org>\r\n' in data
-    assert msg_get_header(sent_message(aws), 'Reply-to') == u'Café List <test-list@example.org>'
+    assert msg_get_header(sent_message(aws), 'Reply-to') == 'Café List <test-list@example.org>'
 
 
 def test_list_name_with_specials_is_quoted(aws):

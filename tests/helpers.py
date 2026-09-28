@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Shared helpers for the characterization tests."""
 
 import email
@@ -21,9 +20,7 @@ def read_bytes(*path):
 
 def parse_message(data):
     """Parse raw message bytes the way the code parses stored mail."""
-    # message_from_bytes only exists on Python 3.
-    parse = getattr(email, 'message_from_bytes', email.message_from_string)
-    return parse(data)
+    return email.message_from_bytes(data)
 
 
 def config_key(list_name, host=HOST):

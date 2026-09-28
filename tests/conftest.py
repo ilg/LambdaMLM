@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Test setup for the Lambda code.
 
 The app modules create boto3 clients and read `config` at import time, so
@@ -110,7 +109,7 @@ def aws(monkeypatch):
     return FakeAWS(s3=s3, ses=ses, log=log)
 
 
-class FakeAWS(object):
+class FakeAWS:
     def __init__(self, s3, ses, log):
         self.s3 = s3
         self.ses = ses

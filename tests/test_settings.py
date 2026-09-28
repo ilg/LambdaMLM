@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The real lambda/settings.py: environment variables and the SSM signing key."""
 
 import importlib.util
@@ -43,19 +42,19 @@ def test_from_environment(monkeypatch):
     assert s.signing_key_parameter == '/lambdamlm/prod/signing-key'
 
 
-class FakeSSM(object):
+class FakeSSM:
     def __init__(self):
         self.calls = []
 
     def get_parameter(self, Name, WithDecryption):
         self.calls.append((Name, WithDecryption))
-        return {'Parameter': {'Name': Name, 'Value': u'key with a backslash \\ and é'}}
+        return {'Parameter': {'Name': Name, 'Value': 'key with a backslash \\ and é'}}
 
 
 def test_signing_key_is_read_from_ssm_once(monkeypatch):
     s = load(monkeypatch, LAMBDAMLM_SIGNING_KEY_PARAMETER='/lambdamlm/prod/signing-key')
     ssm = FakeSSM()
     monkeypatch.setattr(boto3, 'client', lambda service: ssm if service == 'ssm' else None)
-    assert s.signing_key() == u'key with a backslash \\ and é'
-    assert s.signing_key() == u'key with a backslash \\ and é'
+    assert s.signing_key() == 'key with a backslash \\ and é'
+    assert s.signing_key() == 'key with a backslash \\ and é'
     assert ssm.calls == [('/lambdamlm/prod/signing-key', True)]

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Golden files: exact outputs the tests compare against.
 
 They were recorded from the Python 2.7 code (starting at commit 587db49), so

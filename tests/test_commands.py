@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Email commands: the signing round trip and each command's output."""
 
 from datetime import timedelta
@@ -244,7 +243,7 @@ def test_unknown_list(aws):
 
 
 def test_non_ascii_arguments():
-    assert u'José' in run(u'a@example.com', u'echo José')
+    assert 'José' in run('a@example.com', 'echo José')
 
 
 # ---------------------------------------------------------------- run: subscription
