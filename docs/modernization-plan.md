@@ -236,8 +236,9 @@ Each of these gets its own design and review before implementation.
 - **Sending robustness:**
   - Clean up the headers SES rejects on re-sent posts (duplicate headers, malformed address headers, the recipient-count limit).
   - Decide what to do with malformed MIME.
-  - Serialize each post once rather than once per recipient; per-recipient serialization is the main driver of memory use.
-- **Testability refactor:** create AWS clients lazily or inject them, separate persistence from list logic, use `email.policy.default`, and remove Python 2 leftovers such as `from __future__` imports and dead code (for example the unused `rsplit` in `get_signed_command` and `if not l:` in `handle_bounce_to`).
+  - Decide whether to parse and write messages with `email.policy.default`. That changes how headers are decoded and folded, and what `msg['message-id']` returns, so it changes sent bytes and possibly moderation keys. It was moved here from the testability refactor for that reason.
+  - Find what drives memory use for large posts. It isn't serializing the post once per recipient: a measurement during the testability design showed each recipient's bytes are freed before the next. (Serializing once, which saves CPU time, is part of the testability refactor.)
+- **Testability refactor** ([design](design/testability-refactor.md)): create AWS clients lazily, separate persistence from list logic, split the posting, moderation and bounce code into the pieces the other redesigns need, serialize each post once, and remove Python 2 leftovers such as `from __future__` imports and dead code (for example the unused `rsplit` in `get_signed_command` and `if not l:` in `handle_bounce_to`).
 - **Handler dispatch** on the event source (SES, SNS or SQS).
 
 ## Out of scope
