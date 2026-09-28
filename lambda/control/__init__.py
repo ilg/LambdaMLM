@@ -8,13 +8,10 @@ timestamp_format = '%Y%m%d%H%M%S'
 
 signed_cmd_regex = re.compile(r'^(?P<cmd>.+)\s+(?P<signature>[\da-zA-Z+/]{27}=)(?P<timestamp>\d{14})$')
 
+import aws_clients
 import settings
 from sestools import msg_get_header, msg_get_response_address
 from email.utils import parseaddr
-
-import boto3
-
-ses = boto3.client('ses')
 
 from .commands import run
 
@@ -91,7 +88,7 @@ def handle_command(command_address, msg):
             )
 
 def send_response(source, destination, subject, body):
-    return ses.send_email(
+    return aws_clients.ses().send_email(
             Source=source,
             Destination={
                 'ToAddresses': [ destination, ],

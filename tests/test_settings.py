@@ -4,8 +4,7 @@ import importlib.util
 import os
 from datetime import timedelta
 
-import boto3
-
+import aws_clients
 from helpers import TESTS_DIR
 
 SETTINGS = os.path.join(os.path.dirname(TESTS_DIR), 'lambda', 'settings.py')
@@ -54,7 +53,7 @@ class FakeSSM:
 def test_signing_key_is_read_from_ssm_once(monkeypatch):
     s = load(monkeypatch, LAMBDAMLM_SIGNING_KEY_PARAMETER='/lambdamlm/prod/signing-key')
     ssm = FakeSSM()
-    monkeypatch.setattr(boto3, 'client', lambda service: ssm if service == 'ssm' else None)
+    monkeypatch.setattr(aws_clients, 'ssm', lambda: ssm)
     assert s.signing_key() == 'key with a backslash \\ and é'
     assert s.signing_key() == 'key with a backslash \\ and é'
     assert ssm.calls == [('/lambdamlm/prod/signing-key', True)]

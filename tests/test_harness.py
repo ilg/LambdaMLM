@@ -1,18 +1,19 @@
 """Checks that the test harness itself is set up safely."""
 
+import json
 import os
+import subprocess
 import sys
 
 import boto3
 import pytest
 from botocore.client import BaseClient
 
+import aws_clients
 import settings
-import control
-import listobj
-import sestools
 from conftest import (
-        LAMBDA_DIR, RealAWSRequestAttempted, handler_module, import_time_clients)
+        LAMBDA_DIR, REAL_CLIENT_ACCESSORS, RealAWSClientCreated, RealAWSRequestAttempted,
+        handler_module)
 from fakes import FakeS3, FakeSES
 
 
@@ -20,21 +21,39 @@ def test_settings_are_the_fake():
     assert settings.s3_bucket == 'lambdamlm-test'
 
 
-def test_module_clients_are_fakes(aws):
-    assert listobj.s3 is aws.s3
-    assert sestools.s3 is aws.s3
+def test_clients_are_fakes(aws):
+    assert aws_clients.s3() is aws.s3
     assert isinstance(aws.s3, FakeS3)
-    assert listobj.ses is aws.ses
-    assert control.ses is aws.ses
+    assert aws_clients.ses() is aws.ses
     assert isinstance(aws.ses, FakeSES)
+
+
+def test_creating_real_clients_fails(aws):
+    with pytest.raises(RealAWSClientCreated):
+        boto3.client('s3')
+    with pytest.raises(RealAWSClientCreated):
+        aws_clients.ssm()
 
 
 def test_handler_module_imports():
     assert callable(handler_module.lambda_handler)
 
 
+def test_each_client_is_created_once(monkeypatch):
+    created = []
+    monkeypatch.setattr(boto3, 'client', lambda service: created.append(service) or object())
+    for service, accessor in REAL_CLIENT_ACCESSORS.items():
+        accessor.cache_clear()
+        try:
+            assert accessor() is accessor()
+        finally:
+            accessor.cache_clear()
+    assert created == ['s3', 'ses', 'ssm']
+
+
 def test_real_aws_requests_are_blocked():
-    client = boto3.client('s3')
+    # A second line of defense, for a client created despite the fixture.
+    client = boto3.DEFAULT_SESSION.client('s3')
     with pytest.raises(RealAWSRequestAttempted):
         client.get_object(Bucket='lambdamlm-test', Key='anything')
 
@@ -47,18 +66,40 @@ def test_fake_s3_returns_bytes_stream(aws):
     assert body.read() == b''
 
 
-@pytest.mark.parametrize('name', sorted(import_time_clients))
-def test_import_time_clients_are_blocked(name):
-    client = import_time_clients[name]
-    with pytest.raises(RealAWSRequestAttempted):
-        if client.meta.service_model.service_name == 's3':
-            client.get_object(Bucket='lambdamlm-test', Key='anything')
-        else:
-            client.send_email(
-                    Source='a@example.com',
-                    Destination={'ToAddresses': ['b@example.com']},
-                    Message={'Subject': {'Data': 's'}, 'Body': {'Text': {'Data': 'b'}}},
-                    )
+IMPORT_APP = """
+import importlib, json, sys
+import boto3, boto3.session
+
+def fail(*args, **kwargs):
+    raise SystemExit('Importing the app created an AWS client: {}'.format(args))
+boto3.client = fail
+boto3.session.Session.client = fail
+
+sys.path.insert(0, sys.argv[1])
+importlib.import_module('lambda')
+# Only the handler is imported, as in Lambda, so this shows which commands
+# its imports register.
+root = sys.modules['control.commands'].command
+list_group = root.commands['list']
+print(json.dumps({
+    'root': sorted(root.commands),
+    'list': sorted(list_group.commands),
+    'mod': sorted(list_group.commands['mod'].commands),
+    }))
+"""
+
+
+def test_importing_the_app_has_no_side_effects():
+    # In a fresh interpreter, since this one has imported the app already.
+    result = subprocess.run([sys.executable, '-c', IMPORT_APP, LAMBDA_DIR],
+                            capture_output=True, text=True, env=dict(os.environ))
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {
+        'root': ['about', 'echo', 'list'],
+        'list': ['accept_subscription_invitation', 'accept_unsubscription_invitation',
+                 'members', 'mod', 'set', 'setflag', 'subscribe', 'unsetflag', 'unsubscribe'],
+        'mod': ['approve', 'reject'],
+        }
 
 
 def test_no_real_clients_left_in_app_modules(aws):
@@ -73,5 +114,5 @@ def test_no_real_clients_left_in_app_modules(aws):
         for attr, value in vars(module).items():
             if isinstance(value, BaseClient):
                 leftovers.append('{}.{}'.format(module_name, attr))
-    assert {'listobj', 'sestools', 'control', 'lambda'} <= scanned
+    assert {'aws_clients', 'listobj', 'sestools', 'control', 'lambda'} <= scanned
     assert leftovers == []

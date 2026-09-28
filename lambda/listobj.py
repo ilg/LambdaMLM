@@ -8,11 +8,6 @@ import re
 host_regex = re.compile(r'^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$')
 name_regex = re.compile(r'^[a-z0-9-]+$')
 
-import boto3
-
-s3 = boto3.client('s3')
-ses = boto3.client('ses')
-
 from botocore.exceptions import ClientError
 
 import email
@@ -25,6 +20,7 @@ from email.mime.text import MIMEText
 from sestools import msg_get_header
 from email_utils import detect_bounce, bounce_defaults
 
+import aws_clients
 import settings
 import control
 import templates
@@ -99,7 +95,7 @@ class List (ListMemberContainer):
         self._s3_key = '{}{}/{}.yaml'.format(settings.s3_configuration_prefix, self.host, self.username)
         self._s3_moderation_prefix = '{}{}/{}/'.format(settings.s3_moderation_prefix, self.host, self.username)
         try:
-            config_response = s3.get_object(Bucket=settings.s3_bucket, Key=self._s3_key)
+            config_response = aws_clients.s3().get_object(Bucket=settings.s3_bucket, Key=self._s3_key)
         except ClientError:
             raise UnknownList
         self._config = yaml.safe_load(config_response['Body'])
@@ -147,7 +143,7 @@ class List (ListMemberContainer):
         self._save()
 
     def _save(self):
-        response = s3.put_object(
+        response = aws_clients.s3().put_object(
                 Bucket=settings.s3_bucket,
                 Key=self._s3_key,
                 Body=yaml.safe_dump(self._config, default_flow_style=False, allow_unicode=True),
@@ -423,7 +419,7 @@ class List (ListMemberContainer):
             if not mod_approved:
                 # Suppress printing when mod-approved, because the output will go to the moderator approving it.
                 print('> Sending to {}.'.format(recipient))
-            ses.send_raw_email(
+            aws_clients.ses().send_raw_email(
                     Source=return_path,
                     Destinations=[ recipient, ],
                     RawMessage={ 'Data': msg.as_bytes(policy=SEND_POLICY), },
@@ -438,7 +434,7 @@ class List (ListMemberContainer):
         with a Filter.  Falls back to `default` if there's no such rule.
         """
         try:
-            lifecycle = s3.get_bucket_lifecycle_configuration(Bucket=settings.s3_bucket)
+            lifecycle = aws_clients.s3().get_bucket_lifecycle_configuration(Bucket=settings.s3_bucket)
         except ClientError as e:
             # Most likely NoSuchLifecycleConfiguration.
             print('Unable to read the bucket lifecycle configuration: {}'.format(e))
@@ -462,7 +458,7 @@ class List (ListMemberContainer):
             raise ValueError('Messages must contain a Message-ID: header.')
         message_id = message_id.replace(':', '_')  # Make it safe for subject-command.
         # Put the email message into the list's moderation holding space on S3.
-        response = s3.put_object(
+        response = aws_clients.s3().put_object(
                 Bucket=settings.s3_bucket,
                 Key=self._s3_moderation_prefix + message_id,
                 Body=msg.as_bytes(policy=SEND_POLICY),
@@ -491,7 +487,7 @@ class List (ListMemberContainer):
                 moderation_days=mod_interval.days
                 )))
             message.attach(forward_mime)
-            ses.send_raw_email(
+            aws_clients.ses().send_raw_email(
                     Source=control_address,
                     Destinations=[ moderator, ],
                     RawMessage={ 'Data': message.as_bytes(policy=SEND_POLICY), },
@@ -511,14 +507,14 @@ class List (ListMemberContainer):
             raise ModeratedMessageNotFound
 
     def user_mod_approve(self, from_user, message_id):
-        response = self._user_mod_act_on(from_user, message_id, s3.get_object)
+        response = self._user_mod_act_on(from_user, message_id, aws_clients.s3().get_object)
         self.send(email.message_from_bytes(response['Body'].read()), mod_approved=True)
-        self._user_mod_act_on(from_user, message_id, s3.delete_object)
+        self._user_mod_act_on(from_user, message_id, aws_clients.s3().delete_object)
 
     def user_mod_reject(self, from_user, message_id):
         # Head the object first, since delete won't raise an exception if the object doesn't exist.
-        self._user_mod_act_on(from_user, message_id, s3.head_object)
-        self._user_mod_act_on(from_user, message_id, s3.delete_object)
+        self._user_mod_act_on(from_user, message_id, aws_clients.s3().head_object)
+        self._user_mod_act_on(from_user, message_id, aws_clients.s3().delete_object)
 
     @classmethod
     def lists_for_addresses(cls, addresses):

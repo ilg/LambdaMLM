@@ -8,6 +8,8 @@ Parameter Store the first time it's needed.
 import os
 from datetime import timedelta
 
+import aws_clients
+
 # The user part of the address commands are sent to (lambda@<list host>).
 command_user = os.environ.get('LAMBDAMLM_COMMAND_USER', 'lambda')
 
@@ -31,7 +33,6 @@ def signing_key():
     """The command-signing key, read from SSM once per container."""
     global _signing_key
     if _signing_key is None:
-        import boto3
-        response = boto3.client('ssm').get_parameter(Name=signing_key_parameter, WithDecryption=True)
+        response = aws_clients.ssm().get_parameter(Name=signing_key_parameter, WithDecryption=True)
         _signing_key = response['Parameter']['Value']
     return _signing_key

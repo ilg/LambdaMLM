@@ -1,8 +1,7 @@
 """Test setup for the Lambda code.
 
-The app modules create boto3 clients at import time, and `settings` reads
-the environment when it's imported, so everything here must happen, in this
-order, before any app module is imported:
+`settings` reads the environment when it's imported, so everything here must
+happen, in this order, before any app module is imported:
 
 1. Point AWS configuration at fake credentials, so no real credentials or
    profiles can ever be picked up.
@@ -73,40 +72,40 @@ from fakes import FakeS3, FakeSES
 yaml.SafeDumper.add_representer(FakeDatetime, yaml.representer.SafeRepresenter.represent_datetime)
 yaml.SafeDumper.add_representer(FakeDate, yaml.representer.SafeRepresenter.represent_date)
 
-# Import every module that creates a client now, so they're all created
-# under the setup above.
+import aws_clients
 import settings
-import listobj
-import sestools
-import control
+
+# The real accessors, before the `aws` fixture replaces them.
+REAL_CLIENT_ACCESSORS = {'s3': aws_clients.s3, 'ses': aws_clients.ses, 'ssm': aws_clients.ssm}
 # The handler module is named `lambda`, which is a keyword.
 handler_module = importlib.import_module('lambda')
 
-# The real clients the app created, kept so tests can check they're blocked.
-import_time_clients = {
-    'listobj.s3': listobj.s3,
-    'listobj.ses': listobj.ses,
-    'sestools.s3': sestools.s3,
-    'control.ses': control.ses,
-    }
+
+class RealAWSClientCreated(Exception):
+    pass
+
+
+def _no_real_clients(*args, **kwargs):
+    raise RealAWSClientCreated('Tests tried to create an AWS client: {}'.format(args))
 
 
 @pytest.fixture(autouse=True)
 def aws(monkeypatch):
-    """Replace every module-level AWS client with in-memory fakes, and the
-    signing key (otherwise read from SSM) with a fixed one.
+    """Replace the app's AWS clients with in-memory fakes, and the signing key
+    (otherwise read from SSM) with a fixed one.
 
-    This is the only place clients are swapped, so if the clients move (for
-    example, to lazy creation), only this fixture needs to change.
+    The app gets every client from aws_clients, so this is the only place
+    clients are swapped.  Creating a client any other way fails the test.
     """
     monkeypatch.setattr(settings, 'signing_key', lambda: 'test signing key')
     log = []
     s3 = FakeS3(log)
     ses = FakeSES(log)
-    monkeypatch.setattr(listobj, 's3', s3)
-    monkeypatch.setattr(listobj, 'ses', ses)
-    monkeypatch.setattr(sestools, 's3', s3)
-    monkeypatch.setattr(control, 'ses', ses)
+    for accessor in (aws_clients.s3, aws_clients.ses, aws_clients.ssm):
+        accessor.cache_clear()
+    monkeypatch.setattr(aws_clients, 's3', lambda: s3)
+    monkeypatch.setattr(aws_clients, 'ses', lambda: ses)
+    monkeypatch.setattr(boto3, 'client', _no_real_clients)
     return FakeAWS(s3=s3, ses=ses, log=log)
 
 
