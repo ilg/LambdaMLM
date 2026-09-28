@@ -90,31 +90,33 @@ class List (ListMemberContainer):
         # The keys, which the tests check.
         self._s3_key = storage.list_config_key(self.host, self.username)
         self._s3_moderation_prefix = storage.moderation_prefix(self.host, self.username)
-        self._config, self._etag = storage.load_list_config(self.host, self.username)
+        # The config as stored.  Reading an attribute named for a list property
+        # (self.subject_tag for subject-tag) reads it; see __getattr__.
+        self.config, self._etag = storage.load_list_config(self.host, self.username)
         if self.name:
             self.display_address = '{} <{}>'.format(self.name, self.address)
         else:
             self.display_address = self.address
-        # Default bounce scoring constants
-        if not self.bounce_score_threshold:
-            self.bounce_score_threshold = bounce_defaults.bounce_score_threshold
-        if not self.bounce_weights:
-            self.bounce_weights = bounce_defaults.bounce_weights
-        if not self.bounce_decay_factor:
-            self.bounce_decay_factor = bounce_defaults.bounce_decay_factor
 
     def __getattr__(self, name):
         prop = name.replace('_', '-')
         if prop not in list_properties:
             raise AttributeError(name)
-        return self._config.get(prop)
+        return self.config.get(prop)
 
-    def __setattr__(self, name, value):
-        if name in list_properties:
-            prop = name.replace('_', '-')
-            self._config[prop] = value
-            return
-        super().__setattr__(name, value)
+    # The bounce settings in effect: the stored value, or the default if it's
+    # unset or falsy.  The API and the set command show the stored values.
+    @property
+    def bounce_score_threshold(self):
+        return self.config.get('bounce-score-threshold') or bounce_defaults.bounce_score_threshold
+
+    @property
+    def bounce_weights(self):
+        return self.config.get('bounce-weights') or bounce_defaults.bounce_weights
+
+    @property
+    def bounce_decay_factor(self):
+        return self.config.get('bounce-decay-factor') or bounce_defaults.bounce_decay_factor
 
     def dict(self):
         d = {p: getattr(self, p) for p in list_properties}
@@ -131,11 +133,11 @@ class List (ListMemberContainer):
         for k, v in d.items():
             if k not in list_properties:
                 continue
-            setattr(self, k, v)
+            self.config[k] = v
         self._save()
 
     def _save(self):
-        storage.save_list_config(self.host, self.username, self._config)
+        storage.save_list_config(self.host, self.username, self.config)
 
     def user_subscribe_user(self, from_user, target_user):
         from_address = address_from_user(from_user)
@@ -207,7 +209,7 @@ class List (ListMemberContainer):
             raise InsufficientPermissions
         if option not in list_properties or option in list_properties_protected:
             raise UnknownOption
-        setattr(self, option, value)
+        self.config[option] = value
         self._save()
 
     def user_get_members(self, from_user):
