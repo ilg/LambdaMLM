@@ -710,6 +710,21 @@ def test_held_message_access_denied_is_not_found(aws):
         l.user_mod_reject('mod1@example.com', '<m1@example.com>')
 
 
+def test_mod_approve_delete_failure(aws, monkeypatch):
+    # The post goes out before the held copy is deleted, so a failed delete
+    # reports the message as not found after sending it.
+    from botocore.exceptions import ClientError
+    store_held(aws)
+    l = moderated_list(aws)
+
+    def fail(**kwargs):
+        raise ClientError({'Error': {'Code': 'AccessDenied', 'Message': 'no'}}, 'DeleteObject')
+    monkeypatch.setattr(aws.s3, 'delete_object', fail)
+    with pytest.raises(ModeratedMessageNotFound):
+        l.user_mod_approve('mod1@example.com', '<m1@example.com>')
+    assert sent_to(aws) == ['mod1@example.com', 'mod2@example.com', 'alice@example.com']
+
+
 def test_lifecycle_access_denied_uses_default(aws):
     aws.s3.lifecycle[settings.s3_bucket] = FLAT_RULE
     aws.s3.deny(settings.s3_bucket)

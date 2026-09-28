@@ -3,27 +3,28 @@ from contextlib import contextmanager
 import email
 import email.header
 
-import aws_clients
 import settings
+import storage
 
 @contextmanager
 def email_message_for_event(event):
-    key = settings.s3_incoming_email_prefix + event['Records'][0]['ses']['mail']['messageId']
-    
+    message_id = event['Records'][0]['ses']['mail']['messageId']
+    key = storage.incoming_key(message_id)
+
     # Get the email from S3
     try:
-        response = aws_clients.s3().get_object(Bucket=settings.s3_bucket, Key=key)
+        data = storage.incoming_message(message_id)
     except Exception as e:
         print(e)
         print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, settings.s3_bucket))
         raise e
     
-    yield email.message_from_bytes(response['Body'].read())
+    yield email.message_from_bytes(data)
 
     # Clean up: delete the email from S3.  This only happens once the email has
     # been handled; if handling raised, the email stays in S3 so it isn't lost.
     try:
-        response = aws_clients.s3().delete_object(Bucket=settings.s3_bucket, Key=key)
+        storage.delete_incoming_message(message_id)
         print("Removed email from S3.")
     except Exception as e:
         print(e)
