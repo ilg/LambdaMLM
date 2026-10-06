@@ -3,6 +3,9 @@
 Only the operations the code actually calls are implemented.  Bodies are
 stored as bytes and returned through a StreamingBody-like object, so the
 code's stream-reading paths are exercised the way they are against real S3.
+
+Every write gives the object a new ETag, quoted as S3 returns it, and
+put_object honors IfMatch the way S3 does.
 """
 
 import itertools
@@ -10,9 +13,21 @@ import itertools
 from botocore.exceptions import ClientError
 
 
+# The HTTP status S3 reports each error code with.
+_STATUS = {
+    'AccessDenied': 403,
+    'NoSuchKey': 404,
+    '404': 404,
+    'ConditionalRequestConflict': 409,
+    'PreconditionFailed': 412,
+    'NoSuchLifecycleConfiguration': 404,
+    }
+
+
 def _client_error(code, message, operation):
     return ClientError(
-            {'Error': {'Code': code, 'Message': message}},
+            {'Error': {'Code': code, 'Message': message},
+             'ResponseMetadata': {'HTTPStatusCode': _STATUS[code]}},
             operation,
             )
 
@@ -47,6 +62,11 @@ class FakeS3:
     def __init__(self, log=None):
         # (bucket, key) -> bytes
         self.objects = {}
+        # (bucket, key) -> the object's ETag, quoted as S3 returns it
+        self.etags = {}
+        self._etag_numbers = itertools.count(1)
+        # (bucket, key) -> error codes the next put_object calls fail with
+        self.put_failures = {}
         # bucket -> lifecycle configuration dict ({'Rules': [...]})
         self.lifecycle = {}
         # Each call as (service, operation, key), shared with FakeSES so the
@@ -57,8 +77,13 @@ class FakeS3:
         self.denied = set()
 
     def put(self, bucket, key, data):
-        """Test helper: store an object directly."""
+        """Test helper: store an object directly, as another writer would."""
+        self._store(bucket, key, data)
+
+    def _store(self, bucket, key, data):
         self.objects[(bucket, key)] = _to_bytes(data)
+        self.etags[(bucket, key)] = '"etag-{}"'.format(next(self._etag_numbers))
+        return self.etags[(bucket, key)]
 
     def body(self, bucket, key):
         """Test helper: return a stored object's bytes."""
@@ -71,6 +96,11 @@ class FakeS3:
         """Test helper: make calls on this key (or the bucket's own settings) fail."""
         self.denied.add((bucket, key))
 
+    def fail_puts(self, bucket, key, *codes):
+        """Test helper: make the next put_object calls on this key fail, one
+        with each error code (such as 'ConditionalRequestConflict')."""
+        self.put_failures.setdefault((bucket, key), []).extend(codes)
+
     def _call(self, operation, bucket, key=None):
         self.log.append(('s3', operation, key))
         if (bucket, key) in self.denied:
@@ -82,7 +112,8 @@ class FakeS3:
             data = self.objects[(Bucket, Key)]
         except KeyError:
             raise _client_error('NoSuchKey', 'The specified key does not exist.', 'GetObject')
-        return {'Body': FakeStreamingBody(data), 'ContentLength': len(data)}
+        return {'Body': FakeStreamingBody(data), 'ContentLength': len(data),
+                'ETag': self.etags[(Bucket, Key)]}
 
     def head_object(self, Bucket, Key):
         self._call('head_object', Bucket, Key)
@@ -90,17 +121,30 @@ class FakeS3:
             data = self.objects[(Bucket, Key)]
         except KeyError:
             raise _client_error('404', 'Not Found', 'HeadObject')
-        return {'ContentLength': len(data)}
+        return {'ContentLength': len(data), 'ETag': self.etags[(Bucket, Key)]}
 
-    def put_object(self, Bucket, Key, Body):
+    def put_object(self, Bucket, Key, Body, IfMatch=None):
         self._call('put_object', Bucket, Key)
-        self.objects[(Bucket, Key)] = _to_bytes(Body)
-        return {}
+        failures = self.put_failures.get((Bucket, Key))
+        if failures:
+            code = failures.pop(0)
+            raise _client_error(code, 'Injected {}'.format(code), 'PutObject')
+        if IfMatch is not None:
+            if (Bucket, Key) not in self.objects:
+                raise _client_error('NoSuchKey', 'The specified key does not exist.', 'PutObject')
+            if IfMatch != self.etags[(Bucket, Key)]:
+                raise _client_error(
+                        'PreconditionFailed',
+                        'At least one of the pre-conditions you specified did not hold',
+                        'PutObject',
+                        )
+        return {'ETag': self._store(Bucket, Key, Body)}
 
     def delete_object(self, Bucket, Key):
         # S3 doesn't report an error when deleting a key that doesn't exist.
         self._call('delete_object', Bucket, Key)
         self.objects.pop((Bucket, Key), None)
+        self.etags.pop((Bucket, Key), None)
         return {}
 
     def get_bucket_lifecycle_configuration(self, Bucket):
@@ -127,20 +171,27 @@ class FakeSES:
     def _message_id(self):
         return 'fake-message-id-{}'.format(next(self._ids))
 
-    def send_email(self, Source, Destination, Message):
+    # A ConfigurationSetName is recorded only when it's given, so a send
+    # without one looks exactly as it always has.
+
+    def send_email(self, Source, Destination, Message, ConfigurationSetName=None):
         self.log.append(('ses', 'send_email', Destination['ToAddresses'][0]))
         self.sent_emails.append(dict(
             Source=Source,
             Destination=Destination,
             Message=Message,
-            ))
+            **_configuration_set(ConfigurationSetName)))
         return {'MessageId': self._message_id()}
 
-    def send_raw_email(self, Source, Destinations, RawMessage):
+    def send_raw_email(self, Source, Destinations, RawMessage, ConfigurationSetName=None):
         self.log.append(('ses', 'send_raw_email', Destinations[0]))
         self.sent_raw_emails.append(dict(
             Source=Source,
             Destinations=list(Destinations),
             Data=_to_bytes(RawMessage['Data']),
-            ))
+            **_configuration_set(ConfigurationSetName)))
         return {'MessageId': self._message_id()}
+
+
+def _configuration_set(name):
+    return {} if name is None else {'ConfigurationSetName': name}
