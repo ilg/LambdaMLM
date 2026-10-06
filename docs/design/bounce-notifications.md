@@ -273,6 +273,15 @@ This is compatible with rolling back to the Python 2 function, provided staging'
 - **Retrying email commands and API calls on a conflict.** See [Conditional writes everywhere](#conditional-writes-everywhere).
 - **Notifying members or admins about bounces** ([#11](https://github.com/ilg/LambdaMLM/issues/11)). It's a feature request, and out of scope. `record_response` is where crossing the threshold is detected, so it's where #11 would hook in.
 
+## Implementation notes
+
+Where the implementation differs from the design above:
+
+- **`update_list` is in `listobj`, not `storage`.** It loads and changes a `List`, and `listobj` imports `storage`. Its `change` returns whether it changed anything, and the list is saved only if it did, so a bounce for a member who has left saves nothing, as before.
+- **The VERP split is in PR 1.** `handle_bounce_to` needs the list's username and host before `update_list` loads the list, so `parse_verp` and `member_for_verp` replace `list_and_member_for_verp` now. On a retry, the emailed bounce is classified again; that's cheap, and it goes away in PR 3.
+- **A list deleted while a command or API call is changing it** isn't handled specially: the save raises `ListNotFound`, so a command replies "Internal error." and the API returns Lambda's error payload. Before, the unconditional save recreated the list.
+- **The command's reply** has two spaces after the first sentence, like the other command replies.
+
 ## Decisions
 
 The owner accepted all five recommendations when reviewing this design (September 2026):

@@ -2,8 +2,11 @@
 
 A save is conditional on the ETag the list was loaded with, so a write that
 races another one fails instead of silently overwriting it.  Bounces start
-again from a fresh copy of the list.
+again from a fresh copy of the list; email commands and API calls report the
+conflict.
 """
+
+import json
 
 import pytest
 import yaml
@@ -13,12 +16,16 @@ from freezegun import freeze_time
 import listobj
 import settings
 import storage
+from api import handle_api
 from bounces import ResponseType
+from control import commands
 from helpers import FIXTURES, HOST, config_key, member, parse_message, read_bytes, store_list_config, stored_list_config
 from list_exceptions import ListChanged, ListNotFound, UnknownList
 
 NOW = '2026-09-14 12:00:00'
 KEY = config_key('test-list')
+COMMAND_CONFLICT = 'The list changed while your command was running.  Please try again.'
+API_CONFLICT = {'StatusCode': 409, 'Message': 'The list changed while this request was running. Try again.'}
 
 
 def make_list(aws, **options):
@@ -241,3 +248,43 @@ def test_bounce_is_recorded_again_after_a_conflict(aws, racing_writer):
     # Both the other writer's subscription and the bounce were kept.
     assert [m.address for m in members] == ['admin@example.com', 'plain@example.com', 'racer1@example.com']
     assert list(members[1].bounces.values()) == [ResponseType.hard]
+
+
+# ---------------------------------------------------------------- email commands
+
+@pytest.mark.parametrize('user, cmd', [
+    ('new@example.com', 'subscribe'),
+    ('plain@example.com', 'unsubscribe'),
+    ('plain@example.com', 'setflag vacation'),
+    ('admin@example.com', 'set subject-tag Tag'),
+    ])
+def test_command_conflict_says_try_again(aws, racing_writer, user, cmd):
+    make_list(aws, **{'open-subscription': True})
+    racing_writer()
+    before = addresses(aws)
+    assert commands.run(user=user, cmd='list test-list@example.org ' + cmd) == COMMAND_CONFLICT
+    # The command didn't overwrite the other writer's change, and isn't retried.
+    assert addresses(aws) == before + ['racer1@example.com']
+    assert aws.log.count(('s3', 'put_object', KEY)) == 1
+
+
+# ---------------------------------------------------------------- API
+
+def call(**event):
+    # The Lambda runtime JSON-serializes the return value.
+    return json.loads(json.dumps(handle_api(event)))
+
+
+@pytest.mark.parametrize('event', [
+    dict(Action='UpdateList', Data={'subject-tag': 'Tag'}),
+    dict(Action='CreateMember', MemberAddress='new@example.com'),
+    dict(Action='UpdateMember', MemberAddress='plain@example.com', Data={'flags': ['vacation']}),
+    dict(Action='DeleteMember', MemberAddress='plain@example.com'),
+    ])
+def test_api_conflict_is_409(aws, racing_writer, event):
+    make_list(aws)
+    racing_writer()
+    before = addresses(aws)
+    assert call(ListAddress='test-list@example.org', **event) == API_CONFLICT
+    assert addresses(aws) == before + ['racer1@example.com']
+    assert aws.log.count(('s3', 'put_object', KEY)) == 1
