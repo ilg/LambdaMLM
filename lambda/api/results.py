@@ -14,6 +14,11 @@ def NotFound(obj):
             'Message': '{} not found.'.format(obj),
             }
 
+Conflict = {
+        'StatusCode': 409,
+        'Message': 'The list changed while this request was running. Try again.',
+        }
+
 def BadRequest(msg):
     return {
             'StatusCode': 400,

@@ -5,6 +5,8 @@ from types import SimpleNamespace
 import click
 from click.testing import CliRunner
 
+from list_exceptions import ListChanged
+
 runner = CliRunner()
 
 @click.group(name='')
@@ -39,6 +41,10 @@ def run(user, cmd):
     # prog_name keeps the help text's usage line as it was under Click 7.
     result = runner.invoke(command, [user,] + shlex.split(cmd), prog_name='command')
     print('run result: {}'.format(result))
+    if isinstance(result.exception, ListChanged):
+        # Commands aren't retried: replaying one against a list that changed
+        # underneath it isn't obviously right.
+        return 'The list changed while your command was running.  Please try again.'
     if result.exception and not is_help_for_missing_arguments(result.exception):
         print('Exception: {}\nTraceback:\n {}'.format(result.exception, ''.join(format_exception(*result.exc_info))))
         return 'Internal error.'

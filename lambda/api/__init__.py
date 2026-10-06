@@ -1,7 +1,7 @@
-from listobj import List, UnknownList
+from listobj import List, UnknownList, ListChanged
 
 from .actions import actions
-from .results import InternalServerError, BadRequest
+from .results import InternalServerError, BadRequest, Conflict
 
 def handle_api(event):
     action = actions.get(event.get('Action'))
@@ -24,3 +24,7 @@ def handle_api(event):
         if event.get('Debug'):
             raise
         return BadRequest(str(e))
+    except ListChanged:
+        # Something else saved the list after this request loaded it.  The
+        # request isn't retried, for the same reason as email commands.
+        return Conflict

@@ -15,7 +15,9 @@ The invocation payload should be a JSON object:
 
 The `Action` and `ListAddress` parameters are always required.  The `MemberAddress` parameter is required for actions that require a list member address.
 
-The response will be a JSON object, containing an HTTP status code indicating if the response succeeded (e.g., 200, 201, 204 for success; 400, 404, 500 for failure).
+The response will be a JSON object, containing an HTTP status code indicating if the response succeeded (e.g., 200, 201, 204 for success; 400, 404, 409, 500 for failure).
+
+A 409 means something else saved the list while the request was running, so the request's change wasn't saved.  Nothing was changed, and the request can be made again.
 
 - On success:
 

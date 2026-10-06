@@ -9,6 +9,7 @@ import sys
 import boto3
 import pytest
 from botocore.client import BaseClient
+from botocore.exceptions import ClientError
 
 import aws_clients
 import settings
@@ -77,6 +78,63 @@ def test_fake_s3_returns_bytes_stream(aws):
     assert body.read(3) == b'caf'
     assert body.read() == 'é'.encode('utf-8')
     assert body.read() == b''
+
+
+def test_fake_s3_etags(aws):
+    # Quoted, as S3 returns them, and new with every write.
+    aws.s3.put('bucket', 'key', 'one')
+    etag = aws.s3.get_object(Bucket='bucket', Key='key')['ETag']
+    assert etag.startswith('"') and etag.endswith('"')
+    assert aws.s3.head_object(Bucket='bucket', Key='key')['ETag'] == etag
+    new_etag = aws.s3.put_object(Bucket='bucket', Key='key', Body='two')['ETag']
+    assert new_etag != etag
+    assert aws.s3.get_object(Bucket='bucket', Key='key')['ETag'] == new_etag
+    aws.s3.put('bucket', 'key', 'three')
+    assert aws.s3.get_object(Bucket='bucket', Key='key')['ETag'] not in (etag, new_etag)
+
+
+def error_of(call):
+    with pytest.raises(ClientError) as e:
+        call()
+    return e.value.response['Error']['Code'], e.value.response['ResponseMetadata']['HTTPStatusCode']
+
+
+def test_fake_s3_if_match(aws):
+    etag = aws.s3.put_object(Bucket='bucket', Key='key', Body='one')['ETag']
+    etag = aws.s3.put_object(Bucket='bucket', Key='key', Body='two', IfMatch=etag)['ETag']
+    aws.s3.put('bucket', 'key', 'another writer')
+    assert error_of(lambda: aws.s3.put_object(Bucket='bucket', Key='key', Body='three', IfMatch=etag)) == \
+        ('PreconditionFailed', 412)
+    assert aws.s3.body('bucket', 'key') == b'another writer'
+    assert error_of(lambda: aws.s3.put_object(Bucket='bucket', Key='nosuch', Body='x', IfMatch=etag)) == \
+        ('NoSuchKey', 404)
+    aws.s3.delete_object(Bucket='bucket', Key='key')
+    assert error_of(lambda: aws.s3.put_object(Bucket='bucket', Key='key', Body='x', IfMatch=etag)) == \
+        ('NoSuchKey', 404)
+
+
+def test_fake_s3_injected_put_failures(aws):
+    aws.s3.fail_puts('bucket', 'key', 'ConditionalRequestConflict', 'PreconditionFailed')
+    assert error_of(lambda: aws.s3.put_object(Bucket='bucket', Key='key', Body='x')) == \
+        ('ConditionalRequestConflict', 409)
+    assert error_of(lambda: aws.s3.put_object(Bucket='bucket', Key='key', Body='x')) == \
+        ('PreconditionFailed', 412)
+    aws.s3.put_object(Bucket='bucket', Key='key', Body='x')
+    assert aws.s3.body('bucket', 'key') == b'x'
+
+
+def test_fake_ses_configuration_set(aws):
+    # Recorded only when it's given, so sends without one look as they always have.
+    message = {'Subject': {'Data': 's'}, 'Body': {'Text': {'Data': 'b'}}}
+    aws.ses.send_email(Source='a@example.org', Destination={'ToAddresses': ['b@example.com']}, Message=message)
+    aws.ses.send_email(Source='a@example.org', Destination={'ToAddresses': ['b@example.com']}, Message=message,
+                       ConfigurationSetName='set')
+    aws.ses.send_raw_email(Source='a@example.org', Destinations=['b@example.com'], RawMessage={'Data': b'x'})
+    aws.ses.send_raw_email(Source='a@example.org', Destinations=['b@example.com'], RawMessage={'Data': b'x'},
+                           ConfigurationSetName='set')
+    assert [s.get('ConfigurationSetName', 'none') for s in aws.ses.sent_emails + aws.ses.sent_raw_emails] == \
+        ['none', 'set', 'none', 'set']
+    assert 'ConfigurationSetName' not in aws.ses.sent_emails[0]
 
 
 IMPORT_APP = """

@@ -14,6 +14,14 @@ Let the command string be `[command string]`, coming from `[from address]`, and 
 
 Since the SHA1-HMAC is 160 bits = 20 bytes and Base64 encoding uses trios of bytes, the signature will always have one trailing padding byte and the Base64 encoding of it will always be 27 Base64 characters followed by a `=`, so a signed command will end in something matching the regular expression `[\da-zA-Z+/]{27}=\d{14}`, where the first 28 characters (through the `=`) are the Base64-encoded signature and the remaining 14 decimal digits are the expiration date-time string (`YYYYMMDDHHMMSS`).
 
+## Saving Lists
+
+Each list's configuration is one YAML object in S3, which every change reads, modifies and writes back whole.  A save is conditional on the object being unchanged since it was read (S3's `If-Match` with the ETag it was read with), so of two changes made at the same moment, one fails rather than silently overwriting the other:
+
+- recording a bounce reads the list again and reapplies the bounce, up to three times;
+- an email command replies "The list changed while your command was running.  Please try again.";
+- an API call returns status 409 (see [API](api.md)).
+
 ## Bounce Handling
 
 Bounce handling is loosely based on [`mailman`'s bounce processing](http://www.gnu.org/software/mailman/mailman-admin/node25.html) and uses a copy of [Lamson](https://github.com/ilg/lamson-bsd)'s bounce analyzer ([`lamson_bounce.py`](../lambda/lamson_bounce.py)) to help determine what kind of bounce a given email represents.
