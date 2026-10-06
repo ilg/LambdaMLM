@@ -15,7 +15,7 @@ from list_member_container import ListMemberContainer
 from list_exceptions import (
         AlreadySubscribed, ClosedSubscription, ClosedUnsubscription,
         NotSubscribed, UnknownFlag, UnknownOption, ModeratedMessageNotFound,
-        InsufficientPermissions, UnknownList)
+        InsufficientPermissions, UnknownList, ListChanged)
 
 list_properties = [
         'name',
@@ -105,7 +105,9 @@ class List (ListMemberContainer):
         self._save()
 
     def _save(self):
-        storage.save_list_config(self.host, self.username, self.config)
+        """Save the list, unless something else has saved it since it was
+        loaded (see storage.save_list_config)."""
+        self._etag = storage.save_list_config(self.host, self.username, self.config, self._etag)
 
     def user_subscribe_user(self, from_user, target_user):
         from_address = address_from_user(from_user)
@@ -304,20 +306,45 @@ class List (ListMemberContainer):
     def handle_bounce_to(cls, bounce_address, msg):
         """Handle a bounce message sent to a member's VERP address."""
         print('Handling bounce to {}.'.format(bounce_address))
-        l, member = list_and_member_for_verp(bounce_address)
-        if not member:
-            print('No member found matching the bounce address.')
+        list_username, host = parse_verp(bounce_address)
+
+        def record(l):
+            print('Bounce received for list {}.'.format(l.display_address))
+            member = member_for_verp(l, bounce_address)
+            if not member:
+                print('No member found matching the bounce address.')
+                return False
+            l.record_response(member, detect_bounce(msg))
+            return True
+        update_list(host, list_username, record)
+
+
+def update_list(host, username, change, attempts=3):
+    """Load a list, change it and save it, starting again if something else
+    saved the list in the meantime.
+
+    change(l) is given the freshly loaded list.  It returns whether it changed
+    anything, and the list is saved only if it did.  It's called again for
+    each attempt, so it mustn't do anything but change the list.  Raises
+    ListChanged if every attempt's save fails; exceptions from loading the
+    list pass through.
+    """
+    for attempt in range(1, attempts + 1):
+        l = List(username=username, host=host)
+        if not change(l):
             return
-        l.record_response(member, detect_bounce(msg))
-        l._save()
+        try:
+            l._save()
+            return
+        except ListChanged:
+            print('{} changed while it was being updated (attempt {} of {}).'.format(l.address, attempt, attempts))
+    raise ListChanged
 
 
-def list_and_member_for_verp(verp_address):
-    """The list and member a VERP address (list+member=host+bounce@host) is for.
+def parse_verp(verp_address):
+    """The list username and host of a VERP address (list+member=host+bounce@host).
 
-    The member is None if no member's VERP address matches.  Raises
-    ValueError for an address that isn't in that form, and UnknownList if
-    there's no such list.
+    Raises ValueError for an address that isn't in that form.
     """
     if '@' not in verp_address:
         raise ValueError('Bounced-to addresses must contain an @.')
@@ -325,7 +352,9 @@ def list_and_member_for_verp(verp_address):
     if '+' not in verp_address:
         raise ValueError('Bounced-to username must contain a +.')
     list_username, _ = username.split('+', 1)
-    l = List(username=list_username, host=host)
-    print('Bounce received for list {}.'.format(l.display_address))
-    member = l.member_passing_test(lambda m: l.verp_address(m.address).lower() == verp_address.lower())
-    return l, member
+    return list_username, host
+
+
+def member_for_verp(l, verp_address):
+    """The member of the list whose VERP address this is, or None."""
+    return l.member_passing_test(lambda m: l.verp_address(m.address).lower() == verp_address.lower())

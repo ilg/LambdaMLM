@@ -8,8 +8,12 @@ nowhere else:
 - incoming/<SES message ID> for mail as SES stored it.
 
 (The prefixes come from settings.)  Callers get the exceptions they handle, in
-the same cases as before: any S3 error loading a config is UnknownList, and any
-S3 error on a held message is ModeratedMessageNotFound.
+the same cases as before: any S3 error loading a config is UnknownList (more
+specifically ListNotFound if there's no such config), and any S3 error on a
+held message is ModeratedMessageNotFound.
+
+Saving a config is conditional on its ETag, so a save fails with ListChanged
+rather than overwriting a change made since the config was loaded.
 """
 
 import yaml
@@ -17,7 +21,7 @@ from botocore.exceptions import ClientError
 
 import aws_clients
 import settings
-from list_exceptions import ModeratedMessageNotFound, UnknownList
+from list_exceptions import ListChanged, ListNotFound, ModeratedMessageNotFound, UnknownList
 
 
 def list_config_key(host, username):
@@ -34,25 +38,48 @@ def incoming_key(message_id):
 
 # ---------------------------------------------------------------- list configs
 
+def _status(error):
+    return error.response.get('ResponseMetadata', {}).get('HTTPStatusCode')
+
+
 def load_list_config(host, username):
     """The list's parsed config, and the stored object's ETag.
 
-    The ETag isn't used yet; it's there so writes can later be made
-    conditional on nothing having changed the list in the meantime.
+    Raises ListNotFound if there's no such config, and UnknownList for any
+    other S3 error.
     """
     try:
         response = aws_clients.s3().get_object(Bucket=settings.s3_bucket, Key=list_config_key(host, username))
-    except ClientError:
+    except ClientError as e:
+        if _status(e) == 404:
+            raise ListNotFound
         raise UnknownList
     return yaml.safe_load(response['Body']), response.get('ETag')
 
 
-def save_list_config(host, username, config):
-    aws_clients.s3().put_object(
-            Bucket=settings.s3_bucket,
-            Key=list_config_key(host, username),
-            Body=yaml.safe_dump(config, default_flow_style=False, allow_unicode=True),
-            )
+def save_list_config(host, username, config, etag=None):
+    """Save the list's config, and return the saved object's ETag.
+
+    With an ETag (as load_list_config returned it), the save is conditional
+    on the stored config still having it.  S3 reports a failed condition as
+    412, or as 409 if another write was in progress; both raise ListChanged.
+    It reports a config deleted in the meantime as 404, which raises
+    ListNotFound.  Other S3 errors pass through.
+    """
+    kwargs = {} if etag is None else {'IfMatch': etag}
+    try:
+        response = aws_clients.s3().put_object(
+                Bucket=settings.s3_bucket,
+                Key=list_config_key(host, username),
+                Body=yaml.safe_dump(config, default_flow_style=False, allow_unicode=True),
+                **kwargs)
+    except ClientError as e:
+        if etag is not None and _status(e) in (409, 412):
+            raise ListChanged
+        if etag is not None and _status(e) == 404:
+            raise ListNotFound
+        raise
+    return response.get('ETag')
 
 
 # ---------------------------------------------------------------- held messages
